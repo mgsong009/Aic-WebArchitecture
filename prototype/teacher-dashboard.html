@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Dashboard — AIC Index</title>
+<link rel="stylesheet" href="css/design-system.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* Teacher sidebar override */
+.app-sidebar { background: #1a2438; }
+.sidebar-logo-icon { background: linear-gradient(135deg, #F97316, #8B5CF6); }
+.nav-item.active::before { background: #F97316; }
+
+/* Class summary bar */
+.class-summary {
+  background: linear-gradient(135deg, #1a2438, #2d3748);
+  border-radius: var(--radius-xl);
+  padding: 24px 28px;
+  margin-bottom: var(--space-6);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 20px; color: white;
+  position: relative; overflow: hidden;
+}
+.class-summary::before {
+  content: '';
+  position: absolute;
+  right: -40px; top: -40px;
+  width: 180px; height: 180px;
+  background: rgba(249,115,22,0.08);
+  border-radius: 50%;
+}
+.cs-info {}
+.cs-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+.cs-class { font-size: 20px; font-weight: 800; color: white; letter-spacing: -0.3px; margin-bottom: 4px; }
+.cs-meta { font-size: 12px; color: rgba(255,255,255,0.5); }
+.cs-stats { display: flex; gap: 32px; }
+.cs-stat { text-align: center; }
+.cs-stat-val { font-size: 28px; font-weight: 800; color: white; letter-spacing: -0.5px; }
+.cs-stat-label { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+/* Risk summary cards */
+.risk-summary {
+  background: #FFF5F5;
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.risk-summary::before {
+  content: '⚠️';
+  position: absolute;
+  right: 16px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 36px; opacity: 0.15;
+}
+.rs-title { font-size: 12px; font-weight: 700; color: #B91C1C; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+.rs-student-list { display: flex; flex-direction: column; gap: 6px; }
+.rs-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  background: white; border-radius: var(--radius-md);
+  border: 1px solid #FEE2E2;
+}
+.rs-avatar { width: 24px; height: 24px; border-radius: 50%; background: #FCA5A5; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #B91C1C; flex-shrink: 0; }
+.rs-name { font-size: 12px; font-weight: 600; color: #374151; flex: 1; }
+.rs-score { font-size: 14px; font-weight: 800; color: var(--color-danger); }
+
+/* Distribution bar (histogram) */
+.dist-bar-group { display: flex; align-items: flex-end; gap: 4px; height: 80px; }
+.dist-bar {
+  flex: 1;
+  background: var(--color-gray-200);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.dist-bar:hover { background: var(--color-pi); }
+.dist-bar.my-bar { background: var(--color-pi); }
+.dist-bar-label { text-align: center; font-size: 9px; color: var(--text-muted); margin-top: 4px; }
+
+/* Activity feed */
+.activity-feed { display: flex; flex-direction: column; gap: 2px; }
+.activity-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+.activity-item:hover { background: var(--color-gray-50); }
+.act-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.act-text { flex: 1; font-size: 12px; color: var(--text-secondary); }
+.act-text strong { color: var(--text-primary); }
+.act-time { font-size: 11px; color: var(--text-muted); }
+
+/* Top/Bottom students table */
+.mini-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mini-table th { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 6px 10px; text-align: left; background: var(--color-gray-50); }
+.mini-table td { padding: 8px 10px; border-bottom: 1px solid var(--color-gray-50); }
+.mini-table tr:hover td { background: var(--color-gray-50); cursor: pointer; }
+.mini-table tr:last-child td { border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- Sidebar (Teacher) -->
+  <aside class="app-sidebar">
+    <div class="sidebar-logo" onclick="window.location.href='index.html'" style="background:transparent">
+      <div class="sidebar-logo-icon">AIC</div>
+      <span class="sidebar-logo-text">AIC <span>Index</span></span>
+    </div>
+    <div class="sidebar-role-badge">Teacher</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-item active" href="teacher-dashboard.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="teacher-students.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Student List
+      </a>
+      <a class="nav-item" href="teacher-student-detail.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="17" r="3"/><line x1="21.5" y1="19.5" x2="23" y2="21"/></svg>
+        Student Detail
+      </a>
+      <a class="nav-item" href="teacher-risk.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Risk Students
+        <span class="nav-badge">4</span>
+      </a>
+      <a class="nav-item" href="teacher-assignment-analytics.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+        Assignment Analytics
+      </a>
+      <a class="nav-item" href="teacher-advanced.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+        Advanced Analytics
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" style="background:linear-gradient(135deg,#F97316,#8B5CF6)">K</div>
+      <div class="user-info">
+        <div class="user-name">Prof. Kim</div>
+        <div class="user-role">Teacher · CS101</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="app-main">
+    <header class="app-header">
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-item">Teacher</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item active">Dashboard</span>
+      </div>
+      <div class="header-actions">
+        <div class="header-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="학생 검색...">
+        </div>
+        <div class="icon-btn" style="position:relative">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="badge"></span>
+        </div>
+        <div class="icon-btn" onclick="window.location.href='login.html'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content animate-fade-in">
+
+      <!-- Class Summary -->
+      <div class="class-summary">
+        <div class="cs-info">
+          <div class="cs-label">현재 수업</div>
+          <div class="cs-class">CS101 · 컴퓨터과학 개론</div>
+          <div class="cs-meta">Assignment #5 분석 완료 · 최종 업데이트: 오늘</div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <span style="padding:4px 10px;background:rgba(249,115,22,0.2);border-radius:100px;font-size:11px;font-weight:700;color:#FDBA74">Teacher View</span>
+            <span style="padding:4px 10px;background:rgba(16,185,129,0.15);border-radius:100px;font-size:11px;font-weight:700;color:#6EE7B7">분석 완료 25/28</span>
+          </div>
+        </div>
+        <div class="cs-stats">
+          <div class="cs-stat">
+            <div class="cs-stat-val">28</div>
+            <div class="cs-stat-label">전체 학생</div>
+          </div>
+          <div class="cs-stat">
+            <div class="cs-stat-val" style="color:#6EE7B7">25</div>
+            <div class="cs-stat-label">분석 완료</div>
+          </div>
+          <div class="cs-stat">
+            <div class="cs-stat-val" style="color:#FDBA74">4</div>
+            <div class="cs-stat-label">위험 학생</div>
+          </div>
+          <div class="cs-stat">
+            <div class="cs-stat-val">66</div>
+            <div class="cs-stat-label">반 평균 AIC</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="kpi-grid stagger section-gap">
+        <div class="kpi-card aic-card animate-fade-in-up">
+          <div class="kpi-header">
+            <div class="kpi-icon aic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div>
+            <span class="kpi-change up">↑ +2.1</span>
+          </div>
+          <div class="kpi-value">66.3</div>
+          <div class="kpi-label">반 평균 AIC</div>
+        </div>
+        <div class="kpi-card pi-card animate-fade-in-up">
+          <div class="kpi-header">
+            <div class="kpi-icon pi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+            <span class="kpi-change up">↑ +1.8</span>
+          </div>
+          <div class="kpi-value" style="color:var(--color-pi)">64.5</div>
+          <div class="kpi-label">평균 PI</div>
+        </div>
+        <div class="kpi-card ui-card animate-fade-in-up">
+          <div class="kpi-header">
+            <div class="kpi-icon ui"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></div>
+            <span class="kpi-change down">↓ -0.5</span>
+          </div>
+          <div class="kpi-value" style="color:var(--color-ui)">69.2</div>
+          <div class="kpi-label">평균 UI</div>
+        </div>
+        <div class="kpi-card oi-card animate-fade-in-up">
+          <div class="kpi-header">
+            <div class="kpi-icon oi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21h6"/><path d="M12 3a6 6 0 0 1 6 6c0 2.22-1.2 4.16-3 5.2V17H9v-2.8A6 6 0 0 1 6 9a6 6 0 0 1 6-6z"/></svg></div>
+            <span class="kpi-change up">↑ +3.2</span>
+          </div>
+          <div class="kpi-value" style="color:var(--color-oi)">62.8</div>
+          <div class="kpi-label">평균 OI</div>
+        </div>
+        <div class="kpi-card animate-fade-in-up" style="border-top-color:transparent">
+          <div class="kpi-header">
+            <div class="kpi-icon" style="background:#FEF2F2;color:var(--color-danger)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+            </div>
+            <span class="kpi-change down">주의</span>
+          </div>
+          <div class="kpi-value" style="color:var(--color-danger)">4</div>
+          <div class="kpi-label">위험군 학생 수</div>
+        </div>
+      </div>
+
+      <!-- Row 1: Distribution Histogram + Avg Bars + Risk -->
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-6)">
+
+        <!-- AIC Distribution Histogram -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">AIC 점수 분포</div><div class="card-subtitle">반 전체 히스토그램</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:200px">
+              <canvas id="histogramChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- PI/UI/OI Average Bars -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">지표 평균</div><div class="card-subtitle">반 전체 평균</div></div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+                  <span style="font-weight:700;color:var(--color-pi)">PI</span>
+                  <span style="color:var(--text-muted)">64.5</span>
+                </div>
+                <div class="score-bar-track"><div class="score-bar-fill pi" style="width:64.5%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+                  <span style="font-weight:700;color:var(--color-ui)">UI</span>
+                  <span style="color:var(--text-muted)">69.2</span>
+                </div>
+                <div class="score-bar-track"><div class="score-bar-fill ui" style="width:69.2%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+                  <span style="font-weight:700;color:var(--color-oi)">OI</span>
+                  <span style="color:var(--text-muted)">62.8</span>
+                </div>
+                <div class="score-bar-track"><div class="score-bar-fill oi" style="width:62.8%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+                  <span style="font-weight:700;color:var(--color-topic)">TS</span>
+                  <span style="color:var(--text-muted)">73.4</span>
+                </div>
+                <div class="score-bar-track"><div class="score-bar-fill topic" style="width:73.4%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+                  <span style="font-weight:700;color:var(--color-aic)">AIC</span>
+                  <span style="color:var(--text-muted)">66.3</span>
+                </div>
+                <div class="score-bar-track"><div class="score-bar-fill aic" style="width:66.3%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Summary -->
+        <div class="risk-summary">
+          <div class="rs-title">⚠ 위험군 학생 (4명)</div>
+          <div class="rs-student-list">
+            <div class="rs-item" onclick="window.location.href='teacher-student-detail.html'">
+              <div class="rs-avatar">박</div>
+              <div class="rs-name">박지수</div>
+              <div class="rs-score">38</div>
+            </div>
+            <div class="rs-item" onclick="window.location.href='teacher-student-detail.html'">
+              <div class="rs-avatar">이</div>
+              <div class="rs-name">이현우</div>
+              <div class="rs-score">44</div>
+            </div>
+            <div class="rs-item" onclick="window.location.href='teacher-student-detail.html'">
+              <div class="rs-avatar">최</div>
+              <div class="rs-name">최민서</div>
+              <div class="rs-score">47</div>
+            </div>
+            <div class="rs-item" onclick="window.location.href='teacher-student-detail.html'">
+              <div class="rs-avatar">정</div>
+              <div class="rs-name">정승호</div>
+              <div class="rs-score">49</div>
+            </div>
+          </div>
+          <a href="teacher-risk.html" style="display:block;margin-top:12px;font-size:12px;font-weight:700;color:var(--color-danger);text-align:center">전체 위험군 보기 →</a>
+        </div>
+      </div>
+
+      <!-- Row 2: Trend + Top/Bottom Table + Activity -->
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--space-4);margin-bottom:var(--space-6)">
+
+        <!-- Class AIC Trend -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">반 전체 AIC 추이</div><div class="card-subtitle">과제별 평균 AIC 변화</div></div>
+            <a href="teacher-assignment-analytics.html" style="font-size:12px;color:var(--color-pi);font-weight:600;cursor:pointer">과제 분석 →</a>
+          </div>
+          <div class="card-body">
+            <div style="height:200px">
+              <canvas id="classTrendChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">최근 활동</div><div class="card-subtitle">오늘 기준</div></div>
+          </div>
+          <div class="card-body" style="padding:8px 12px">
+            <div class="activity-feed">
+              <div class="activity-item">
+                <div class="act-dot" style="background:var(--color-oi)"></div>
+                <div class="act-text"><strong>김민준</strong> Assignment #5 제출</div>
+                <div class="act-time">2h ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="act-dot" style="background:var(--color-pi)"></div>
+                <div class="act-text"><strong>이수현</strong> 분석 완료</div>
+                <div class="act-time">3h ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="act-dot" style="background:var(--color-danger)"></div>
+                <div class="act-text"><strong>박지수</strong> 위험군 탐지됨</div>
+                <div class="act-time">4h ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="act-dot" style="background:var(--color-ui)"></div>
+                <div class="act-text"><strong>한승희</strong> 피드백 읽음</div>
+                <div class="act-time">5h ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="act-dot" style="background:var(--color-topic)"></div>
+                <div class="act-text"><strong>정승호</strong> 재제출 완료</div>
+                <div class="act-time">6h ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="act-dot" style="background:var(--color-success)"></div>
+                <div class="act-text"><strong>최민서</strong> 분석 완료</div>
+                <div class="act-time">7h ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Top/Bottom Students -->
+      <div class="grid-2 section-gap">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">🏆 상위 5명</div><div class="card-subtitle">AIC 점수 순</div></div>
+            <a href="teacher-students.html" style="font-size:12px;color:var(--color-pi);font-weight:600">전체 보기 →</a>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table class="mini-table" onclick="window.location.href='teacher-student-detail.html'">
+              <thead><tr><th>순위</th><th>학생</th><th>AIC</th><th>PI</th><th>UI</th><th>OI</th><th>상태</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>강태양</td><td style="font-weight:800;color:var(--color-aic)">88</td><td style="color:var(--color-pi)">85</td><td style="color:var(--color-ui)">90</td><td style="color:var(--color-oi)">88</td><td><span class="status-badge status-excellent">Excellent</span></td></tr>
+                <tr><td>2</td><td>윤서연</td><td style="font-weight:800;color:var(--color-aic)">84</td><td style="color:var(--color-pi)">82</td><td style="color:var(--color-ui)">86</td><td style="color:var(--color-oi)">84</td><td><span class="status-badge status-excellent">Excellent</span></td></tr>
+                <tr><td>3</td><td>이수현</td><td style="font-weight:800;color:var(--color-aic)">81</td><td style="color:var(--color-pi)">78</td><td style="color:var(--color-ui)">83</td><td style="color:var(--color-oi)">82</td><td><span class="status-badge status-excellent">Excellent</span></td></tr>
+                <tr><td>4</td><td>한승희</td><td style="font-weight:800;color:var(--color-aic)">78</td><td style="color:var(--color-pi)">75</td><td style="color:var(--color-ui)">80</td><td style="color:var(--color-oi)">79</td><td><span class="status-badge status-good">Good</span></td></tr>
+                <tr><td>5</td><td>조민준</td><td style="font-weight:800;color:var(--color-aic)">76</td><td style="color:var(--color-pi)">74</td><td style="color:var(--color-ui)">77</td><td style="color:var(--color-oi)">77</td><td><span class="status-badge status-good">Good</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">⚠ 주의 필요 학생</div><div class="card-subtitle">AIC 50점 미만</div></div>
+            <a href="teacher-risk.html" style="font-size:12px;color:var(--color-danger);font-weight:600">위험군 보기 →</a>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table class="mini-table" onclick="window.location.href='teacher-student-detail.html'">
+              <thead><tr><th>학생</th><th>AIC</th><th>PI</th><th>UI</th><th>OI</th><th>위험유형</th></tr></thead>
+              <tbody>
+                <tr><td>박지수</td><td style="font-weight:800;color:var(--color-danger)">38</td><td style="color:var(--color-pi)">32</td><td style="color:var(--color-ui)">40</td><td style="color:var(--color-oi)">41</td><td><span class="badge badge-danger">All Low</span></td></tr>
+                <tr><td>이현우</td><td style="font-weight:800;color:var(--color-danger)">44</td><td style="color:var(--color-pi)">38</td><td style="color:var(--color-ui)">48</td><td style="color:var(--color-oi)">46</td><td><span class="badge badge-danger">PI Low</span></td></tr>
+                <tr><td>최민서</td><td style="font-weight:800;color:var(--color-danger)">47</td><td style="color:var(--color-pi)">50</td><td style="color:var(--color-ui)">44</td><td style="color:var(--color-oi)">46</td><td><span class="badge badge-warning">UI Low</span></td></tr>
+                <tr><td>정승호</td><td style="font-weight:800;color:#F59E0B)">49</td><td style="color:var(--color-pi)">55</td><td style="color:var(--color-ui)">42</td><td style="color:var(--color-oi)">49</td><td><span class="badge badge-warning">UI Low</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// AIC Histogram
+new Chart(document.getElementById('histogramChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['30-40', '40-50', '50-60', '60-70', '70-80', '80-90', '90+'],
+    datasets: [{
+      label: '학생 수',
+      data: [1, 3, 6, 10, 5, 3, 0],
+      backgroundColor: (ctx) => {
+        const colors = ['#FCA5A5','#FDBA74','#FDE68A','#93C5FD','#6EE7B7','#A78BFA','#D1D5DB'];
+        return colors[ctx.dataIndex] || '#93C5FD';
+      },
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 }, stepSize: 2 } },
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// Class Trend
+new Chart(document.getElementById('classTrendChart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: ['A1', 'A2', 'A3', 'A4', 'A5'],
+    datasets: [
+      { label: '반 평균 AIC', data: [58, 61, 62, 64, 66], borderColor: '#1E3A5F', backgroundColor: 'rgba(30,58,95,0.07)', borderWidth: 2.5, fill: true, tension: 0.4, pointRadius: 4 },
+      { label: '상위 25%', data: [70, 73, 74, 76, 78], borderColor: '#3B82F6', borderWidth: 1.5, borderDash: [4,4], fill: false, tension: 0.4, pointRadius: 0 },
+      { label: '하위 25%', data: [44, 46, 47, 48, 50], borderColor: '#EF4444', borderWidth: 1.5, borderDash: [4,4], fill: false, tension: 0.4, pointRadius: 0 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { font: { size: 10, family: 'Inter' }, boxWidth: 10 } } },
+    scales: {
+      y: { min: 30, max: 90, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 }, stepSize: 10 } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>

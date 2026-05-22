@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Detail — AIC Index</title>
+<link rel="stylesheet" href="css/design-system.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.app-sidebar { background: #1a2438; }
+.sidebar-logo-icon { background: linear-gradient(135deg, #F97316, #8B5CF6); }
+.nav-item.active::before { background: #F97316; }
+
+/* Student profile header */
+.student-profile-card {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 24px 28px;
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.sp-avatar {
+  width: 64px; height: 64px;
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 800; color: white;
+  background: linear-gradient(135deg, #3B82F6, #10B981);
+  flex-shrink: 0;
+}
+.sp-info { flex: 1; }
+.sp-name { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px; margin-bottom: 4px; }
+.sp-meta { font-size: 13px; color: var(--text-muted); display: flex; gap: 16px; flex-wrap: wrap; }
+.sp-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.sp-aic-display { text-align: right; }
+.sp-aic-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+.sp-aic-val { font-size: 44px; font-weight: 800; color: var(--color-aic); letter-spacing: -2px; line-height: 1; }
+
+/* Weakness cards */
+.weakness-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.weakness-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.weakness-low::before  { background: var(--color-danger); }
+.weakness-mid::before  { background: var(--color-warning); }
+.weakness-high::before { background: var(--color-oi); }
+.wc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.wc-label { font-size: 12px; font-weight: 800; }
+.wc-score { font-size: 20px; font-weight: 800; margin-left: auto; }
+.wc-desc { font-size: 11px; color: var(--text-muted); line-height: 1.55; }
+
+/* Feedback editor */
+.feedback-editor {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+.fe-header { padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; }
+.fe-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 16px 20px;
+  border: none;
+  resize: vertical;
+  font-family: var(--font-family);
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  outline: none;
+  background: var(--bg-surface);
+}
+.fe-footer { padding: 10px 16px; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; background: var(--color-gray-50); }
+.fe-info { font-size: 11px; color: var(--text-muted); }
+
+/* Previous feedback list */
+.prev-feedback { display: flex; flex-direction: column; gap: 8px; }
+.pf-item { padding: 12px 14px; background: var(--color-gray-50); border-radius: var(--radius-md); border: 1px solid var(--border-light); }
+.pf-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.pf-assign { font-size: 11px; font-weight: 700; color: var(--color-pi); }
+.pf-date { font-size: 11px; color: var(--text-muted); }
+.pf-body { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+
+/* Assignment history */
+.assign-history { display: flex; flex-direction: column; gap: 4px; }
+.ah-item {
+  display: flex; align-items: center;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-gray-50);
+  border: 1px solid var(--border-light);
+  gap: 10px; cursor: pointer;
+  transition: all 0.15s;
+}
+.ah-item:hover { background: white; box-shadow: var(--shadow-sm); }
+.ah-num { font-size: 11px; font-weight: 700; color: var(--text-muted); width: 24px; }
+.ah-info { flex: 1; }
+.ah-title { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+.ah-date { font-size: 10px; color: var(--text-muted); }
+.ah-aic { font-size: 16px; font-weight: 800; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="app-sidebar">
+    <div class="sidebar-logo" onclick="window.location.href='index.html'">
+      <div class="sidebar-logo-icon">AIC</div>
+      <span class="sidebar-logo-text">AIC <span>Index</span></span>
+    </div>
+    <div class="sidebar-role-badge">Teacher</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-item" href="teacher-dashboard.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="teacher-students.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Student List
+      </a>
+      <a class="nav-item active" href="teacher-student-detail.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="17" r="3"/></svg>
+        Student Detail
+      </a>
+      <a class="nav-item" href="teacher-risk.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Risk Students
+        <span class="nav-badge">4</span>
+      </a>
+      <a class="nav-item" href="teacher-assignment-analytics.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+        Assignment Analytics
+      </a>
+      <a class="nav-item" href="teacher-advanced.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
+        Advanced Analytics
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" style="background:linear-gradient(135deg,#F97316,#8B5CF6)">K</div>
+      <div class="user-info"><div class="user-name">Prof. Kim</div><div class="user-role">Teacher · CS101</div></div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <header class="app-header">
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-item">Teacher</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item"><a href="teacher-students.html" style="color:inherit">Student List</a></span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item active">김민준</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" onclick="window.location.href='teacher-students.html'">← 목록으로</button>
+        <button class="btn btn-secondary btn-sm">이전 학생</button>
+        <button class="btn btn-secondary btn-sm">다음 학생</button>
+      </div>
+    </header>
+
+    <div class="page-content animate-fade-in">
+
+      <!-- Student Profile -->
+      <div class="student-profile-card">
+        <div class="sp-avatar">민</div>
+        <div class="sp-info">
+          <div class="sp-name">김민준</div>
+          <div class="sp-meta">
+            <span>STU006</span>
+            <span>CS101 · 컴퓨터과학 개론</span>
+            <span>Assignment #5 제출</span>
+            <span>2025.03.18</span>
+          </div>
+          <div class="sp-badges">
+            <span class="status-badge status-good">Good</span>
+            <span class="badge badge-pi">PI 72</span>
+            <span class="badge badge-ui">UI 68</span>
+            <span class="badge badge-oi">OI 75</span>
+            <span class="badge badge-topic">TS 83</span>
+            <span style="padding:4px 10px;background:var(--color-ui-pale);border-radius:100px;font-size:11px;font-weight:700;color:var(--color-ui)">UI 개선 필요</span>
+          </div>
+        </div>
+        <div class="sp-aic-display">
+          <div class="sp-aic-label">AIC Score</div>
+          <div class="sp-aic-val">71</div>
+          <div style="font-size:11px;color:var(--color-success);margin-top:4px">↑ +5 (A4→A5)</div>
+          <div style="font-size:11px;color:var(--text-muted)">상위 25% · 7위/28명</div>
+        </div>
+      </div>
+
+      <!-- Row 1: Donut + Metric Bars + Weakness Analysis -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:var(--space-4);margin-bottom:var(--space-4)">
+
+        <!-- AIC Donut -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">AIC Score</div></div>
+          <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:12px">
+            <div id="donutChart"></div>
+            <div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div style="padding:8px;background:var(--color-pi-pale);border-radius:8px;text-align:center">
+                <div style="font-size:16px;font-weight:800;color:var(--color-pi)">72</div>
+                <div style="font-size:10px;color:var(--text-muted)">PI</div>
+              </div>
+              <div style="padding:8px;background:var(--color-ui-pale);border-radius:8px;text-align:center">
+                <div style="font-size:16px;font-weight:800;color:var(--color-ui)">68</div>
+                <div style="font-size:10px;color:var(--text-muted)">UI</div>
+              </div>
+              <div style="padding:8px;background:var(--color-oi-pale);border-radius:8px;text-align:center">
+                <div style="font-size:16px;font-weight:800;color:var(--color-oi)">75</div>
+                <div style="font-size:10px;color:var(--text-muted)">OI</div>
+              </div>
+              <div style="padding:8px;background:var(--color-topic-pale);border-radius:8px;text-align:center">
+                <div style="font-size:16px;font-weight:800;color:var(--color-topic)">83</div>
+                <div style="font-size:10px;color:var(--text-muted)">TS</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PI/UI/OI Bars -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">지표 vs 반 평균</div></div>
+          </div>
+          <div class="card-body">
+            <div id="metricBarsEl"></div>
+            <div style="margin-top:16px">
+              <div class="card-title" style="font-size:12px;margin-bottom:8px">반 내 순위</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-pi);font-weight:700;width:20px">PI</span>
+                  <span style="color:var(--text-muted)">반에서 <strong style="color:var(--text-primary)">9위</strong>/28명</span>
+                  <span class="badge badge-pi">상위 32%</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-ui);font-weight:700;width:20px">UI</span>
+                  <span style="color:var(--text-muted)">반에서 <strong style="color:var(--text-primary)">13위</strong>/28명</span>
+                  <span class="badge badge-warning">하위 50%</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span style="color:var(--color-oi);font-weight:700;width:20px">OI</span>
+                  <span style="color:var(--text-muted)">반에서 <strong style="color:var(--text-primary)">6위</strong>/28명</span>
+                  <span class="badge badge-oi">상위 21%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weakness Analysis -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">취약 지표 분석</div><div class="card-subtitle">개선 우선순위</div></div>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div class="weakness-card weakness-mid">
+                <div class="wc-header">
+                  <div class="kpi-icon pi" style="width:28px;height:28px;font-size:12px">PI</div>
+                  <span class="wc-score" style="color:var(--color-pi)">72</span>
+                </div>
+                <div style="height:4px;background:var(--color-gray-100);border-radius:100px;margin-bottom:8px;overflow:hidden"><div style="width:72%;height:100%;background:var(--color-pi);border-radius:100px"></div></div>
+                <div class="wc-desc">반 평균(65) 대비 +7 우수. 비판적 질문 비율을 더 높이면 85+ 가능.</div>
+              </div>
+              <div class="weakness-card weakness-low">
+                <div class="wc-header">
+                  <div class="kpi-icon ui" style="width:28px;height:28px;font-size:12px">UI</div>
+                  <span class="wc-score" style="color:var(--color-ui)">68</span>
+                </div>
+                <div style="height:4px;background:var(--color-gray-100);border-radius:100px;margin-bottom:8px;overflow:hidden"><div style="width:68%;height:100%;background:var(--color-ui);border-radius:100px"></div></div>
+                <div class="wc-desc">⚠ 반 평균(70) 대비 -2. AI 수정 비율이 34%로 낮음. 의미 변화 필요.</div>
+              </div>
+              <div class="weakness-card weakness-high">
+                <div class="wc-header">
+                  <div class="kpi-icon oi" style="width:28px;height:28px;font-size:12px">OI</div>
+                  <span class="wc-score" style="color:var(--color-oi)">75</span>
+                </div>
+                <div style="height:4px;background:var(--color-gray-100);border-radius:100px;margin-bottom:8px;overflow:hidden"><div style="width:75%;height:100%;background:var(--color-oi);border-radius:100px"></div></div>
+                <div class="wc-desc">✓ 반 평균(63) 대비 +12 강점. 독창적 관점 서술 우수.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Growth Chart + Assignment History -->
+      <div class="grid-2 section-gap">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">성장 추이</div><div class="card-subtitle">전체 과제 기준</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:200px">
+              <canvas id="growthChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">과제 이력</div></div>
+          </div>
+          <div class="card-body" style="padding:8px 12px">
+            <div class="assign-history">
+              <div class="ah-item">
+                <div class="ah-num">A5</div>
+                <div class="ah-info">
+                  <div class="ah-title">생성형 AI 윤리 에세이</div>
+                  <div class="ah-date">2025.03.18</div>
+                </div>
+                <span class="status-badge status-good" style="font-size:10px">Good</span>
+                <div class="ah-aic" style="color:var(--color-aic)">71</div>
+              </div>
+              <div class="ah-item">
+                <div class="ah-num">A4</div>
+                <div class="ah-info">
+                  <div class="ah-title">딥러닝 모델 설계 보고서</div>
+                  <div class="ah-date">2025.03.05</div>
+                </div>
+                <span class="status-badge status-average" style="font-size:10px">Avg</span>
+                <div class="ah-aic" style="color:var(--color-pi)">66</div>
+              </div>
+              <div class="ah-item">
+                <div class="ah-num">A3</div>
+                <div class="ah-info">
+                  <div class="ah-title">데이터 분석 보고서</div>
+                  <div class="ah-date">2025.02.20</div>
+                </div>
+                <span class="status-badge status-average" style="font-size:10px">Avg</span>
+                <div class="ah-aic" style="color:var(--color-ui)">59</div>
+              </div>
+              <div class="ah-item">
+                <div class="ah-num">A2</div>
+                <div class="ah-info">
+                  <div class="ah-title">알고리즘 활용 분석</div>
+                  <div class="ah-date">2025.02.05</div>
+                </div>
+                <span class="status-badge status-average" style="font-size:10px">Avg</span>
+                <div class="ah-aic" style="color:var(--color-oi)">63</div>
+              </div>
+              <div class="ah-item">
+                <div class="ah-num">A1</div>
+                <div class="ah-info">
+                  <div class="ah-title">AI 개요 리뷰</div>
+                  <div class="ah-date">2025.01.22</div>
+                </div>
+                <span class="status-badge status-average" style="font-size:10px">Avg</span>
+                <div class="ah-aic" style="color:var(--text-muted)">54</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Feedback Editor + Previous Feedback -->
+      <div class="grid-2 section-gap">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:12px">교사 피드백 작성</div>
+          <div class="feedback-editor">
+            <div class="fe-header">
+              <div style="font-size:13px;font-weight:700">Assignment #5 피드백</div>
+              <span class="badge badge-ui">UI 개선 중점</span>
+            </div>
+            <textarea class="fe-textarea" placeholder="학생 김민준에 대한 피드백을 작성하세요...">독창적인 개인 경험 서술이 매우 인상적이었습니다. 특히 직접 AI를 사용하면서 느낀 편향성에 대한 서술은 단순 정보 제공을 넘어 비판적 사고를 보여줬어요.
+
+다음 과제에서는 UI 지표 향상을 위해 AI 초안의 논리 구조를 더 적극적으로 재배치해 보세요.</textarea>
+            <div class="fe-footer">
+              <span class="fe-info">마지막 저장: 2025.03.20 14:32</span>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-secondary btn-sm">임시저장</button>
+                <button class="btn btn-primary btn-sm">피드백 전송</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:12px">이전 피드백 이력</div>
+          <div class="prev-feedback">
+            <div class="pf-item">
+              <div class="pf-header">
+                <span class="pf-assign">Assignment #5</span>
+                <span class="pf-date">2025.03.20</span>
+              </div>
+              <div class="pf-body">독창적인 개인 경험 서술이 매우 인상적이었습니다. 다음에는 UI 지표 향상을 위해 AI 초안의 논리 구조를 더 적극적으로 재배치해 보세요.</div>
+            </div>
+            <div class="pf-item">
+              <div class="pf-header">
+                <span class="pf-assign">Assignment #4</span>
+                <span class="pf-date">2025.03.06</span>
+              </div>
+              <div class="pf-body">딥러닝 개념 서술이 명확해졌습니다. PI 점수가 크게 올랐군요. 계속 이 방향으로 발전하세요.</div>
+            </div>
+            <div class="pf-item">
+              <div class="pf-header">
+                <span class="pf-assign">Assignment #3</span>
+                <span class="pf-date">2025.02.21</span>
+              </div>
+              <div class="pf-body">이번 과제는 AI 초안을 거의 수정 없이 제출한 것 같습니다. 다음에는 자신의 목소리를 더 담아보세요.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// Donut
+(function() {
+  const size = 140, r = size*0.375, cx = size/2, cy = size/2;
+  const score = 71, c = 2*Math.PI*r;
+  const doc = document.getElementById('donutChart');
+  doc.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#E5E7EB" stroke-width="14"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1E3A5F" stroke-width="14"
+      stroke-dasharray="${c}" stroke-dashoffset="${c*(1-score/100)}"
+      stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+    <text x="${cx}" y="${cy-4}" text-anchor="middle" fill="#1F2937" font-size="20px" font-weight="800" font-family="Inter,sans-serif">${score}</text>
+    <text x="${cx}" y="${cy+12}" text-anchor="middle" fill="#9CA3AF" font-size="9px" font-weight="600" font-family="Inter,sans-serif">AIC</text>
+  </svg>`;
+})();
+
+// Metric Bars
+document.getElementById('metricBarsEl').innerHTML = `
+<div class="score-bar-group">
+  ${[['PI','pi',72,65],[['UI','ui',68,70]],['OI','oi',75,63],['TS','topic',83,74]].flat().map(b=>`
+  <div class="score-bar-item">
+    <span class="score-bar-label" style="color:var(--color-${b[1]})">${b[0]}</span>
+    <div class="score-bar-track">
+      <div class="score-bar-fill" style="background:var(--color-gray-300);width:${b[3]}%;position:absolute;height:100%;border-radius:inherit"></div>
+      <div class="score-bar-fill ${b[1]}" style="width:${b[2]}%;opacity:0.85"></div>
+    </div>
+    <span class="score-bar-value" style="color:var(--color-${b[1]})">${b[2]}</span>
+  </div>`).join('')}
+</div>`;
+
+// Growth chart
+new Chart(document.getElementById('growthChart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: ['A1','A2','A3','A4','A5'],
+    datasets: [
+      { label: 'AIC', data:[54,63,59,66,71], borderColor:'#1E3A5F', backgroundColor:'rgba(30,58,95,0.07)', fill:true, tension:0.4, borderWidth:2.5, pointRadius:4 },
+      { label: 'PI',  data:[52,60,55,68,72], borderColor:'#3B82F6', fill:false, tension:0.4, borderWidth:1.5, pointRadius:0 },
+      { label: 'UI',  data:[58,65,58,70,68], borderColor:'#F97316', fill:false, tension:0.4, borderWidth:1.5, pointRadius:0 },
+      { label: 'OI',  data:[51,64,63,60,75], borderColor:'#10B981', fill:false, tension:0.4, borderWidth:1.5, pointRadius:0 },
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ display:true, position:'top', labels:{ font:{size:10,family:'Inter'}, boxWidth:10 }}},
+    scales:{
+      y:{ min:40, max:90, grid:{color:'#F3F4F6'}, ticks:{font:{size:10}} },
+      x:{ grid:{display:false}, ticks:{font:{size:11}} }
+    }
+  }
+});
+</script>
+</body>
+</html>

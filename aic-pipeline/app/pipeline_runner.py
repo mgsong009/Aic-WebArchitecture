@@ -1,0 +1,114 @@
+import sys
+import numpy as np
+import pandas as pd
+
+sys.path.insert(0, "/app")
+
+# aic_pipeline.py must be copied to /app (container root) — see Dockerfile
+from aic_pipeline import (
+    EmbeddingBackend,
+    compute_PI,
+    compute_UI_OI,
+    fit_weights_and_aic,
+    safe_text,
+)
+
+_backend = None  # module-level singleton; loaded once at startup
+
+DEFAULT_KEYWORDS = [
+    "however", "although", "because", "why", "how", "compare",
+    "contrast", "analyze", "evaluate", "critique", "moreover",
+    "therefore", "consequently", "alternatively", "nevertheless",
+]
+
+
+def preload_model():
+    global _backend
+    preferred_backend = EmbeddingBackend(prefer="sbert", sbert_model="paraphrase-multilingual-mpnet-base-v2")
+    try:
+        preferred_backend.fit(["warmup text for initialization"])
+        _backend = preferred_backend
+        print("[pipeline] Embedding backend initialized: sbert", flush=True)
+    except Exception as exc:
+        fallback_backend = EmbeddingBackend(prefer="tfidf")
+        fallback_backend.fit(["warmup text for initialization"])
+        _backend = fallback_backend
+        print(f"[pipeline] Embedding fallback activated: tfidf ({exc})", flush=True)
+
+
+def run_analysis(payload: dict) -> dict:
+    global _backend
+    try:
+        if _backend is None:
+            preload_model()
+
+        sub = payload["submission"]
+        cfg = payload["config"]
+
+        df = pd.DataFrame([{
+            "sample_id": sub.get("sample_id", "x"),
+            "course": sub.get("course", "default"),
+            "student_id": sub.get("student_id", "x"),
+            "chatgpt_before": safe_text(sub["chatgpt_before"]),
+            "user": safe_text(sub["user"]),
+            "essay": safe_text(sub["essay"]),
+            "rating": np.nan,
+        }])
+
+        keywords = cfg.get("critical_keywords") or DEFAULT_KEYWORDS
+        df = compute_PI(df, keywords, weights=cfg.get("pi_weights", [0.4, 0.3, 0.3]))
+
+        pipeline_cfg = {
+            "ui_oi": {
+                "topic_score_alpha": cfg.get("topic_score_alpha", 1.0),
+                "topic_score_beta": cfg.get("topic_score_beta", 1.0),
+                "min_course_samples": 1,
+            }
+        }
+        df = compute_UI_OI(df, _backend, pipeline_cfg)
+
+        weights_cfg = {
+            "weights": {
+                "mode": "equal",
+                "clip_negative": True,
+                "min_ratings": 10,
+                "n_folds": 5,
+            }
+        }
+        df, w = fit_weights_and_aic(df, weights_cfg)
+
+        row = df.iloc[0]
+
+        def _f(col):
+            v = row.get(col)
+            return float(v) if v is not None and not (isinstance(v, float) and np.isnan(v)) else 0.0
+
+        def _i(col):
+            v = row.get(col)
+            return int(v) if v is not None and not (isinstance(v, float) and np.isnan(v)) else 0
+
+        return {
+            "job_id": payload["job_id"],
+            "pi": _f("PI"),
+            "ui": _f("UI"),
+            "oi": _f("OI"),
+            "aic": _f("AIC"),
+            "topic_score": _f("topic_score"),
+            "weight_pi": float(w[0]),
+            "weight_ui": float(w[1]),
+            "weight_oi": float(w[2]),
+            "pi_depth_tokens": _i("pi_depth_tokens"),
+            "pi_depth_norm": _f("pi_depth_norm"),
+            "pi_critical_ratio": _f("pi_critical_ratio"),
+            "pi_avg_sent_len": _f("pi_avg_sent_len"),
+            "pi_ttr": _f("pi_ttr"),
+            "pi_complexity": _f("pi_complexity"),
+            "ui_cos_similarity": _f("ui_cos_similarity"),
+            "ui_distance": _f("ui_distance"),
+            "ui_newinfo_ratio": _f("ui_newinfo_ratio"),
+            "oi_topic_score_raw": _f("topic_score"),
+            "embedding_backend": _backend.kind if _backend else "unknown",
+        }
+    except Exception as exc:
+        backend_name = _backend.kind if _backend else "uninitialized"
+        raise RuntimeError(f"run_analysis failed (embedding_backend={backend_name}): {exc}") from exc

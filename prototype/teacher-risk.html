@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk Students — AIC Index</title>
+<link rel="stylesheet" href="css/design-system.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.app-sidebar { background: #1a2438; }
+.sidebar-logo-icon { background: linear-gradient(135deg, #F97316, #8B5CF6); }
+.nav-item.active::before { background: #F97316; }
+
+.risk-hero {
+  background: linear-gradient(135deg, #7F1D1D, #991B1B);
+  border-radius: var(--radius-xl);
+  padding: 24px 28px;
+  margin-bottom: var(--space-6);
+  color: white;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 20px;
+  position: relative; overflow: hidden;
+}
+.risk-hero::after { content: '⚠️'; position: absolute; right: 28px; font-size: 64px; opacity: 0.12; }
+.rh-title { font-size: 20px; font-weight: 800; color: white; margin-bottom: 4px; }
+.rh-sub { font-size: 13px; color: rgba(255,255,255,0.55); }
+.rh-stats { display: flex; gap: 24px; }
+.rh-stat { text-align: center; }
+.rh-stat-val { font-size: 28px; font-weight: 800; color: white; }
+.rh-stat-label { font-size: 10px; color: rgba(255,255,255,0.45); text-transform: uppercase; margin-top: 2px; }
+
+/* Risk type tags */
+.risk-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 10px; font-weight: 700;
+}
+.risk-all   { background: #FEE2E2; color: #B91C1C; }
+.risk-pi    { background: var(--color-pi-pale); color: var(--color-pi); }
+.risk-ui    { background: var(--color-ui-pale); color: var(--color-ui); }
+.risk-oi    { background: var(--color-oi-pale); color: var(--color-oi); }
+.risk-dep   { background: #F5F3FF; color: #6D28D9; }
+
+/* Risk cards */
+.risk-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--color-danger);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.risk-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.rc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.rc-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--color-danger); display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; font-size: 16px; flex-shrink: 0; }
+.rc-name { font-size: 15px; font-weight: 800; color: var(--text-primary); }
+.rc-id { font-size: 11px; color: var(--text-muted); }
+.rc-aic { margin-left: auto; font-size: 28px; font-weight: 800; color: var(--color-danger); letter-spacing: -0.5px; }
+.rc-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+.rc-bars { display: flex; flex-direction: column; gap: 6px; }
+.rc-bar-item { display: flex; align-items: center; gap: 6px; }
+.rc-bar-label { width: 20px; font-size: 10px; font-weight: 700; }
+.rc-bar-track { flex: 1; height: 6px; background: var(--color-gray-100); border-radius: 100px; overflow: hidden; }
+.rc-bar-fill { height: 100%; border-radius: 100px; }
+.rc-bar-val { font-size: 11px; font-weight: 700; width: 24px; text-align: right; }
+.rc-action { margin-top: 14px; display: flex; gap: 6px; }
+
+/* Scatter plot section */
+.scatter-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; }
+.sl-item { display: flex; align-items: center; gap: 4px; }
+.sl-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="app-sidebar">
+    <div class="sidebar-logo" onclick="window.location.href='index.html'">
+      <div class="sidebar-logo-icon">AIC</div>
+      <span class="sidebar-logo-text">AIC <span>Index</span></span>
+    </div>
+    <div class="sidebar-role-badge">Teacher</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-item" href="teacher-dashboard.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="teacher-students.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Student List
+      </a>
+      <a class="nav-item" href="teacher-student-detail.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="17" r="3"/></svg>
+        Student Detail
+      </a>
+      <a class="nav-item active" href="teacher-risk.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Risk Students
+        <span class="nav-badge">4</span>
+      </a>
+      <a class="nav-item" href="teacher-assignment-analytics.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+        Assignment Analytics
+      </a>
+      <a class="nav-item" href="teacher-advanced.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
+        Advanced Analytics
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" style="background:linear-gradient(135deg,#F97316,#8B5CF6)">K</div>
+      <div class="user-info"><div class="user-name">Prof. Kim</div><div class="user-role">Teacher · CS101</div></div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <header class="app-header">
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-item">Teacher</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item active">Risk Students</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm">CSV 내보내기</button>
+        <button class="btn btn-danger btn-sm">일괄 피드백 전송</button>
+      </div>
+    </header>
+
+    <div class="page-content animate-fade-in">
+
+      <div class="risk-hero">
+        <div>
+          <div class="rh-title">⚠ 위험군 학생 관리</div>
+          <div class="rh-sub">AIC 50점 미만 또는 특정 지표 기준 이하 학생</div>
+          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="risk-tag risk-all">All Low (1명)</span>
+            <span class="risk-tag risk-pi">PI Low (1명)</span>
+            <span class="risk-tag risk-ui">UI Low (2명)</span>
+            <span class="risk-tag risk-dep">고의존도 (3명)</span>
+          </div>
+        </div>
+        <div class="rh-stats">
+          <div class="rh-stat">
+            <div class="rh-stat-val">4</div>
+            <div class="rh-stat-label">위험군</div>
+          </div>
+          <div class="rh-stat">
+            <div class="rh-stat-val">38</div>
+            <div class="rh-stat-label">최저 AIC</div>
+          </div>
+          <div class="rh-stat">
+            <div class="rh-stat-val">44.5</div>
+            <div class="rh-stat-label">위험군 평균</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Student Cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-6)">
+
+        <div class="risk-card" onclick="window.location.href='teacher-student-detail.html'">
+          <div class="rc-header">
+            <div class="rc-avatar">박</div>
+            <div>
+              <div class="rc-name">박지수</div>
+              <div class="rc-id">STU019 · CS101</div>
+            </div>
+            <div class="rc-aic">38</div>
+          </div>
+          <div class="rc-tags">
+            <span class="risk-tag risk-all">All Low</span>
+            <span class="risk-tag risk-dep">고의존도 (78%)</span>
+            <span class="status-badge status-risk" style="font-size:10px">Risk</span>
+          </div>
+          <div class="rc-bars">
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-pi)">PI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:32%;background:var(--color-pi)"></div></div><span class="rc-bar-val" style="color:var(--color-pi)">32</span></div>
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-ui)">UI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:40%;background:var(--color-ui)"></div></div><span class="rc-bar-val" style="color:var(--color-ui)">40</span></div>
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-oi)">OI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:41%;background:var(--color-oi)"></div></div><span class="rc-bar-val" style="color:var(--color-oi)">41</span></div>
+          </div>
+          <div class="rc-action">
+            <button class="btn btn-danger btn-sm">피드백 작성</button>
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">상세 보기</button>
+          </div>
+        </div>
+
+        <div class="risk-card" onclick="window.location.href='teacher-student-detail.html'" style="border-left-color:var(--color-danger)">
+          <div class="rc-header">
+            <div class="rc-avatar">이</div>
+            <div>
+              <div class="rc-name">이현우</div>
+              <div class="rc-id">STU018 · CS101</div>
+            </div>
+            <div class="rc-aic">44</div>
+          </div>
+          <div class="rc-tags">
+            <span class="risk-tag risk-pi">PI Low</span>
+            <span class="risk-tag risk-dep">고의존도 (74%)</span>
+            <span class="status-badge status-risk" style="font-size:10px">Risk</span>
+          </div>
+          <div class="rc-bars">
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-pi)">PI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:38%;background:var(--color-pi)"></div></div><span class="rc-bar-val" style="color:var(--color-pi)">38</span></div>
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-ui)">UI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:48%;background:var(--color-ui)"></div></div><span class="rc-bar-val" style="color:var(--color-ui)">48</span></div>
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-oi)">OI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:46%;background:var(--color-oi)"></div></div><span class="rc-bar-val" style="color:var(--color-oi)">46</span></div>
+          </div>
+          <div class="rc-action">
+            <button class="btn btn-danger btn-sm">피드백 작성</button>
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">상세 보기</button>
+          </div>
+        </div>
+
+        <div class="risk-card" onclick="window.location.href='teacher-student-detail.html'" style="border-left-color:#F59E0B">
+          <div class="rc-header">
+            <div class="rc-avatar" style="background:#D97706">최</div>
+            <div>
+              <div class="rc-name">최민서</div>
+              <div class="rc-id">STU017 · CS101</div>
+            </div>
+            <div class="rc-aic" style="color:#D97706">47</div>
+          </div>
+          <div class="rc-tags">
+            <span class="risk-tag risk-ui">UI Low</span>
+            <span class="risk-tag risk-dep">고의존도 (71%)</span>
+            <span class="status-badge status-risk" style="font-size:10px">Risk</span>
+          </div>
+          <div class="rc-bars">
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-pi)">PI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:50%;background:var(--color-pi)"></div></div><span class="rc-bar-val" style="color:var(--color-pi)">50</span></div>
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-ui)">UI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:44%;background:var(--color-ui)"></div></div><span class="rc-bar-val" style="color:var(--color-ui)">44</span></div>
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-oi)">OI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:46%;background:var(--color-oi)"></div></div><span class="rc-bar-val" style="color:var(--color-oi)">46</span></div>
+          </div>
+          <div class="rc-action">
+            <button class="btn btn-secondary btn-sm">피드백 작성</button>
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">상세 보기</button>
+          </div>
+        </div>
+
+        <div class="risk-card" onclick="window.location.href='teacher-student-detail.html'" style="border-left-color:#F59E0B">
+          <div class="rc-header">
+            <div class="rc-avatar" style="background:#D97706">정</div>
+            <div>
+              <div class="rc-name">정승호</div>
+              <div class="rc-id">STU016 · CS101</div>
+            </div>
+            <div class="rc-aic" style="color:#D97706">49</div>
+          </div>
+          <div class="rc-tags">
+            <span class="risk-tag risk-ui">UI Low</span>
+            <span class="status-badge status-risk" style="font-size:10px">Risk</span>
+          </div>
+          <div class="rc-bars">
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-pi)">PI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:55%;background:var(--color-pi)"></div></div><span class="rc-bar-val" style="color:var(--color-pi)">55</span></div>
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-ui)">UI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:42%;background:var(--color-ui)"></div></div><span class="rc-bar-val" style="color:var(--color-ui)">42</span></div>
+            <div class="rc-bar-item"><span class="rc-bar-label" style="color:var(--color-oi)">OI</span><div class="rc-bar-track"><div class="rc-bar-fill" style="width:49%;background:var(--color-oi)"></div></div><span class="rc-bar-val" style="color:var(--color-oi)">49</span></div>
+          </div>
+          <div class="rc-action">
+            <button class="btn btn-secondary btn-sm">피드백 작성</button>
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">상세 보기</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scatter Plot (Effort vs AI Dependency) -->
+      <div class="grid-2 section-gap">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Effort vs AI Dependency Scatter</div><div class="card-subtitle">X: AI 의존도, Y: AIC Score — 위험군 탐지</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:240px">
+              <canvas id="scatterChart"></canvas>
+            </div>
+            <div class="scatter-legend" style="margin-top:10px">
+              <div class="sl-item"><div class="sl-dot" style="background:#EF4444"></div>위험군</div>
+              <div class="sl-item"><div class="sl-dot" style="background:#F97316"></div>주의</div>
+              <div class="sl-item"><div class="sl-dot" style="background:#3B82F6"></div>평균</div>
+              <div class="sl-item"><div class="sl-dot" style="background:#10B981"></div>우수</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">위험군 AIC 비교</div><div class="card-subtitle">위험군 학생 vs 반 평균</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:240px">
+              <canvas id="riskBarChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// Scatter Chart
+new Chart(document.getElementById('scatterChart').getContext('2d'), {
+  type: 'scatter',
+  data: {
+    datasets: [
+      { label: '위험군', data: [{x:78,y:38},{x:74,y:44},{x:71,y:47},{x:65,y:49}], backgroundColor: '#EF4444', pointRadius: 8, pointHoverRadius: 10 },
+      { label: '주의', data: [{x:62,y:54},{x:60,y:56},{x:58,y:58},{x:55,y:59}], backgroundColor: '#F97316', pointRadius: 6 },
+      { label: '평균', data: [{x:50,y:63},{x:48,y:65},{x:45,y:67},{x:43,y:68},{x:40,y:70},{x:38,y:71},{x:35,y:73},{x:33,y:75}], backgroundColor: '#3B82F6', pointRadius: 5 },
+      { label: '우수', data: [{x:28,y:78},{x:25,y:81},{x:22,y:84},{x:20,y:88}], backgroundColor: '#10B981', pointRadius: 6 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 10 } } },
+    scales: {
+      x: { title: { display: true, text: 'AI 의존도 (%)', font: { size: 10 } }, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } },
+      y: { title: { display: true, text: 'AIC Score', font: { size: 10 } }, min: 30, max: 95, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// Risk Bar
+new Chart(document.getElementById('riskBarChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: ['박지수', '이현우', '최민서', '정승호', '반 평균'],
+    datasets: [
+      { label: 'PI', data: [32, 38, 50, 55, 65], backgroundColor: 'rgba(59,130,246,0.75)', borderRadius: 4 },
+      { label: 'UI', data: [40, 48, 44, 42, 70], backgroundColor: 'rgba(249,115,22,0.75)', borderRadius: 4 },
+      { label: 'OI', data: [41, 46, 46, 49, 63], backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 4 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 10 } } },
+    scales: {
+      y: { min: 0, max: 80, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assignment Analytics — AIC Index</title>
+<link rel="stylesheet" href="css/design-system.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.app-sidebar { background: #1a2438; }
+.sidebar-logo-icon { background: linear-gradient(135deg, #F97316, #8B5CF6); }
+.nav-item.active::before { background: #F97316; }
+
+.assign-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+.assign-stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.asc-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.asc-val { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+.asc-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+/* Assignment comparison table */
+.assign-compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.act-th { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 10px 14px; background: var(--color-gray-50); border-bottom: 2px solid var(--border-light); text-align: left; }
+.act-td { padding: 12px 14px; border-bottom: 1px solid var(--color-gray-50); }
+.act-tr:hover td { background: var(--color-gray-50); }
+.act-diff-bar { display: flex; align-items: center; gap: 8px; }
+.act-diff-fill { height: 8px; border-radius: 100px; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="app-sidebar">
+    <div class="sidebar-logo" onclick="window.location.href='index.html'">
+      <div class="sidebar-logo-icon">AIC</div>
+      <span class="sidebar-logo-text">AIC <span>Index</span></span>
+    </div>
+    <div class="sidebar-role-badge">Teacher</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-item" href="teacher-dashboard.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a class="nav-item" href="teacher-students.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Student List</a>
+      <a class="nav-item" href="teacher-student-detail.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="17" r="3"/></svg>Student Detail</a>
+      <a class="nav-item" href="teacher-risk.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Risk Students<span class="nav-badge">4</span></a>
+      <a class="nav-item active" href="teacher-assignment-analytics.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Assignment Analytics</a>
+      <a class="nav-item" href="teacher-advanced.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>Advanced Analytics</a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" style="background:linear-gradient(135deg,#F97316,#8B5CF6)">K</div>
+      <div class="user-info"><div class="user-name">Prof. Kim</div><div class="user-role">Teacher · CS101</div></div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <header class="app-header">
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-item">Teacher</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item active">Assignment Analytics</span>
+      </div>
+      <div class="header-actions">
+        <select style="padding:6px 10px;border:1px solid var(--border-default);border-radius:var(--radius-md);font-size:13px;background:white;cursor:pointer;outline:none">
+          <option>CS101 전체</option>
+        </select>
+        <button class="btn btn-secondary btn-sm">내보내기</button>
+      </div>
+    </header>
+
+    <div class="page-content animate-fade-in">
+      <div class="page-header">
+        <div>
+          <div class="page-title">과제 분석</div>
+          <div class="page-subtitle">CS101 · Assignment #1~#5 분포 및 난이도 분석</div>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="assign-stat-grid stagger">
+        <div class="assign-stat-card animate-fade-in-up">
+          <div class="asc-label">총 과제 수</div>
+          <div class="asc-val">5</div>
+          <div class="asc-sub">A1~A5</div>
+        </div>
+        <div class="assign-stat-card animate-fade-in-up">
+          <div class="asc-label">전체 평균 AIC</div>
+          <div class="asc-val" style="color:var(--color-aic)">62.6</div>
+          <div class="asc-sub">5개 과제 평균</div>
+        </div>
+        <div class="assign-stat-card animate-fade-in-up">
+          <div class="asc-label">최고 난이도</div>
+          <div class="asc-val" style="color:var(--color-danger)">A3</div>
+          <div class="asc-sub">평균 AIC 60.2 (최저)</div>
+        </div>
+        <div class="assign-stat-card animate-fade-in-up">
+          <div class="asc-label">최저 난이도</div>
+          <div class="asc-val" style="color:var(--color-success)">A5</div>
+          <div class="asc-sub">평균 AIC 66.3 (최고)</div>
+        </div>
+        <div class="assign-stat-card animate-fade-in-up">
+          <div class="asc-label">평균 표준편차</div>
+          <div class="asc-val">12.8</div>
+          <div class="asc-sub">AIC 분포 폭</div>
+        </div>
+      </div>
+
+      <!-- Row 1: Avg AIC Bar + Box Plot simulation -->
+      <div class="grid-2 section-gap">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">과제별 평균 AIC</div><div class="card-subtitle">A1~A5 비교</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:220px"><canvas id="assignAvgChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">과제별 분포 (Box Plot)</div><div class="card-subtitle">최솟값, 25th, 중앙값, 75th, 최댓값</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:220px"><canvas id="boxChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: PI/UI/OI per Assignment + Distribution Histogram -->
+      <div class="grid-2 section-gap">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">과제별 PI / UI / OI 평균</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:220px"><canvas id="metricsByAssignChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">과제별 편차</div><div class="card-subtitle">표준편차 시각화</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:220px"><canvas id="deviationChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assignment Summary Table -->
+      <div class="card section-gap">
+        <div class="card-header">
+          <div><div class="card-title">과제별 상세 요약</div></div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="assign-compare-table">
+            <thead>
+              <tr>
+                <th class="act-th">과제</th>
+                <th class="act-th">주제</th>
+                <th class="act-th">평균 AIC</th>
+                <th class="act-th">평균 PI</th>
+                <th class="act-th">평균 UI</th>
+                <th class="act-th">평균 OI</th>
+                <th class="act-th">표준편차</th>
+                <th class="act-th">위험군 비율</th>
+                <th class="act-th">난이도</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="act-tr"><td class="act-td"><span class="badge badge-neutral">A1</span></td><td class="act-td" style="font-size:12px">AI 개요 리뷰</td><td class="act-td" style="font-weight:800;color:var(--color-aic)">58.2</td><td class="act-td" style="color:var(--color-pi)">56.1</td><td class="act-td" style="color:var(--color-ui)">61.3</td><td class="act-td" style="color:var(--color-oi)">57.0</td><td class="act-td">14.2</td><td class="act-td">22%</td><td class="act-td"><span class="badge badge-warning">보통</span></td></tr>
+              <tr class="act-tr"><td class="act-td"><span class="badge badge-neutral">A2</span></td><td class="act-td" style="font-size:12px">알고리즘 분석</td><td class="act-td" style="font-weight:800;color:var(--color-aic)">61.4</td><td class="act-td" style="color:var(--color-pi)">59.2</td><td class="act-td" style="color:var(--color-ui)">64.8</td><td class="act-td" style="color:var(--color-oi)">60.3</td><td class="act-td">13.1</td><td class="act-td">18%</td><td class="act-td"><span class="badge badge-success">쉬움</span></td></tr>
+              <tr class="act-tr"><td class="act-td"><span class="badge badge-danger">A3</span></td><td class="act-td" style="font-size:12px">데이터 분석 보고서</td><td class="act-td" style="font-weight:800;color:var(--color-danger)">60.2</td><td class="act-td" style="color:var(--color-pi)">58.0</td><td class="act-td" style="color:var(--color-ui)">62.5</td><td class="act-td" style="color:var(--color-oi)">60.1</td><td class="act-td">15.8</td><td class="act-td" style="color:var(--color-danger);font-weight:700">28%</td><td class="act-td"><span class="badge badge-danger">어려움</span></td></tr>
+              <tr class="act-tr"><td class="act-td"><span class="badge badge-neutral">A4</span></td><td class="act-td" style="font-size:12px">딥러닝 설계 보고서</td><td class="act-td" style="font-weight:800;color:var(--color-aic)">64.1</td><td class="act-td" style="color:var(--color-pi)">62.0</td><td class="act-td" style="color:var(--color-ui)">67.3</td><td class="act-td" style="color:var(--color-oi)">63.0</td><td class="act-td">12.4</td><td class="act-td">15%</td><td class="act-td"><span class="badge badge-warning">보통</span></td></tr>
+              <tr class="act-tr"><td class="act-td"><span class="badge badge-success">A5</span></td><td class="act-td" style="font-size:12px">생성형 AI 윤리 에세이</td><td class="act-td" style="font-weight:800;color:var(--color-oi)">66.3</td><td class="act-td" style="color:var(--color-pi)">64.5</td><td class="act-td" style="color:var(--color-ui)">69.2</td><td class="act-td" style="color:var(--color-oi)">62.8</td><td class="act-td">12.8</td><td class="act-td">14%</td><td class="act-td"><span class="badge badge-success">쉬움</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const assignments = ['A1', 'A2', 'A3', 'A4', 'A5'];
+const avgAIC = [58.2, 61.4, 60.2, 64.1, 66.3];
+
+// Avg AIC bar
+new Chart(document.getElementById('assignAvgChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: assignments,
+    datasets: [{
+      label: '평균 AIC',
+      data: avgAIC,
+      backgroundColor: avgAIC.map(v => v < 61 ? 'rgba(239,68,68,0.7)' : v < 65 ? 'rgba(249,115,22,0.7)' : 'rgba(30,58,95,0.7)'),
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { min: 50, max: 75, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Box plot (simulated with floating bar)
+new Chart(document.getElementById('boxChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: assignments,
+    datasets: [
+      { label: 'IQR (25-75)', data: [[42,72],[45,76],[38,78],[48,80],[50,82]], backgroundColor: 'rgba(59,130,246,0.3)', borderColor: '#3B82F6', borderWidth: 1.5, borderRadius: 4 },
+      { label: '중앙값', data: [[57,59],[61,63],[59,61],[64,66],[66,68]], backgroundColor: '#1E3A5F', borderRadius: 2 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 10 } } },
+    scales: {
+      y: { min: 30, max: 90, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Metrics by Assignment
+new Chart(document.getElementById('metricsByAssignChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: assignments,
+    datasets: [
+      { label: 'PI', data: [56.1, 59.2, 58.0, 62.0, 64.5], backgroundColor: 'rgba(59,130,246,0.75)', borderRadius: 4 },
+      { label: 'UI', data: [61.3, 64.8, 62.5, 67.3, 69.2], backgroundColor: 'rgba(249,115,22,0.75)', borderRadius: 4 },
+      { label: 'OI', data: [57.0, 60.3, 60.1, 63.0, 62.8], backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 4 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 10 } } },
+    scales: {
+      y: { min: 50, max: 80, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Deviation Chart
+new Chart(document.getElementById('deviationChart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: assignments,
+    datasets: [{
+      label: '표준편차',
+      data: [14.2, 13.1, 15.8, 12.4, 12.8],
+      borderColor: '#8B5CF6',
+      backgroundColor: 'rgba(139,92,246,0.1)',
+      fill: true, tension: 0.4, borderWidth: 2.5,
+      pointBackgroundColor: '#8B5CF6', pointRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { font: { size: 11 }, boxWidth: 10 } } },
+    scales: {
+      y: { min: 10, max: 20, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>

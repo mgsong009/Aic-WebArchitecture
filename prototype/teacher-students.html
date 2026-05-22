@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student List — AIC Index</title>
+<link rel="stylesheet" href="css/design-system.css">
+<style>
+.app-sidebar { background: #1a2438; }
+.sidebar-logo-icon { background: linear-gradient(135deg, #F97316, #8B5CF6); }
+.nav-item.active::before { background: #F97316; }
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+.filter-search {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+}
+.filter-search input { border: none; outline: none; background: transparent; flex: 1; font-size: 13px; color: var(--text-primary); }
+.filter-search svg { flex-shrink: 0; color: var(--text-muted); }
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  outline: none;
+}
+
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 12px;
+  background: var(--color-gray-100);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  font-size: 12px; font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-chip.active { background: var(--color-aic-pale); border-color: var(--color-pi); color: var(--color-pi); }
+.filter-chip:hover { background: var(--color-gray-200); }
+
+/* Table enhancements */
+.student-avatar {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px; color: white;
+  flex-shrink: 0;
+}
+.aic-score-cell {
+  font-size: 16px; font-weight: 800;
+  letter-spacing: -0.3px;
+}
+.score-mini { font-size: 13px; font-weight: 700; }
+
+/* Mini bar */
+.mini-bar-wrap { display: flex; align-items: center; gap: 6px; }
+.mini-bar-track { width: 60px; height: 5px; background: var(--color-gray-100); border-radius: 100px; overflow: hidden; }
+.mini-bar-fill { height: 100%; border-radius: 100px; }
+
+/* Pagination */
+.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-light);
+  font-size: 12px; color: var(--text-muted);
+}
+.pag-btns { display: flex; gap: 4px; }
+.pag-btn {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; color: var(--text-muted);
+  background: var(--bg-surface);
+  transition: all 0.15s;
+}
+.pag-btn:hover { border-color: var(--color-pi); color: var(--color-pi); }
+.pag-btn.active { background: var(--color-aic); border-color: var(--color-aic); color: white; }
+
+/* Sort indicator */
+.sort-icon { display: inline; font-size: 10px; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="app-sidebar">
+    <div class="sidebar-logo" onclick="window.location.href='index.html'">
+      <div class="sidebar-logo-icon">AIC</div>
+      <span class="sidebar-logo-text">AIC <span>Index</span></span>
+    </div>
+    <div class="sidebar-role-badge">Teacher</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-item" href="teacher-dashboard.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item active" href="teacher-students.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Student List
+      </a>
+      <a class="nav-item" href="teacher-student-detail.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="17" r="3"/></svg>
+        Student Detail
+      </a>
+      <a class="nav-item" href="teacher-risk.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Risk Students
+        <span class="nav-badge">4</span>
+      </a>
+      <a class="nav-item" href="teacher-assignment-analytics.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+        Assignment Analytics
+      </a>
+      <a class="nav-item" href="teacher-advanced.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+        Advanced Analytics
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" style="background:linear-gradient(135deg,#F97316,#8B5CF6)">K</div>
+      <div class="user-info"><div class="user-name">Prof. Kim</div><div class="user-role">Teacher · CS101</div></div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <header class="app-header">
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-item">Teacher</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item active">Student List</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV 내보내기
+        </button>
+        <button class="btn btn-primary btn-sm">+ 학생 추가</button>
+      </div>
+    </header>
+
+    <div class="page-content animate-fade-in">
+      <div class="page-header">
+        <div>
+          <div class="page-title">학생 목록</div>
+          <div class="page-subtitle">CS101 · Assignment #5 · 28명 중 25명 분석 완료</div>
+        </div>
+      </div>
+
+      <!-- Summary KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-3);margin-bottom:var(--space-4)">
+        <div style="background:var(--bg-surface);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:14px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:var(--color-aic)">28</div>
+          <div style="font-size:11px;color:var(--text-muted)">전체</div>
+        </div>
+        <div style="background:var(--color-oi-pale);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-lg);padding:14px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:var(--color-oi)">11</div>
+          <div style="font-size:11px;color:var(--text-muted)">Excellent/Good</div>
+        </div>
+        <div style="background:#FEF9C3;border:1px solid rgba(234,179,8,0.2);border-radius:var(--radius-lg);padding:14px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:#A16207">13</div>
+          <div style="font-size:11px;color:var(--text-muted)">Average</div>
+        </div>
+        <div style="background:#FEF2F2;border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-lg);padding:14px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:var(--color-danger)">4</div>
+          <div style="font-size:11px;color:var(--text-muted)">Risk</div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <div class="filter-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="학생 이름 또는 ID 검색..." id="searchInput" oninput="filterTable()">
+        </div>
+        <select class="filter-select" onchange="filterTable()">
+          <option value="">전체 상태</option>
+          <option value="Excellent">Excellent</option>
+          <option value="Good">Good</option>
+          <option value="Average">Average</option>
+          <option value="Risk">Risk</option>
+        </select>
+        <select class="filter-select">
+          <option>Assignment #5</option>
+          <option>Assignment #4</option>
+          <option>Assignment #3</option>
+        </select>
+        <div class="filter-chip active">전체</div>
+        <div class="filter-chip">AI 의존도 높음</div>
+        <div class="filter-chip">PI 낮음</div>
+        <div class="filter-chip">OI 낮음</div>
+      </div>
+
+      <!-- Student Table -->
+      <div class="data-table-wrapper">
+        <table class="data-table" id="studentTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">학생 <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable(1)">Student ID</th>
+              <th onclick="sortTable(2)">AIC ↓ <span class="sort-icon">↑</span></th>
+              <th onclick="sortTable(3)">PI</th>
+              <th onclick="sortTable(4)">UI</th>
+              <th onclick="sortTable(5)">OI</th>
+              <th>TopicScore</th>
+              <th>상태</th>
+              <th>과제</th>
+              <th>액션</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span>28명 중 1-15 표시</span>
+          <div class="pag-btns">
+            <div class="pag-btn">←</div>
+            <div class="pag-btn active">1</div>
+            <div class="pag-btn">2</div>
+            <div class="pag-btn">→</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const students = [
+  { name: '강태양', id: 'STU001', aic: 88, pi: 85, ui: 90, oi: 88, ts: 91, assign: 'A5', color: '#3B82F6' },
+  { name: '윤서연', id: 'STU002', aic: 84, pi: 82, ui: 86, oi: 84, ts: 88, assign: 'A5', color: '#10B981' },
+  { name: '이수현', id: 'STU003', aic: 81, pi: 78, ui: 83, oi: 82, ts: 85, assign: 'A5', color: '#8B5CF6' },
+  { name: '한승희', id: 'STU004', aic: 78, pi: 75, ui: 80, oi: 79, ts: 82, assign: 'A5', color: '#F97316' },
+  { name: '조민준', id: 'STU005', aic: 76, pi: 74, ui: 77, oi: 77, ts: 80, assign: 'A5', color: '#EF4444' },
+  { name: '김민준', id: 'STU006', aic: 71, pi: 72, ui: 68, oi: 75, ts: 83, assign: 'A5', color: '#1E3A5F' },
+  { name: '박서준', id: 'STU007', aic: 70, pi: 68, ui: 72, oi: 70, ts: 74, assign: 'A5', color: '#6B7280' },
+  { name: '최다은', id: 'STU008', aic: 68, pi: 65, ui: 70, oi: 69, ts: 72, assign: 'A5', color: '#3B82F6' },
+  { name: '김지아', id: 'STU009', aic: 67, pi: 64, ui: 69, oi: 68, ts: 71, assign: 'A5', color: '#10B981' },
+  { name: '이하은', id: 'STU010', aic: 65, pi: 63, ui: 67, oi: 65, ts: 70, assign: 'A5', color: '#F97316' },
+  { name: '박민재', id: 'STU011', aic: 63, pi: 60, ui: 65, oi: 64, ts: 68, assign: 'A5', color: '#8B5CF6' },
+  { name: '오지우', id: 'STU012', aic: 61, pi: 59, ui: 63, oi: 61, ts: 65, assign: 'A5', color: '#6B7280' },
+  { name: '장서윤', id: 'STU013', aic: 58, pi: 55, ui: 60, oi: 59, ts: 62, assign: 'A4', color: '#EF4444' },
+  { name: '신유진', id: 'STU014', aic: 56, pi: 53, ui: 58, oi: 57, ts: 60, assign: 'A4', color: '#3B82F6' },
+  { name: '황지현', id: 'STU015', aic: 54, pi: 51, ui: 56, oi: 55, ts: 58, assign: 'A4', color: '#10B981' },
+  { name: '정승호', id: 'STU016', aic: 49, pi: 55, ui: 42, oi: 49, ts: 53, assign: 'A5', color: '#F97316' },
+  { name: '최민서', id: 'STU017', aic: 47, pi: 50, ui: 44, oi: 46, ts: 51, assign: 'A5', color: '#8B5CF6' },
+  { name: '이현우', id: 'STU018', aic: 44, pi: 38, ui: 48, oi: 46, ts: 49, assign: 'A5', color: '#EF4444' },
+  { name: '박지수', id: 'STU019', aic: 38, pi: 32, ui: 40, oi: 41, ts: 42, assign: 'A5', color: '#6B7280' },
+];
+
+function getStatus(aic) {
+  if (aic >= 80) return { cls: 'status-excellent', text: 'Excellent' };
+  if (aic >= 65) return { cls: 'status-good', text: 'Good' };
+  if (aic >= 50) return { cls: 'status-average', text: 'Average' };
+  return { cls: 'status-risk', text: 'Risk' };
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = data.map(s => {
+    const st = getStatus(s.aic);
+    return `
+    <tr onclick="window.location.href='teacher-student-detail.html'" style="cursor:pointer">
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="student-avatar" style="background:${s.color}">${s.name.charAt(0)}</div>
+          <div>
+            <div style="font-weight:700;font-size:13px">${s.name}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${s.id}</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-size:12px;color:var(--text-muted)">${s.id}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="aic-score-cell" style="color:${s.aic>=80?'var(--color-oi)':s.aic>=65?'var(--color-pi)':s.aic>=50?'var(--color-ui)':'var(--color-danger)'}">${s.aic}</span>
+          <div class="mini-bar-wrap">
+            <div class="mini-bar-track"><div class="mini-bar-fill" style="width:${s.aic}%;background:var(--color-aic)"></div></div>
+          </div>
+        </div>
+      </td>
+      <td><span class="score-mini" style="color:var(--color-pi)">${s.pi}</span></td>
+      <td><span class="score-mini" style="color:var(--color-ui)">${s.ui}</span></td>
+      <td><span class="score-mini" style="color:var(--color-oi)">${s.oi}</span></td>
+      <td><span class="score-mini" style="color:var(--color-topic)">${s.ts}</span></td>
+      <td><span class="status-badge ${st.cls}">${st.text}</span></td>
+      <td><span class="badge badge-neutral">${s.assign}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();window.location.href='teacher-student-detail.html'">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            보기
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = students.filter(s => s.name.includes(q) || s.id.toLowerCase().includes(q));
+  renderTable(filtered);
+}
+
+// Init
+renderTable(students);
+</script>
+</body>
+</html>

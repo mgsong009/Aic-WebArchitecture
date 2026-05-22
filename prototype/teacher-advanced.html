@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Analytics — AIC Index</title>
+<link rel="stylesheet" href="css/design-system.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.app-sidebar { background: #1a2438; }
+.sidebar-logo-icon { background: linear-gradient(135deg, #F97316, #8B5CF6); }
+.nav-item.active::before { background: #F97316; }
+
+.adv-hero {
+  background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+  border-radius: var(--radius-xl);
+  padding: 24px 28px;
+  margin-bottom: var(--space-6);
+  color: white;
+  position: relative; overflow: hidden;
+}
+.adv-hero::after { content: '🔬'; position: absolute; right: 28px; top: 50%; transform: translateY(-50%); font-size: 56px; opacity: 0.15; }
+.ah-tag { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+.ah-title { font-size: 20px; font-weight: 800; color: white; margin-bottom: 4px; }
+.ah-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 12px; }
+.ah-tabs { display: flex; gap: 6px; }
+.ah-tab {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.12);
+  transition: all 0.15s;
+}
+.ah-tab.active, .ah-tab:hover {
+  background: rgba(59,130,246,0.3);
+  color: #93C5FD;
+  border-color: rgba(59,130,246,0.4);
+}
+
+/* Cluster scatter */
+.cluster-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 11px; }
+.cl-item { display: flex; align-items: center; gap: 5px; }
+.cl-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* Correlation heatmap (CSS-based) */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2px;
+}
+.hm-cell {
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 4px;
+  font-size: 10px; font-weight: 700;
+  color: white;
+}
+.hm-label {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--text-secondary);
+}
+.hm-row-label {
+  font-size: 11px; font-weight: 700; color: var(--text-muted);
+  display: flex; align-items: center;
+}
+.heatmap-wrapper {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 4px;
+}
+
+/* Strategy type map */
+.strategy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 8px;
+  height: 250px;
+}
+.strategy-cell {
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.strategy-cell::after {
+  position: absolute;
+  right: 10px; bottom: 8px;
+  font-size: 28px; opacity: 0.15;
+}
+.sc-high-pi-high-ui { background: linear-gradient(135deg, #DBEAFE, #EFF6FF); border: 1px solid rgba(59,130,246,0.2); }
+.sc-high-pi-high-ui::after { content: '🎯'; }
+.sc-high-pi-low-ui  { background: linear-gradient(135deg, #FEF9C3, #FFFBEB); border: 1px solid rgba(234,179,8,0.2); }
+.sc-high-pi-low-ui::after  { content: '💭'; }
+.sc-low-pi-high-ui  { background: linear-gradient(135deg, #FFF7ED, #FFEDD5); border: 1px solid rgba(249,115,22,0.2); }
+.sc-low-pi-high-ui::after  { content: '✏️'; }
+.sc-low-pi-low-ui   { background: linear-gradient(135deg, #FEF2F2, #FFF5F5); border: 1px solid rgba(239,68,68,0.2); }
+.sc-low-pi-low-ui::after   { content: '⚠️'; }
+.sc-title { font-size: 12px; font-weight: 800; }
+.sc-desc { font-size: 10px; color: var(--text-muted); line-height: 1.5; }
+.sc-count { font-size: 18px; font-weight: 800; }
+.sc-label { font-size: 10px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="app-sidebar">
+    <div class="sidebar-logo" onclick="window.location.href='index.html'">
+      <div class="sidebar-logo-icon">AIC</div>
+      <span class="sidebar-logo-text">AIC <span>Index</span></span>
+    </div>
+    <div class="sidebar-role-badge">Teacher</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-item" href="teacher-dashboard.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a class="nav-item" href="teacher-students.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Student List</a>
+      <a class="nav-item" href="teacher-student-detail.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><circle cx="19" cy="17" r="3"/></svg>Student Detail</a>
+      <a class="nav-item" href="teacher-risk.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>Risk Students<span class="nav-badge">4</span></a>
+      <a class="nav-item" href="teacher-assignment-analytics.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Assignment Analytics</a>
+      <a class="nav-item active" href="teacher-advanced.html"><svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>Advanced Analytics</a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" style="background:linear-gradient(135deg,#F97316,#8B5CF6)">K</div>
+      <div class="user-info"><div class="user-name">Prof. Kim</div><div class="user-role">Teacher · CS101</div></div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <header class="app-header">
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-item">Teacher</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item active">Advanced Analytics</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm">데이터 내보내기</button>
+      </div>
+    </header>
+
+    <div class="page-content animate-fade-in">
+
+      <!-- Hero -->
+      <div class="adv-hero">
+        <div class="ah-tag">Data Science View</div>
+        <div class="ah-title">심화 데이터 분석</div>
+        <div class="ah-sub">학생 군집, 지표 상관관계, 협업 전략 유형 분석</div>
+        <div class="ah-tabs">
+          <div class="ah-tab active">군집 분석</div>
+          <div class="ah-tab">상관관계</div>
+          <div class="ah-tab">전략 유형</div>
+          <div class="ah-tab">Effort vs Score</div>
+        </div>
+      </div>
+
+      <!-- Row 1: Cluster Scatter + Strategy Map -->
+      <div class="grid-2 section-gap">
+
+        <!-- Cluster Scatter (PCA simulation) -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">학생 군집 분석 (PCA Scatter)</div><div class="card-subtitle">PI/UI/OI/AIC 기반 2D 축소 — 4개 군집 탐지</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:250px">
+              <canvas id="clusterChart"></canvas>
+            </div>
+            <div class="cluster-legend">
+              <div class="cl-item"><div class="cl-dot" style="background:#10B981"></div>고역량 (7명)</div>
+              <div class="cl-item"><div class="cl-dot" style="background:#3B82F6"></div>중상위 (10명)</div>
+              <div class="cl-item"><div class="cl-dot" style="background:#F97316"></div>성장형 (7명)</div>
+              <div class="cl-item"><div class="cl-dot" style="background:#EF4444"></div>위험군 (4명)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strategy Type Map -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">협업 전략 유형 지도</div><div class="card-subtitle">PI vs UI 기준 — 4가지 학습 전략 유형</div></div>
+          </div>
+          <div class="card-body">
+            <div style="margin-bottom:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px;text-align:center;font-size:10px;color:var(--text-muted)">
+              <div></div><div style="font-weight:700">UI 높음 →</div>
+            </div>
+            <div style="display:grid;grid-template-columns:20px 1fr;gap:4px">
+              <div style="display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted);writing-mode:vertical-rl;transform:rotate(180deg);font-weight:700">← PI 높음</div>
+              <div class="strategy-grid">
+                <div class="strategy-cell sc-high-pi-high-ui">
+                  <div>
+                    <div class="sc-title" style="color:#1D4ED8">🎯 Expert</div>
+                    <div class="sc-desc">질문도 좋고<br>수정도 많음</div>
+                  </div>
+                  <div><div class="sc-count" style="color:#1D4ED8">7</div><div class="sc-label">학생</div></div>
+                </div>
+                <div class="strategy-cell sc-high-pi-low-ui">
+                  <div>
+                    <div class="sc-title" style="color:#A16207">💭 Thinker</div>
+                    <div class="sc-desc">질문은 좋지만<br>수정 적음</div>
+                  </div>
+                  <div><div class="sc-count" style="color:#A16207">6</div><div class="sc-label">학생</div></div>
+                </div>
+                <div class="strategy-cell sc-low-pi-high-ui">
+                  <div>
+                    <div class="sc-title" style="color:#C2410C">✏️ Editor</div>
+                    <div class="sc-desc">질문은 약하나<br>수정 많음</div>
+                  </div>
+                  <div><div class="sc-count" style="color:#C2410C">11</div><div class="sc-label">학생</div></div>
+                </div>
+                <div class="strategy-cell sc-low-pi-low-ui">
+                  <div>
+                    <div class="sc-title" style="color:#B91C1C">⚠️ Passive</div>
+                    <div class="sc-desc">질문도 약하고<br>수정도 적음</div>
+                  </div>
+                  <div><div class="sc-count" style="color:#B91C1C">4</div><div class="sc-label">학생</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Correlation Heatmap + Effort vs Score -->
+      <div class="grid-2 section-gap">
+
+        <!-- Correlation Heatmap -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">지표 상관관계 히트맵</div><div class="card-subtitle">Pearson correlation coefficient</div></div>
+          </div>
+          <div class="card-body">
+            <div style="max-width:320px;margin:0 auto">
+              <!-- Header row -->
+              <div style="display:grid;grid-template-columns:50px repeat(5,1fr);gap:3px;margin-bottom:3px;text-align:center">
+                <div></div>
+                <div style="font-size:10px;font-weight:700;color:var(--color-pi)">PI</div>
+                <div style="font-size:10px;font-weight:700;color:var(--color-ui)">UI</div>
+                <div style="font-size:10px;font-weight:700;color:var(--color-oi)">OI</div>
+                <div style="font-size:10px;font-weight:700;color:var(--color-topic)">TS</div>
+                <div style="font-size:10px;font-weight:700;color:var(--color-aic)">AIC</div>
+              </div>
+              <!-- Rows -->
+              <div id="heatmapGrid"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:16px;font-size:10px;color:var(--text-muted)">
+              <div style="width:60px;height:8px;background:linear-gradient(90deg,#EF4444,#FCA5A5,#E5E7EB,#93C5FD,#1E3A5F);border-radius:4px"></div>
+              <span>-1.0 (역상관) — 0 — +1.0 (정상관)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Effort vs Score Scatter -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Effort vs AIC Score</div><div class="card-subtitle">X: 수정 횟수, Y: AIC — 노력-성과 상관관계</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:250px"><canvas id="effortChart"></canvas></div>
+            <div style="margin-top:10px;padding:10px 12px;background:var(--color-pi-pale);border-radius:8px;font-size:11px;color:var(--color-pi)">
+              <strong>r = 0.74</strong> — 수정 횟수와 AIC 점수 간 강한 양의 상관관계 (p &lt; 0.001)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: TopicScore vs OI + Draft Similarity -->
+      <div class="grid-2 section-gap">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">TopicScore vs OI</div><div class="card-subtitle">주제 적합성과 독창성의 관계</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:220px"><canvas id="topicOIChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Draft Similarity Matrix</div><div class="card-subtitle">초안 vs 최종본 유사도 (낮을수록 개입 많음)</div></div>
+          </div>
+          <div class="card-body">
+            <div style="height:220px"><canvas id="similarityChart"></canvas></div>
+            <div style="margin-top:10px;display:flex;gap:10px;font-size:11px;color:var(--text-muted)">
+              <span style="color:var(--color-oi);font-weight:700">■</span> 낮은 유사도 = 높은 개입
+              <span style="color:var(--color-danger);font-weight:700">■</span> 높은 유사도 = 낮은 개입
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// Cluster Scatter
+new Chart(document.getElementById('clusterChart').getContext('2d'), {
+  type: 'scatter',
+  data: {
+    datasets: [
+      { label: '고역량', data: [{x:0.8,y:0.9},{x:0.7,y:0.85},{x:0.9,y:0.8},{x:0.75,y:0.95},{x:0.85,y:0.78},{x:0.6,y:0.88},{x:0.92,y:0.72}], backgroundColor: '#10B981', pointRadius: 7 },
+      { label: '중상위', data: [{x:0.3,y:0.5},{x:0.4,y:0.6},{x:0.35,y:0.55},{x:0.5,y:0.45},{x:0.45,y:0.65},{x:0.2,y:0.58},{x:0.55,y:0.42},{x:0.28,y:0.62},{x:0.48,y:0.38},{x:0.38,y:0.70}], backgroundColor: '#3B82F6', pointRadius: 6 },
+      { label: '성장형', data: [{x:-0.2,y:0.1},{x:-0.1,y:0.2},{x:0.0,y:0.0},{x:-0.3,y:0.15},{x:-0.15,y:-0.1},{x:0.1,y:-0.05},{x:-0.25,y:0.25}], backgroundColor: '#F97316', pointRadius: 6 },
+      { label: '위험군', data: [{x:-0.7,y:-0.6},{x:-0.8,y:-0.5},{x:-0.65,y:-0.75},{x:-0.75,y:-0.55}], backgroundColor: '#EF4444', pointRadius: 8 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { title: { display: true, text: 'PC1 (AIC/PI)', font: { size: 10 } }, grid: { color: '#F3F4F6' }, ticks: { font: { size: 9 } } },
+      y: { title: { display: true, text: 'PC2 (UI/OI)', font: { size: 10 } }, grid: { color: '#F3F4F6' }, ticks: { font: { size: 9 } } }
+    }
+  }
+});
+
+// Heatmap
+const labels = ['PI','UI','OI','TS','AIC'];
+const corr = [
+  [1.0, 0.62, 0.55, 0.44, 0.88],
+  [0.62, 1.0, 0.48, 0.38, 0.81],
+  [0.55, 0.48, 1.0, 0.71, 0.79],
+  [0.44, 0.38, 0.71, 1.0, 0.65],
+  [0.88, 0.81, 0.79, 0.65, 1.0],
+];
+
+function corrColor(v) {
+  const r = Math.round(255 * (1 - Math.max(0, v)));
+  const g = Math.round(255 * Math.max(0, v));
+  const b = Math.round(255 * (1 - Math.abs(v)));
+  const alpha = 0.3 + Math.abs(v) * 0.7;
+  if (v >= 0.7) return `rgba(30,58,95,${alpha})`;
+  if (v >= 0.4) return `rgba(59,130,246,${alpha})`;
+  if (v >= 0.0) return `rgba(209,213,219,0.5)`;
+  return `rgba(239,68,68,${Math.abs(alpha)})`;
+}
+
+const grid = document.getElementById('heatmapGrid');
+labels.forEach((row, i) => {
+  const rowEl = document.createElement('div');
+  rowEl.style.cssText = 'display:grid;grid-template-columns:50px repeat(5,1fr);gap:3px;margin-bottom:3px';
+  rowEl.innerHTML = `<div style="font-size:10px;font-weight:700;color:var(--text-muted);display:flex;align-items:center">${row}</div>`;
+  labels.forEach((col, j) => {
+    const v = corr[i][j];
+    rowEl.innerHTML += `<div style="aspect-ratio:1;background:${corrColor(v)};display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:9px;font-weight:700;color:${v>0.5?'white':'#374151'}">${v.toFixed(2)}</div>`;
+  });
+  grid.appendChild(rowEl);
+});
+
+// Effort vs Score
+const students28 = Array.from({length:28}, (_,i) => ({ x: 2 + Math.random()*10, y: 35 + Math.random()*50 }));
+students28.sort((a,b) => a.x-b.x);
+new Chart(document.getElementById('effortChart').getContext('2d'), {
+  type: 'scatter',
+  data: {
+    datasets: [
+      { label: '학생', data: students28, backgroundColor: students28.map(s => s.y>75?'#10B981':s.y>60?'#3B82F6':s.y>50?'#F97316':'#EF4444'), pointRadius: 5 },
+      { label: '추세선', data: [{x:2,y:38},{x:4,y:46},{x:6,y:54},{x:8,y:62},{x:10,y:70},{x:12,y:78}], type:'line', borderColor:'#1E3A5F', borderWidth:1.5, fill:false, tension:0, pointRadius:0, borderDash:[4,4] },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { title: { display: true, text: '수정 횟수', font: { size: 10 } }, grid: { color: '#F3F4F6' }, ticks: { font: { size: 9 } } },
+      y: { title: { display: true, text: 'AIC Score', font: { size: 10 } }, min: 30, max: 95, grid: { color: '#F3F4F6' }, ticks: { font: { size: 9 } } }
+    }
+  }
+});
+
+// TopicScore vs OI
+const tsOI = Array.from({length:28}, () => ({ x: 40+Math.random()*55, y: 35+Math.random()*50 }));
+new Chart(document.getElementById('topicOIChart').getContext('2d'), {
+  type: 'scatter',
+  data: {
+    datasets: [{ label: '학생', data: tsOI, backgroundColor: 'rgba(139,92,246,0.5)', pointRadius: 5 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { title: { display: true, text: 'TopicScore', font: { size: 10 } }, min: 30, max: 100, grid: { color: '#F3F4F6' }, ticks: { font: { size: 9 } } },
+      y: { title: { display: true, text: 'OI', font: { size: 10 } }, min: 30, max: 90, grid: { color: '#F3F4F6' }, ticks: { font: { size: 9 } } }
+    }
+  }
+});
+
+// Similarity
+const simData = [0.82, 0.76, 0.89, 0.71, 0.68, 0.79, 0.66, 0.74, 0.85, 0.72, 0.64, 0.78, 0.91, 0.84, 0.67, 0.73, 0.62, 0.88, 0.77, 0.69, 0.83, 0.75, 0.70, 0.86, 0.65, 0.80, 0.92, 0.71];
+const simColors = simData.map(v => v > 0.8 ? 'rgba(239,68,68,0.7)' : v > 0.7 ? 'rgba(249,115,22,0.7)' : 'rgba(16,185,129,0.7)');
+new Chart(document.getElementById('similarityChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: simData.map((_,i)=>`S${String(i+1).padStart(2,'0')}`),
+    datasets: [{ label: '초안 유사도', data: simData, backgroundColor: simColors, borderRadius: 3 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { min: 0.5, max: 1.0, grid: { color: '#F3F4F6' }, ticks: { font: { size: 9 }, callback: v => (v*100).toFixed(0)+'%' } },
+      x: { grid: { display: false }, ticks: { font: { size: 8 }, maxRotation: 0 } }
+    }
+  }
+});
+</script>
+</body>
+</html>

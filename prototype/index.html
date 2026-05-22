@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIC Index — AI Collaboration Index Platform</title>
+<link rel="stylesheet" href="css/design-system.css">
+<style>
+/* ── Landing Page Styles ── */
+.landing-root {
+  min-height: 100vh;
+  background: #0B1526;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Gradient mesh background */
+.landing-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.25;
+}
+.bg-blob-1 { width: 500px; height: 500px; background: #3B82F6; top: -100px; left: -100px; }
+.bg-blob-2 { width: 400px; height: 400px; background: #10B981; top: 200px; right: -80px; }
+.bg-blob-3 { width: 350px; height: 350px; background: #8B5CF6; bottom: 100px; left: 30%; }
+
+/* Nav */
+.landing-nav {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 60px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-brand-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #3B82F6, #10B981);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px; color: white;
+}
+
+.nav-brand-text {
+  font-size: 18px; font-weight: 700; color: white;
+  letter-spacing: -0.3px;
+}
+.nav-brand-text span { font-weight: 300; opacity: 0.6; }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.nav-links a {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  font-weight: 500;
+  transition: color 0.15s;
+  cursor: pointer;
+}
+.nav-links a:hover { color: white; }
+
+.nav-cta {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-outline-white {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 20px;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  text-decoration: none;
+}
+.btn-outline-white:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.05); }
+
+.btn-white {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 20px;
+  background: white; color: #1E3A5F;
+  border-radius: 8px;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+.btn-white:hover { background: #EFF6FF; }
+
+/* Hero */
+.hero {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 100px 40px 80px;
+}
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 100px;
+  font-size: 12px; font-weight: 600; color: #60A5FA;
+  margin-bottom: 24px;
+  letter-spacing: 0.3px;
+}
+
+.hero-title {
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 800;
+  color: white;
+  line-height: 1.15;
+  letter-spacing: -1.5px;
+  max-width: 800px;
+  margin-bottom: 20px;
+}
+
+.hero-title .gradient-text {
+  background: linear-gradient(90deg, #60A5FA, #34D399, #A78BFA);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: 16px;
+  color: rgba(255,255,255,0.55);
+  max-width: 540px;
+  line-height: 1.7;
+  margin-bottom: 40px;
+}
+
+.hero-cta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 64px;
+}
+
+.btn-hero-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  color: white; border-radius: 10px;
+  font-size: 15px; font-weight: 700;
+  cursor: pointer; border: none;
+  box-shadow: 0 4px 20px rgba(59,130,246,0.4);
+  transition: all 0.2s;
+}
+.btn-hero-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(59,130,246,0.5); }
+
+.btn-hero-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 32px;
+  background: rgba(255,255,255,0.08);
+  color: white; border-radius: 10px;
+  font-size: 15px; font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-hero-secondary:hover { background: rgba(255,255,255,0.12); }
+
+/* Stat bar */
+.hero-stats {
+  display: flex;
+  gap: 48px;
+  padding: 24px 48px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+.stat-item { text-align: center; }
+.stat-value { font-size: 28px; font-weight: 800; color: white; letter-spacing: -0.5px; }
+.stat-label { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 4px; font-weight: 500; }
+
+/* Index Pills */
+.index-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.index-pill {
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.pill-pi { background: rgba(59,130,246,0.15); color: #93C5FD; border: 1px solid rgba(59,130,246,0.3); }
+.pill-ui { background: rgba(249,115,22,0.15); color: #FDBA74; border: 1px solid rgba(249,115,22,0.3); }
+.pill-oi { background: rgba(16,185,129,0.15); color: #6EE7B7; border: 1px solid rgba(16,185,129,0.3); }
+.pill-aic { background: rgba(30,58,95,0.4); color: #93C5FD; border: 1px solid rgba(59,130,246,0.2); }
+
+/* Features */
+.features {
+  position: relative; z-index: 5;
+  padding: 80px 60px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.section-label {
+  text-align: center;
+  font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+  color: #60A5FA;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.section-title {
+  text-align: center;
+  font-size: 32px; font-weight: 800; color: white;
+  letter-spacing: -0.5px;
+  margin-bottom: 48px;
+}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.feature-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 28px;
+  transition: all 0.2s;
+}
+.feature-card:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.15);
+  transform: translateY(-2px);
+}
+.feature-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+  font-size: 20px;
+}
+.feature-title {
+  font-size: 16px; font-weight: 700; color: white;
+  margin-bottom: 8px;
+}
+.feature-desc {
+  font-size: 13px; color: rgba(255,255,255,0.5);
+  line-height: 1.65;
+}
+
+/* Role cards */
+.roles-section {
+  position: relative; z-index: 5;
+  padding: 60px 60px 80px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.roles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.role-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 36px;
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.role-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.role-card.student::before { background: linear-gradient(90deg, #3B82F6, #10B981); }
+.role-card.teacher::before { background: linear-gradient(90deg, #F97316, #8B5CF6); }
+.role-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+  border-color: rgba(255,255,255,0.18);
+}
+.role-emoji {
+  font-size: 36px;
+  margin-bottom: 16px;
+  display: block;
+}
+.role-title {
+  font-size: 20px; font-weight: 800; color: white;
+  margin-bottom: 8px;
+}
+.role-desc {
+  font-size: 13px; color: rgba(255,255,255,0.5);
+  line-height: 1.65;
+  margin-bottom: 20px;
+}
+.role-features {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.role-feature-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: rgba(255,255,255,0.65);
+}
+.role-feature-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.student .role-feature-dot { background: #3B82F6; }
+.teacher .role-feature-dot { background: #F97316; }
+
+.role-cta {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 24px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+}
+.role-cta.student { background: rgba(59,130,246,0.15); color: #93C5FD; }
+.role-cta.teacher { background: rgba(249,115,22,0.15); color: #FDBA74; }
+.role-cta:hover { opacity: 0.8; }
+
+/* Footer */
+.landing-footer {
+  position: relative; z-index: 5;
+  padding: 24px 60px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255,255,255,0.3);
+}
+
+@media (max-width: 768px) {
+  .landing-nav { padding: 16px 20px; }
+  .nav-links { display: none; }
+  .hero { padding: 60px 20px 50px; }
+  .hero-stats { gap: 24px; padding: 16px 24px; flex-wrap: wrap; }
+  .features { padding: 60px 20px; }
+  .roles-section { padding: 40px 20px 60px; }
+  .roles-grid { grid-template-columns: 1fr; }
+  .landing-footer { flex-direction: column; gap: 8px; padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="landing-root">
+
+  <!-- Background Blobs -->
+  <div class="landing-bg">
+    <div class="bg-blob bg-blob-1"></div>
+    <div class="bg-blob bg-blob-2"></div>
+    <div class="bg-blob bg-blob-3"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="landing-nav">
+    <div class="nav-brand">
+      <div class="nav-brand-icon">AIC</div>
+      <span class="nav-brand-text">AIC <span>Index</span></span>
+    </div>
+    <div class="nav-links">
+      <a>플랫폼 소개</a>
+      <a>지표 체계</a>
+      <a>사용 방법</a>
+      <a>문의</a>
+    </div>
+    <div class="nav-cta">
+      <a href="login.html" class="btn-outline-white">로그인</a>
+      <a href="login.html" class="btn-white">시작하기 →</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero animate-fade-in">
+    <div class="hero-tag">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+      생성형 AI 시대의 새로운 학습 평가 패러다임
+    </div>
+
+    <div class="index-pills">
+      <span class="index-pill pill-pi">PI · Prompt Insight</span>
+      <span class="index-pill pill-ui">UI · User Intervention</span>
+      <span class="index-pill pill-oi">OI · Originality Index</span>
+      <span class="index-pill pill-aic">AIC · AI Collaboration Index</span>
+    </div>
+
+    <h1 class="hero-title">
+      AI와의 협업 과정을<br>
+      <span class="gradient-text">정량적으로 평가</span>하다
+    </h1>
+
+    <p class="hero-subtitle">
+      결과물이 아닌 <strong style="color:rgba(255,255,255,0.8)">과정</strong>을 분석합니다.
+      학생의 노력, AI 개입, 독창성을 AIC Index로 시각화하여
+      교사와 학생 모두에게 의미 있는 피드백을 제공합니다.
+    </p>
+
+    <div class="hero-cta">
+      <a href="login.html" class="btn-hero-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10,17 15,12 10,7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        로그인하여 시작하기
+      </a>
+      <button class="btn-hero-secondary" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,8 12,12 14,14"/></svg>
+        지표 설명 보기
+      </button>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-value">4개</div>
+        <div class="stat-label">핵심 평가 지표</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">실시간</div>
+        <div class="stat-label">AI 협업 분석</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">2가지</div>
+        <div class="stat-label">사용자 역할</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">10개+</div>
+        <div class="stat-label">분석 화면</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="section-label">플랫폼 기능</div>
+    <div class="section-title">4가지 핵심 지표로 학습 과정을 분석</div>
+
+    <div class="features-grid stagger">
+      <div class="feature-card animate-fade-in-up">
+        <div class="feature-icon" style="background:rgba(59,130,246,0.15)">💡</div>
+        <div class="feature-title" style="color:#93C5FD">PI · Prompt Insight</div>
+        <div class="feature-desc">질문의 깊이, 구체성, 비판성을 분석합니다. 학생이 AI에게 던진 질문의 수준이 얼마나 높은지 측정합니다.</div>
+      </div>
+      <div class="feature-card animate-fade-in-up">
+        <div class="feature-icon" style="background:rgba(249,115,22,0.15)">✏️</div>
+        <div class="feature-title" style="color:#FDBA74">UI · User Intervention</div>
+        <div class="feature-desc">AI 초안에 대한 의미 있는 수정과 개입 정도를 측정합니다. 단순 복붙이 아닌 진짜 사고의 흔적을 포착합니다.</div>
+      </div>
+      <div class="feature-card animate-fade-in-up">
+        <div class="feature-icon" style="background:rgba(16,185,129,0.15)">🌱</div>
+        <div class="feature-title" style="color:#6EE7B7">OI · Originality Index</div>
+        <div class="feature-desc">주제 내에서의 자기 관점과 독창성을 평가합니다. 학생만의 시각과 창의적 사고를 계량화합니다.</div>
+      </div>
+      <div class="feature-card animate-fade-in-up">
+        <div class="feature-icon" style="background:rgba(30,58,95,0.5)">🎯</div>
+        <div class="feature-title" style="color:#93C5FD">AIC · AI Collaboration Index</div>
+        <div class="feature-desc">PI, UI, OI를 종합한 최종 협업 지수입니다. AI를 도구로 잘 활용하는 역량을 하나의 숫자로 표현합니다.</div>
+      </div>
+      <div class="feature-card animate-fade-in-up">
+        <div class="feature-icon" style="background:rgba(139,92,246,0.15)">📈</div>
+        <div class="feature-title" style="color:#C4B5FD">성장 추이 분석</div>
+        <div class="feature-desc">과제별 시계열 분석으로 학생의 AI 활용 역량 성장을 추적합니다. 장기적 학습 패턴을 파악할 수 있습니다.</div>
+      </div>
+      <div class="feature-card animate-fade-in-up">
+        <div class="feature-icon" style="background:rgba(239,68,68,0.15)">⚠️</div>
+        <div class="feature-title" style="color:#FCA5A5">위험군 조기 감지</div>
+        <div class="feature-desc">AI 의존도가 높거나 개입이 낮은 학생을 자동으로 탐지합니다. 교사가 우선 지도할 학생을 즉시 파악할 수 있습니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Role Selection -->
+  <section class="roles-section">
+    <div class="section-label">역할 선택</div>
+    <div class="section-title">누구로 시작하시나요?</div>
+
+    <div class="roles-grid">
+      <div class="role-card student" onclick="window.location.href='student-dashboard.html'">
+        <span class="role-emoji">🧑‍🎓</span>
+        <div class="role-title">학생 (Student)</div>
+        <div class="role-desc">내 AIC 점수를 확인하고, 성장 추이를 파악하며, AI를 더 잘 활용하는 방법을 배웁니다.</div>
+        <div class="role-features">
+          <div class="role-feature-item">
+            <div class="role-feature-dot"></div>내 AIC 점수 및 PI/UI/OI 확인
+          </div>
+          <div class="role-feature-item">
+            <div class="role-feature-dot"></div>과제별 성장 추이 분석
+          </div>
+          <div class="role-feature-item">
+            <div class="role-feature-dot"></div>맞춤형 개선 피드백 가이드
+          </div>
+          <div class="role-feature-item">
+            <div class="role-feature-dot"></div>평균 대비 내 위치 확인
+          </div>
+        </div>
+        <button class="role-cta student">학생으로 입장 →</button>
+      </div>
+
+      <div class="role-card teacher" onclick="window.location.href='teacher-dashboard.html'">
+        <span class="role-emoji">👩‍🏫</span>
+        <div class="role-title">교사 (Teacher)</div>
+        <div class="role-desc">반 전체 현황을 파악하고, 학생별 AIC 수준을 분석하며, 위험 학생을 조기 탐지합니다.</div>
+        <div class="role-features">
+          <div class="role-feature-item">
+            <div class="role-feature-dot"></div>반 전체 AIC 현황 대시보드
+          </div>
+          <div class="role-feature-item">
+            <div class="role-feature-dot"></div>학생별 상세 분석 및 피드백
+          </div>
+          <div class="role-feature-item">
+            <div class="role-feature-dot"></div>위험 학생 자동 탐지
+          </div>
+          <div class="role-feature-item">
+            <div class="role-feature-dot"></div>심화 데이터 분석 및 시각화
+          </div>
+        </div>
+        <button class="role-cta teacher">교사로 입장 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div>© 2025 AIC Index Platform. AI Collaboration Assessment System.</div>
+    <div>PI · UI · OI · TopicScore · AIC</div>
+  </footer>
+
+</div>
+
+</body>
+</html>

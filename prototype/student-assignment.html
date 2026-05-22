@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assignment Detail — AIC Index</title>
+<link rel="stylesheet" href="css/design-system.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.assign-hero {
+  background: linear-gradient(135deg, #F0F4F8, #EBF4FF);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 24px 28px;
+  margin-bottom: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.assign-hero-info {}
+.assign-hero-tag {
+  font-size: 11px; font-weight: 700; color: var(--color-pi);
+  text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;
+}
+.assign-hero-title {
+  font-size: 20px; font-weight: 800; color: var(--text-primary);
+  letter-spacing: -0.3px; margin-bottom: 8px;
+}
+.assign-hero-meta {
+  display: flex; gap: 16px; flex-wrap: wrap;
+}
+.meta-item { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+
+/* AI vs Human contribution */
+.contrib-section {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  padding: 20px 24px;
+}
+.contrib-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; }
+.contrib-bar-wrap {
+  height: 40px;
+  background: var(--color-gray-100);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  display: flex;
+  margin-bottom: 12px;
+}
+.contrib-ai {
+  background: linear-gradient(90deg, #6B7280, #9CA3AF);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white;
+  transition: width 1s ease;
+}
+.contrib-human {
+  background: linear-gradient(90deg, #3B82F6, #2563EB);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white;
+  flex: 1;
+  transition: width 1s ease;
+}
+.contrib-legend {
+  display: flex; gap: 16px; font-size: 11px; color: var(--text-muted);
+}
+.contrib-legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* Essay evolution */
+.essay-stages {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.essay-stage {
+  flex: 1;
+  background: var(--color-gray-50);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  position: relative;
+}
+.essay-stage-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 6px;
+}
+.essay-stage-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); font-size: 18px;
+  padding: 0 4px;
+}
+.highlight-add { background: #DCFCE7; color: #166534; border-radius: 2px; padding: 0 2px; }
+.highlight-del { background: #FEE2E2; color: #991B1B; border-radius: 2px; text-decoration: line-through; padding: 0 2px; }
+
+/* Feedback block */
+.teacher-feedback-card {
+  background: linear-gradient(135deg, #EFF6FF, #F0FDF4);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: var(--radius-xl);
+  padding: 20px 24px;
+}
+.tf-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
+}
+.tf-avatar {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--color-pi), var(--color-oi));
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; color: white;
+}
+.tf-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.tf-date { font-size: 11px; color: var(--text-muted); }
+.tf-body { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+
+/* Score breakdown table */
+.score-breakdown {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.sb-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.sb-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.sb-pi::before { background: var(--color-pi); }
+.sb-ui::before { background: var(--color-ui); }
+.sb-oi::before { background: var(--color-oi); }
+.sb-ts::before { background: var(--color-topic); }
+.sb-score { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 2px; }
+.sb-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; }
+.sb-bar { height: 4px; background: var(--color-gray-100); border-radius: var(--radius-full); overflow: hidden; margin-bottom: 4px; }
+.sb-bar-fill { height: 100%; border-radius: var(--radius-full); }
+.sb-desc { font-size: 10px; color: var(--text-muted); }
+
+/* Guide steps */
+.guide-step {
+  display: flex; gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-gray-50);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-fast);
+}
+.guide-step:hover { background: white; box-shadow: var(--shadow-sm); }
+.guide-step-num {
+  width: 24px; height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--color-aic);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+  flex-shrink: 0;
+}
+.guide-step-body { flex: 1; }
+.guide-step-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+.guide-step-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar" id="sidebar">
+    <div class="sidebar-logo" onclick="window.location.href='index.html'">
+      <div class="sidebar-logo-icon">AIC</div>
+      <span class="sidebar-logo-text">AIC <span>Index</span></span>
+    </div>
+    <div class="sidebar-role-badge">Student</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-item" href="student-dashboard.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item active" href="student-assignment.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Assignment Detail
+      </a>
+      <a class="nav-item" href="student-growth.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Growth Analysis
+      </a>
+      <a class="nav-item" href="student-feedback.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21h6"/><path d="M12 3a6 6 0 0 1 6 6c0 2.22-1.2 4.16-3 5.2V17H9v-2.8A6 6 0 0 1 6 9a6 6 0 0 1 6-6z"/></svg>
+        Feedback Guide
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar">민</div>
+      <div class="user-info">
+        <div class="user-name">김민준</div>
+        <div class="user-role">Student · CS101</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="app-main">
+    <header class="app-header">
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-item">Student</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item"><a href="student-dashboard.html" style="color:inherit">Dashboard</a></span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item active">Assignment #5</span>
+      </div>
+      <div class="header-actions">
+        <div class="header-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Search...">
+        </div>
+        <div class="icon-btn" onclick="window.location.href='login.html'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content animate-fade-in">
+
+      <!-- Assignment selector bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4)">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm" onclick="window.location.href='student-dashboard.html'">← Back</button>
+          <div class="tabs">
+            <div class="tab-item">A1</div>
+            <div class="tab-item">A2</div>
+            <div class="tab-item">A3</div>
+            <div class="tab-item">A4</div>
+            <div class="tab-item active">A5</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          리포트 다운로드
+        </button>
+      </div>
+
+      <!-- Assignment Hero -->
+      <div class="assign-hero">
+        <div class="assign-hero-info">
+          <div class="assign-hero-tag">Assignment #5 · CS101</div>
+          <div class="assign-hero-title">생성형 AI 윤리와 책임에 관한 에세이</div>
+          <div class="assign-hero-meta">
+            <span class="meta-item">📅 제출일: 2025.03.18</span>
+            <span class="meta-item">📝 최종 글자 수: 1,842자</span>
+            <span class="meta-item">🔄 AI 초안 대비 변경률: 34%</span>
+            <span class="meta-item">💬 프롬프트 수: 7회</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px">AIC Score</div>
+          <div style="font-size:44px;font-weight:800;color:var(--color-aic);letter-spacing:-2px;line-height:1">71</div>
+          <span class="status-badge status-good">Good</span>
+        </div>
+      </div>
+
+      <!-- Score Breakdown -->
+      <div class="section-gap">
+        <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px">지표별 점수 분석</div>
+        <div class="score-breakdown">
+          <div class="sb-item sb-pi">
+            <div class="sb-label">PI</div>
+            <div class="sb-score" style="color:var(--color-pi)">72</div>
+            <div class="sb-bar"><div class="sb-bar-fill" style="width:72%;background:var(--color-pi)"></div></div>
+            <div class="sb-desc">질문 깊이 ↑</div>
+          </div>
+          <div class="sb-item sb-ui">
+            <div class="sb-label">UI</div>
+            <div class="sb-score" style="color:var(--color-ui)">68</div>
+            <div class="sb-bar"><div class="sb-bar-fill" style="width:68%;background:var(--color-ui)"></div></div>
+            <div class="sb-desc">개입도 ↓ 개선 필요</div>
+          </div>
+          <div class="sb-item sb-oi">
+            <div class="sb-label">OI</div>
+            <div class="sb-score" style="color:var(--color-oi)">75</div>
+            <div class="sb-bar"><div class="sb-bar-fill" style="width:75%;background:var(--color-oi)"></div></div>
+            <div class="sb-desc">독창성 ↑ 우수</div>
+          </div>
+          <div class="sb-item sb-ts">
+            <div class="sb-label">TopicScore</div>
+            <div class="sb-score" style="color:var(--color-topic)">83</div>
+            <div class="sb-bar"><div class="sb-bar-fill" style="width:83%;background:var(--color-topic)"></div></div>
+            <div class="sb-desc">주제 적합성 높음</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row: AI vs Human + Contribution Chart -->
+      <div class="grid-2 section-gap">
+
+        <!-- AI vs Human Contribution -->
+        <div class="chart-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">AI vs 학생 기여도</div>
+              <div class="card-subtitle">최종 에세이 기준</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="contrib-section" style="padding:0;border:none">
+              <div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:6px">
+                  <span>구성 기여도</span>
+                  <span>AI 66% / 학생 34%</span>
+                </div>
+                <div class="contrib-bar-wrap">
+                  <div class="contrib-ai" style="width:66%">AI 66%</div>
+                  <div class="contrib-human">학생 34%</div>
+                </div>
+              </div>
+              <div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:6px">
+                  <span>의미 변화량</span>
+                  <span>AI 52% / 학생 48%</span>
+                </div>
+                <div class="contrib-bar-wrap">
+                  <div class="contrib-ai" style="width:52%">52%</div>
+                  <div class="contrib-human">48%</div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-bottom:6px">
+                  <span>새 정보 비율</span>
+                  <span>AI 40% / 학생 60%</span>
+                </div>
+                <div class="contrib-bar-wrap">
+                  <div class="contrib-ai" style="width:40%">40%</div>
+                  <div class="contrib-human" style="background:linear-gradient(90deg,#10B981,#059669)">학생 60%</div>
+                </div>
+              </div>
+            </div>
+            <div class="contrib-legend" style="margin-top:12px">
+              <div class="contrib-legend-item"><div class="legend-dot" style="background:#9CA3AF"></div>AI 기여</div>
+              <div class="contrib-legend-item"><div class="legend-dot" style="background:#3B82F6"></div>학생 기여</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PI Breakdown Radar -->
+        <div class="chart-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">PI 세부 분석</div>
+              <div class="card-subtitle">Prompt Insight 구성 요소</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="height:200px">
+              <canvas id="radarChart"></canvas>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px">
+              <div style="text-align:center;padding:8px;background:var(--color-gray-50);border-radius:8px">
+                <div style="font-size:16px;font-weight:800;color:var(--color-pi)">74</div>
+                <div style="font-size:10px;color:var(--text-muted);font-weight:600">깊이</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:var(--color-gray-50);border-radius:8px">
+                <div style="font-size:16px;font-weight:800;color:var(--color-pi)">68</div>
+                <div style="font-size:10px;color:var(--text-muted);font-weight:600">비판성</div>
+              </div>
+              <div style="text-align:center;padding:8px;background:var(--color-gray-50);border-radius:8px">
+                <div style="font-size:16px;font-weight:800;color:var(--color-pi)">73</div>
+                <div style="font-size:10px;color:var(--text-muted);font-weight:600">복잡도</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Essay Evolution -->
+      <div class="chart-card section-gap">
+        <div class="card-header">
+          <div>
+            <div class="card-title">글 변화 과정 (Essay Evolution)</div>
+            <div class="card-subtitle">AI 초안 → 1차 수정 → 최종 제출본 비교</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="essay-stages">
+            <div class="essay-stage">
+              <div class="essay-stage-label" style="color:var(--text-muted)">AI 초안 (Draft 0)</div>
+              <p>생성형 AI는 현대 사회에서 빠르게 발전하고 있습니다. 이에 따른 윤리적 문제도 증가하고 있으며, 책임 있는 사용이 필요합니다. AI 개발자와 사용자 모두가 윤리 의식을 갖추어야 합니다.</p>
+            </div>
+            <div class="essay-stage-arrow">→</div>
+            <div class="essay-stage">
+              <div class="essay-stage-label" style="color:var(--color-ui)">1차 수정 (Draft 1)</div>
+              <p>생성형 AI는 현대 사회에서 빠르게 발전하고 있습니다. <span class="highlight-del">이에 따른 윤리적 문제도 증가하고 있으며</span><span class="highlight-add">특히 편향성과 저작권 침해 문제가 심화되고 있으며</span>, 책임 있는 사용이 <span class="highlight-add">개발 초기 단계부터</span> 필요합니다.</p>
+            </div>
+            <div class="essay-stage-arrow">→</div>
+            <div class="essay-stage">
+              <div class="essay-stage-label" style="color:var(--color-oi)">최종 제출 (Final)</div>
+              <p>생성형 AI의 윤리 문제는 편향성에서 시작합니다. <span class="highlight-add">제가 직접 ChatGPT를 활용해 에세이를 작성하면서 느낀 것은, AI가 특정 시각을 과도하게 강화한다는 점이었습니다.</span> 이를 극복하기 위해서는 다양한 관점을 의도적으로 요청하는 것이 중요합니다.</p>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:16px;font-size:11px">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#DCFCE7;border:1px solid #86EFAC;border-radius:2px;display:inline-block"></span>추가된 내용</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:2px;display:inline-block"></span>제거된 내용</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teacher Feedback + Improvement Guide -->
+      <div class="grid-2 section-gap">
+
+        <!-- Teacher Feedback -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px">교사 피드백</div>
+          <div class="teacher-feedback-card">
+            <div class="tf-header">
+              <div class="tf-avatar">김</div>
+              <div>
+                <div class="tf-name">김선생님 (CS101)</div>
+                <div class="tf-date">2025.03.20</div>
+              </div>
+              <span class="status-badge status-good" style="margin-left:auto">Good</span>
+            </div>
+            <div class="tf-body">
+              민준이가 이번 과제에서 독창적인 개인 경험을 글에 녹여낸 점이 매우 인상적이었습니다. 특히 직접 AI를 사용하면서 느낀 편향성에 대한 서술은 단순 정보 제공을 넘어 비판적 사고를 보여줬어요.
+              <br><br>
+              다만 UI 지표에서 AI 초안의 논리 구조를 더 적극적으로 재배치하는 시도가 부족했습니다. 다음 과제에서는 AI가 제안한 단락 순서를 자신만의 방식으로 재구성해 보는 것을 권장합니다.
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto Improvement Guide -->
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:12px">자동 개선 가이드</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="guide-step">
+              <div class="guide-step-num">1</div>
+              <div class="guide-step-body">
+                <div class="guide-step-title">AI 초안의 단락 순서 바꾸기</div>
+                <div class="guide-step-desc">AI가 제안한 단락 구조를 그대로 사용하지 말고, 자신의 논리 흐름에 맞게 재배치하세요.</div>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-step-num">2</div>
+              <div class="guide-step-body">
+                <div class="guide-step-title">개인 사례 및 경험 추가</div>
+                <div class="guide-step-desc">추상적인 AI 답변에 자신의 구체적 경험이나 사례를 1~2개 추가하면 OI가 올라갑니다.</div>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-step-num">3</div>
+              <div class="guide-step-body">
+                <div class="guide-step-title">프롬프트에 "반박해줘" 추가</div>
+                <div class="guide-step-desc">"이 주장의 반론도 제시해줘" 같은 비판적 프롬프트를 활용하면 PI 깊이가 높아집니다.</div>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="guide-step-num">4</div>
+              <div class="guide-step-body">
+                <div class="guide-step-title">초안 대비 30% 이상 수정 목표</div>
+                <div class="guide-step-desc">단어 교체보다 문장 수준의 의미 변화를 30% 이상 달성하면 UI 점수가 크게 개선됩니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// Radar Chart (PI breakdown)
+const rCtx = document.getElementById('radarChart').getContext('2d');
+new Chart(rCtx, {
+  type: 'radar',
+  data: {
+    labels: ['깊이', '비판성', '복잡도', '구체성', '창의성'],
+    datasets: [{
+      label: '내 점수',
+      data: [74, 68, 73, 70, 76],
+      backgroundColor: 'rgba(59,130,246,0.15)',
+      borderColor: '#3B82F6',
+      borderWidth: 2,
+      pointBackgroundColor: '#3B82F6',
+      pointRadius: 3,
+    }, {
+      label: '반 평균',
+      data: [65, 62, 64, 66, 60],
+      backgroundColor: 'rgba(156,163,175,0.1)',
+      borderColor: '#D1D5DB',
+      borderWidth: 1.5,
+      borderDash: [4, 4],
+      pointRadius: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 10, padding: 8 } }
+    },
+    scales: {
+      r: {
+        min: 40, max: 90, stepSize: 10,
+        grid: { color: '#F3F4F6' },
+        ticks: { font: { size: 9 }, backdropColor: 'transparent', stepSize: 15 },
+        pointLabels: { font: { size: 10, weight: '600' } }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

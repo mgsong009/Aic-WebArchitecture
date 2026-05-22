@@ -1,0 +1,67 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: aic_db
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: aic_db
+      MYSQL_USER: aic_user
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - aic_internal
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "aic_user", "--password=${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  pipeline:
+    build: ./aic-pipeline
+    container_name: aic_pipeline
+    restart: unless-stopped
+    environment:
+      TRANSFORMERS_CACHE: /app/models
+    volumes:
+      - model_cache:/app/models
+    networks:
+      - aic_internal
+
+  backend:
+    build: ./aic-backend
+    container_name: aic_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      pipeline:
+        condition: service_started
+    environment:
+      DB_URL: mysql+aiomysql://aic_user:${MYSQL_PASSWORD}@db:3306/aic_db
+      JWT_SECRET: ${JWT_SECRET}
+      PIPELINE_URL: http://pipeline:9000
+    networks:
+      - aic_internal
+
+  frontend:
+    build: ./aic-frontend
+    container_name: aic_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - aic_internal
+
+networks:
+  aic_internal:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  model_cache:

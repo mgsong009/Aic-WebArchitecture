@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Growth Analysis — AIC Index</title>
+<link rel="stylesheet" href="css/design-system.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.growth-hero {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.growth-stat {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.growth-stat-icon { font-size: 24px; margin-bottom: 8px; }
+.growth-stat-val { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: var(--text-primary); }
+.growth-stat-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+.growth-stat-delta { font-size: 11px; font-weight: 600; margin-top: 4px; }
+
+.period-filter {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--color-gray-100);
+  padding: 3px;
+  border-radius: var(--radius-md);
+}
+.period-btn {
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.period-btn.active {
+  background: white;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+.trend-analysis {
+  background: var(--color-gray-50);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+.trend-icon { font-size: 24px; }
+.trend-body { flex: 1; }
+.trend-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+.trend-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+/* AI dependency timeline */
+.dependency-bar-group { display: flex; flex-direction: column; gap: 10px; }
+.dep-item { display: flex; align-items: center; gap: 12px; }
+.dep-label { font-size: 11px; font-weight: 700; color: var(--text-muted); width: 24px; }
+.dep-track {
+  flex: 1; height: 20px;
+  background: var(--color-gray-100);
+  border-radius: var(--radius-full);
+  overflow: hidden; position: relative;
+}
+.dep-ai-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #9CA3AF, #D1D5DB);
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; padding-left: 8px;
+  font-size: 10px; font-weight: 700; color: white;
+  transition: width 0.8s ease;
+}
+.dep-human-fill {
+  position: absolute; top: 0; right: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #3B82F6, #1D4ED8);
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
+  font-size: 10px; font-weight: 700; color: white;
+  transition: width 0.8s ease;
+}
+.dep-num { font-size: 11px; color: var(--text-muted); width: 30px; text-align: right; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="app-sidebar" id="sidebar">
+    <div class="sidebar-logo" onclick="window.location.href='index.html'">
+      <div class="sidebar-logo-icon">AIC</div>
+      <span class="sidebar-logo-text">AIC <span>Index</span></span>
+    </div>
+    <div class="sidebar-role-badge">Student</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-item" href="student-dashboard.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="student-assignment.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+        Assignment Detail
+      </a>
+      <a class="nav-item active" href="student-growth.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Growth Analysis
+      </a>
+      <a class="nav-item" href="student-feedback.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21h6"/><path d="M12 3a6 6 0 0 1 6 6c0 2.22-1.2 4.16-3 5.2V17H9v-2.8A6 6 0 0 1 6 9a6 6 0 0 1 6-6z"/></svg>
+        Feedback Guide
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar">민</div>
+      <div class="user-info"><div class="user-name">김민준</div><div class="user-role">Student · CS101</div></div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <header class="app-header">
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-item">Student</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item active">Growth Analysis</span>
+      </div>
+      <div class="header-actions">
+        <div class="period-filter">
+          <div class="period-btn">1개월</div>
+          <div class="period-btn active">전체</div>
+          <div class="period-btn">학기</div>
+        </div>
+        <button class="btn btn-secondary btn-sm">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          내보내기
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content animate-fade-in">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <div class="page-title">성장 분석</div>
+          <div class="page-subtitle">과제별 AIC 지표 변화 및 AI 활용 역량 성장 추이</div>
+        </div>
+      </div>
+
+      <!-- Growth Stats -->
+      <div class="growth-hero stagger">
+        <div class="growth-stat animate-fade-in-up">
+          <div class="growth-stat-icon">📈</div>
+          <div class="growth-stat-val" style="color:var(--color-aic)">+17</div>
+          <div class="growth-stat-label">AIC 총 성장</div>
+          <div class="growth-stat-delta" style="color:var(--color-success)">A1(54) → A5(71)</div>
+        </div>
+        <div class="growth-stat animate-fade-in-up">
+          <div class="growth-stat-icon">💡</div>
+          <div class="growth-stat-val" style="color:var(--color-pi)">+20</div>
+          <div class="growth-stat-label">PI 성장</div>
+          <div class="growth-stat-delta" style="color:var(--color-success)">52 → 72</div>
+        </div>
+        <div class="growth-stat animate-fade-in-up">
+          <div class="growth-stat-icon">✏️</div>
+          <div class="growth-stat-val" style="color:var(--color-ui)">+10</div>
+          <div class="growth-stat-label">UI 성장</div>
+          <div class="growth-stat-delta" style="color:var(--color-success)">58 → 68</div>
+        </div>
+        <div class="growth-stat animate-fade-in-up">
+          <div class="growth-stat-icon">🌱</div>
+          <div class="growth-stat-val" style="color:var(--color-oi)">+24</div>
+          <div class="growth-stat-label">OI 성장</div>
+          <div class="growth-stat-delta" style="color:var(--color-success)">51 → 75 ★최고 성장</div>
+        </div>
+      </div>
+
+      <!-- Main Trend Chart -->
+      <div class="chart-card section-gap">
+        <div class="card-header">
+          <div>
+            <div class="card-title">AIC 종합 성장 추이</div>
+            <div class="card-subtitle">과제별 내 AIC vs 반 평균</div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center">
+            <span style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px">
+              <span style="width:12px;height:3px;background:var(--color-aic);display:inline-block;border-radius:2px"></span>내 AIC
+            </span>
+            <span style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px">
+              <span style="width:12px;height:3px;background:#D1D5DB;display:inline-block;border-radius:2px;border-top:1px dashed #9CA3AF"></span>반 평균
+            </span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div style="height:260px">
+            <canvas id="aicTrendChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- PI/UI/OI Trend + AI Dependency -->
+      <div class="grid-2 section-gap">
+
+        <div class="chart-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">PI / UI / OI 변화 추이</div>
+              <div class="card-subtitle">지표별 시계열 비교</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="height:220px">
+              <canvas id="multiLineChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">AI 의존도 변화</div>
+              <div class="card-subtitle">과제별 AI vs 학생 기여 비율</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="dependency-bar-group">
+              <div class="dep-item">
+                <div class="dep-label">A1</div>
+                <div class="dep-track">
+                  <div class="dep-ai-fill" style="width:78%">AI 78%</div>
+                  <div class="dep-human-fill" style="width:22%">22%</div>
+                </div>
+              </div>
+              <div class="dep-item">
+                <div class="dep-label">A2</div>
+                <div class="dep-track">
+                  <div class="dep-ai-fill" style="width:72%">AI 72%</div>
+                  <div class="dep-human-fill" style="width:28%">28%</div>
+                </div>
+              </div>
+              <div class="dep-item">
+                <div class="dep-label">A3</div>
+                <div class="dep-track">
+                  <div class="dep-ai-fill" style="width:75%">AI 75%</div>
+                  <div class="dep-human-fill" style="width:25%">25%</div>
+                </div>
+              </div>
+              <div class="dep-item">
+                <div class="dep-label">A4</div>
+                <div class="dep-track">
+                  <div class="dep-ai-fill" style="width:68%">AI 68%</div>
+                  <div class="dep-human-fill" style="width:32%">32%</div>
+                </div>
+              </div>
+              <div class="dep-item">
+                <div class="dep-label">A5</div>
+                <div class="dep-track">
+                  <div class="dep-ai-fill" style="width:66%">AI 66%</div>
+                  <div class="dep-human-fill" style="width:34%">34%</div>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:14px">
+              <div class="trend-analysis">
+                <span class="trend-icon">📉</span>
+                <div class="trend-body">
+                  <div class="trend-title">AI 의존도 점진적 감소 ✅</div>
+                  <div class="trend-desc">A1의 78%에서 A5의 66%로 AI 의존도가 지속적으로 감소하고 있습니다. 학생 기여도는 22%→34%로 성장했습니다.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stacked Area + Insights -->
+      <div class="grid-2 section-gap">
+
+        <div class="chart-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">AIC 구성 누적 면적 차트</div>
+              <div class="card-subtitle">PI/UI/OI 기여 비율 변화</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="height:220px">
+              <canvas id="stackedAreaChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">성장 인사이트</div>
+              <div class="card-subtitle">데이터 기반 분석</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div class="trend-analysis" style="background:var(--color-oi-pale);border-color:rgba(16,185,129,0.2)">
+                <span>🌟</span>
+                <div class="trend-body">
+                  <div class="trend-title" style="color:#065F46">OI 최고 성장 (+24)</div>
+                  <div class="trend-desc">5개 과제 중 독창성 지표가 가장 빠르게 성장했습니다. 개인 경험 서술 능력이 향상되고 있습니다.</div>
+                </div>
+              </div>
+              <div class="trend-analysis" style="background:var(--color-pi-pale);border-color:rgba(59,130,246,0.2)">
+                <span>💡</span>
+                <div class="trend-body">
+                  <div class="trend-title" style="color:#1D4ED8">PI 꾸준한 향상</div>
+                  <div class="trend-desc">프롬프트의 질이 매 과제마다 개선되고 있습니다. A3에서 일시적 하락 후 강하게 반등했습니다.</div>
+                </div>
+              </div>
+              <div class="trend-analysis" style="background:var(--color-ui-pale);border-color:rgba(249,115,22,0.2)">
+                <span>⚡</span>
+                <div class="trend-body">
+                  <div class="trend-title" style="color:#C2410C">UI 개선 여지</div>
+                  <div class="trend-desc">UI는 성장하고 있으나 다른 지표 대비 속도가 느립니다. AI 수정 비율을 더 높이는 노력이 필요합니다.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const assignments = ['A1', 'A2', 'A3', 'A4', 'A5'];
+
+// AIC Trend
+new Chart(document.getElementById('aicTrendChart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: assignments,
+    datasets: [
+      {
+        label: '내 AIC', data: [54, 63, 59, 66, 71],
+        borderColor: '#1E3A5F', backgroundColor: 'rgba(30,58,95,0.08)',
+        borderWidth: 2.5, fill: true, tension: 0.4,
+        pointBackgroundColor: '#1E3A5F', pointRadius: 5, pointHoverRadius: 7,
+      },
+      {
+        label: '반 평균', data: [60, 62, 63, 65, 66],
+        borderColor: '#D1D5DB', borderWidth: 1.5,
+        borderDash: [5, 5], fill: false, tension: 0.4, pointRadius: 0,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: true, position: 'top', labels: { font: { size: 11, family: 'Inter' }, boxWidth: 12 } },
+      tooltip: {
+        callbacks: {
+          afterBody: (items) => items[0].label === 'A3' ? ['⚠ 하락 구간'] : []
+        }
+      }
+    },
+    scales: {
+      y: { min: 40, max: 85, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 }, stepSize: 10 } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Multi-line PI/UI/OI
+new Chart(document.getElementById('multiLineChart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: assignments,
+    datasets: [
+      { label: 'PI', data: [52, 60, 55, 68, 72], borderColor: '#3B82F6', borderWidth: 2, fill: false, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#3B82F6' },
+      { label: 'UI', data: [58, 65, 58, 70, 68], borderColor: '#F97316', borderWidth: 2, fill: false, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#F97316' },
+      { label: 'OI', data: [51, 64, 63, 60, 75], borderColor: '#10B981', borderWidth: 2, fill: false, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#10B981' },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { font: { size: 11, family: 'Inter' }, boxWidth: 10 } } },
+    scales: {
+      y: { min: 40, max: 90, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Stacked Area
+new Chart(document.getElementById('stackedAreaChart').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: assignments,
+    datasets: [
+      { label: 'PI', data: [52, 60, 55, 68, 72], backgroundColor: 'rgba(59,130,246,0.3)', borderColor: '#3B82F6', borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 2 },
+      { label: 'UI', data: [58, 65, 58, 70, 68], backgroundColor: 'rgba(249,115,22,0.2)', borderColor: '#F97316', borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 2 },
+      { label: 'OI', data: [51, 64, 63, 60, 75], backgroundColor: 'rgba(16,185,129,0.2)', borderColor: '#10B981', borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 2 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top', labels: { font: { size: 11, family: 'Inter' }, boxWidth: 10 } } },
+    scales: {
+      y: { min: 0, max: 100, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+</script>
+</body>
+</html>

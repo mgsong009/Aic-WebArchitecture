@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로그인 — AIC Index Platform</title>
+<link rel="stylesheet" href="css/design-system.css">
+<style>
+body { background: #0B1526; min-height: 100vh; }
+
+.login-root {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Left Panel */
+.login-left {
+  background: linear-gradient(145deg, #0B1526, #1E3A5F);
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.login-left::before {
+  content: '';
+  position: absolute;
+  bottom: -100px; right: -100px;
+  width: 400px; height: 400px;
+  background: rgba(59,130,246,0.1);
+  border-radius: 50%;
+  filter: blur(60px);
+}
+
+.ll-brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.ll-brand-icon {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, #3B82F6, #10B981);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; color: white;
+}
+.ll-brand-text {
+  font-size: 20px; font-weight: 700; color: white;
+}
+.ll-brand-text span { font-weight: 300; opacity: 0.6; }
+
+.ll-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 0;
+}
+.ll-title {
+  font-size: 36px; font-weight: 800; color: white;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+.ll-title .hl {
+  background: linear-gradient(90deg, #60A5FA, #34D399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.ll-desc {
+  font-size: 14px; color: rgba(255,255,255,0.5);
+  line-height: 1.7; margin-bottom: 40px;
+}
+
+.metric-cards {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.metric-card-mini {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.metric-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.metric-mini-label { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.75); flex: 1; }
+.metric-mini-desc { font-size: 11px; color: rgba(255,255,255,0.35); }
+
+.ll-footer {
+  font-size: 12px; color: rgba(255,255,255,0.25);
+}
+
+/* Right Panel */
+.login-right {
+  background: #F0F4F8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.login-form-card {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  border-radius: 20px;
+  padding: 44px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+}
+
+.lf-header { margin-bottom: 32px; }
+.lf-title {
+  font-size: 24px; font-weight: 800; color: #1F2937;
+  margin-bottom: 6px; letter-spacing: -0.5px;
+}
+.lf-subtitle { font-size: 13px; color: #6B7280; }
+
+.role-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+  background: #F3F4F6;
+  padding: 4px;
+  border-radius: 10px;
+}
+.role-option {
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7280;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.role-option.active {
+  background: white;
+  color: #1F2937;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.form-fields {
+  display: flex; flex-direction: column; gap: 16px;
+  margin-bottom: 24px;
+}
+
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-label {
+  font-size: 12px; font-weight: 700;
+  color: #374151; text-transform: uppercase; letter-spacing: 0.4px;
+}
+.field-input {
+  padding: 11px 14px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px; color: #1F2937;
+  background: white;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.field-input:focus { border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59,130,246,0.08); }
+.field-input::placeholder { color: #D1D5DB; }
+
+.field-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px;
+}
+.remember-check {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #6B7280; cursor: pointer;
+}
+.forgot-link {
+  font-size: 12px; color: #3B82F6; font-weight: 600; cursor: pointer;
+}
+.forgot-link:hover { color: #2563EB; }
+
+.btn-login {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #1E3A5F, #2C5282);
+  color: white;
+  border-radius: 10px;
+  font-size: 15px; font-weight: 700;
+  border: none; cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+.btn-login:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(30,58,95,0.35); }
+
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px;
+}
+.divider-line { flex: 1; height: 1px; background: #E5E7EB; }
+.divider-text { font-size: 11px; color: #9CA3AF; font-weight: 500; }
+
+.demo-btns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin-bottom: 20px;
+}
+.demo-btn {
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; border: none;
+  transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.demo-student {
+  background: #EFF6FF; color: #1D4ED8;
+}
+.demo-student:hover { background: #DBEAFE; }
+.demo-teacher {
+  background: #FFF7ED; color: #C2410C;
+}
+.demo-teacher:hover { background: #FFEDD5; }
+
+.lf-footer {
+  text-align: center;
+  font-size: 12px; color: #9CA3AF;
+}
+.lf-footer a { color: #3B82F6; font-weight: 600; cursor: pointer; }
+
+@media (max-width: 768px) {
+  .login-root { grid-template-columns: 1fr; }
+  .login-left { display: none; }
+  .login-right { padding: 24px; }
+  .login-form-card { padding: 28px; }
+}
+</style>
+</head>
+<body>
+
+<div class="login-root">
+
+  <!-- Left Panel: Branding -->
+  <div class="login-left">
+    <div class="ll-brand">
+      <div class="ll-brand-icon">AIC</div>
+      <span class="ll-brand-text">AIC <span>Index</span></span>
+    </div>
+
+    <div class="ll-content">
+      <div class="ll-title">
+        AI 협업 역량을<br>
+        <span class="hl">과학적으로</span> 평가
+      </div>
+      <div class="ll-desc">
+        생성형 AI와의 협업 과정을 분석하여<br>
+        학생의 진짜 실력을 측정합니다.
+      </div>
+      <div class="metric-cards">
+        <div class="metric-card-mini">
+          <div class="metric-dot" style="background:#3B82F6"></div>
+          <span class="metric-mini-label">PI · Prompt Insight</span>
+          <span class="metric-mini-desc">질문의 깊이와 비판성</span>
+        </div>
+        <div class="metric-card-mini">
+          <div class="metric-dot" style="background:#F97316"></div>
+          <span class="metric-mini-label">UI · User Intervention</span>
+          <span class="metric-mini-desc">AI 초안 수정 개입 정도</span>
+        </div>
+        <div class="metric-card-mini">
+          <div class="metric-dot" style="background:#10B981"></div>
+          <span class="metric-mini-label">OI · Originality Index</span>
+          <span class="metric-mini-desc">자기 관점과 독창성</span>
+        </div>
+        <div class="metric-card-mini">
+          <div class="metric-dot" style="background:#60A5FA"></div>
+          <span class="metric-mini-label">AIC · 종합 협업 지수</span>
+          <span class="metric-mini-desc">PI + UI + OI 가중 종합</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ll-footer">© 2025 AIC Index Platform</div>
+  </div>
+
+  <!-- Right Panel: Login Form -->
+  <div class="login-right">
+    <div class="login-form-card">
+      <div class="lf-header">
+        <div class="lf-title">환영합니다 👋</div>
+        <div class="lf-subtitle">계속하려면 로그인하세요</div>
+      </div>
+
+      <!-- Role Selector -->
+      <div class="role-selector">
+        <div class="role-option active" id="roleStudent" onclick="selectRole('student')">
+          🧑‍🎓 학생
+        </div>
+        <div class="role-option" id="roleTeacher" onclick="selectRole('teacher')">
+          👩‍🏫 교사
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div class="form-fields">
+        <div class="field-group">
+          <label class="field-label">아이디 (학번/교번)</label>
+          <input type="text" class="field-input" placeholder="student_001" id="loginId">
+        </div>
+        <div class="field-group">
+          <label class="field-label">비밀번호</label>
+          <input type="password" class="field-input" placeholder="••••••••" id="loginPw">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <label class="remember-check">
+          <input type="checkbox"> 로그인 상태 유지
+        </label>
+        <span class="forgot-link">비밀번호 찾기</span>
+      </div>
+
+      <button class="btn-login" onclick="handleLogin()">
+        로그인하기 →
+      </button>
+
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">데모 빠른 접속</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <div class="demo-btns">
+        <button class="demo-btn demo-student" onclick="loginAsStudent()">
+          🧑‍🎓 학생 데모
+        </button>
+        <button class="demo-btn demo-teacher" onclick="loginAsTeacher()">
+          👩‍🏫 교사 데모
+        </button>
+      </div>
+
+      <div class="lf-footer">
+        <a href="index.html">← 홈으로 돌아가기</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentRole = 'student';
+
+function selectRole(role) {
+  currentRole = role;
+  document.getElementById('roleStudent').classList.toggle('active', role === 'student');
+  document.getElementById('roleTeacher').classList.toggle('active', role === 'teacher');
+}
+
+function loginAsStudent() {
+  document.getElementById('loginId').value = 'student_001';
+  document.getElementById('loginPw').value = '••••••••';
+  selectRole('student');
+  setTimeout(() => window.location.href = 'student-dashboard.html', 400);
+}
+
+function loginAsTeacher() {
+  document.getElementById('loginId').value = 'teacher_kim';
+  document.getElementById('loginPw').value = '••••••••';
+  selectRole('teacher');
+  setTimeout(() => window.location.href = 'teacher-dashboard.html', 400);
+}
+
+function handleLogin() {
+  const id = document.getElementById('loginId').value;
+  if (!id) { document.getElementById('loginId').focus(); return; }
+  if (currentRole === 'student') {
+    window.location.href = 'student-dashboard.html';
+  } else {
+    window.location.href = 'teacher-dashboard.html';
+  }
+}
+</script>
+</body>
+</html>

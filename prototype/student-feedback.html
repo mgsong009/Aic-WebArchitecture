@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feedback Guide — AIC Index</title>
+<link rel="stylesheet" href="css/design-system.css">
+<style>
+/* Guide hero */
+.feedback-hero {
+  background: linear-gradient(135deg, #1E3A5F, #2C5282);
+  border-radius: var(--radius-xl);
+  padding: 28px 32px;
+  margin-bottom: var(--space-6);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.feedback-hero::after {
+  content: '💡';
+  position: absolute;
+  right: 32px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 64px;
+  opacity: 0.15;
+}
+.fh-tag { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+.fh-title { font-size: 22px; font-weight: 800; color: white; margin-bottom: 6px; letter-spacing: -0.3px; }
+.fh-sub { font-size: 13px; color: rgba(255,255,255,0.55); }
+
+/* Metric guide cards */
+.metric-guide-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.mgc-header {
+  padding: 20px 24px 16px;
+  display: flex; align-items: center; gap: 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+.mgc-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.mgc-score-badge {
+  margin-left: auto;
+  display: flex; flex-direction: column; align-items: flex-end;
+}
+.mgc-score { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+.mgc-status { font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.mgc-body { padding: 20px 24px; }
+.mgc-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 16px; }
+
+/* Action steps */
+.action-steps { display: flex; flex-direction: column; gap: 10px; }
+.action-step {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px;
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+.action-step:hover { background: white; box-shadow: var(--shadow-sm); transform: translateX(2px); }
+.as-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.as-body { flex: 1; }
+.as-title { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.as-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+
+/* Score bar in card */
+.mgc-score-bar { height: 6px; background: var(--color-gray-100); border-radius: var(--radius-full); overflow: hidden; margin-bottom: 12px; }
+.mgc-score-bar-fill { height: 100%; border-radius: var(--radius-full); }
+
+/* Teacher comments section */
+.teacher-comments { display: flex; flex-direction: column; gap: 12px; }
+.tc-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.tc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.tc-avatar { width: 32px; height: 32px; border-radius: var(--radius-full); background: linear-gradient(135deg, #3B82F6, #10B981); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: white; flex-shrink: 0; }
+.tc-name { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+.tc-date { font-size: 11px; color: var(--text-muted); }
+.tc-assign { font-size: 10px; background: var(--color-gray-100); padding: 2px 8px; border-radius: 100px; color: var(--text-muted); font-weight: 600; margin-left: auto; }
+.tc-body { font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+
+/* Next assignment plan */
+.next-plan {
+  background: linear-gradient(135deg, var(--color-oi-pale), var(--color-pi-pale));
+  border: 1px solid rgba(16,185,129,0.2);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+}
+.np-title { font-size: 15px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+.np-checklist { display: flex; flex-direction: column; gap: 8px; }
+.np-check-item { display: flex; align-items: center; gap: 10px; }
+.np-check {
+  width: 20px; height: 20px; border: 2px solid var(--color-oi);
+  border-radius: 4px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 0.15s;
+}
+.np-check.checked { background: var(--color-oi); }
+.np-check.checked::after { content: '✓'; color: white; font-size: 11px; font-weight: 800; }
+.np-check-label { font-size: 13px; color: var(--text-secondary); cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="app-sidebar">
+    <div class="sidebar-logo" onclick="window.location.href='index.html'">
+      <div class="sidebar-logo-icon">AIC</div>
+      <span class="sidebar-logo-text">AIC <span>Index</span></span>
+    </div>
+    <div class="sidebar-role-badge">Student</div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <a class="nav-item" href="student-dashboard.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="student-assignment.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+        Assignment Detail
+      </a>
+      <a class="nav-item" href="student-growth.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Growth Analysis
+      </a>
+      <a class="nav-item active" href="student-feedback.html">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21h6"/><path d="M12 3a6 6 0 0 1 6 6c0 2.22-1.2 4.16-3 5.2V17H9v-2.8A6 6 0 0 1 6 9a6 6 0 0 1 6-6z"/></svg>
+        Feedback Guide
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar">민</div>
+      <div class="user-info"><div class="user-name">김민준</div><div class="user-role">Student · CS101</div></div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <header class="app-header">
+      <div class="header-breadcrumb">
+        <span class="breadcrumb-item">Student</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item active">Feedback Guide</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="window.location.href='student-dashboard.html'">← Dashboard</button>
+      </div>
+    </header>
+
+    <div class="page-content animate-fade-in">
+
+      <!-- Hero -->
+      <div class="feedback-hero">
+        <div class="fh-tag">📌 Assignment #5 · 2025.03.18</div>
+        <div class="fh-title">생성형 AI 윤리 에세이 — 개선 가이드</div>
+        <div class="fh-sub">AIC 71점 · 점수를 행동으로 연결하는 구체적인 개선 방법을 확인하세요</div>
+      </div>
+
+      <!-- Metric Guides -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-6)">
+
+        <!-- PI Guide -->
+        <div class="metric-guide-card">
+          <div class="mgc-header">
+            <div class="mgc-icon" style="background:var(--color-pi-pale)">💡</div>
+            <div>
+              <div style="font-size:14px;font-weight:800;color:var(--color-pi)">PI · Prompt Insight</div>
+              <div style="font-size:11px;color:var(--text-muted)">질문의 깊이와 비판성</div>
+            </div>
+            <div class="mgc-score-badge">
+              <div class="mgc-score" style="color:var(--color-pi)">72</div>
+              <div class="mgc-status" style="color:var(--color-pi)">Good ↑</div>
+            </div>
+          </div>
+          <div class="mgc-body">
+            <div class="mgc-score-bar"><div class="mgc-score-bar-fill" style="width:72%;background:var(--color-pi)"></div></div>
+            <div class="mgc-desc">이번 과제에서 7개의 프롬프트를 사용했습니다. 질문의 깊이는 좋아지고 있으나 비판적 사고를 요구하는 질문 비율이 아직 낮습니다.</div>
+            <div class="action-steps">
+              <div class="action-step">
+                <span class="as-icon">🔍</span>
+                <div class="as-body">
+                  <div class="as-title">심화 질문어 사용하기</div>
+                  <div class="as-desc">"왜", "어떻게", "어떤 한계가 있나", "반론은?" 등 비판적 질문어를 매 프롬프트에 포함하세요.</div>
+                </div>
+              </div>
+              <div class="action-step">
+                <span class="as-icon">📊</span>
+                <div class="as-body">
+                  <div class="as-title">다각도 관점 요청</div>
+                  <div class="as-desc">"찬성 입장과 반대 입장 모두 제시해줘" 처럼 여러 관점을 동시에 요청하세요.</div>
+                </div>
+              </div>
+              <div class="action-step">
+                <span class="as-icon">🎯</span>
+                <div class="as-body">
+                  <div class="as-title">구체적 제약 조건 명시</div>
+                  <div class="as-desc">"500자 이내", "고등학생 수준으로" 등 구체적 조건을 추가할수록 PI가 높아집니다.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UI Guide -->
+        <div class="metric-guide-card">
+          <div class="mgc-header">
+            <div class="mgc-icon" style="background:var(--color-ui-pale)">✏️</div>
+            <div>
+              <div style="font-size:14px;font-weight:800;color:var(--color-ui)">UI · User Intervention</div>
+              <div style="font-size:11px;color:var(--text-muted)">AI 초안 수정 개입 정도</div>
+            </div>
+            <div class="mgc-score-badge">
+              <div class="mgc-score" style="color:var(--color-ui)">68</div>
+              <div class="mgc-status" style="color:var(--color-danger)">개선 필요 ↓</div>
+            </div>
+          </div>
+          <div class="mgc-body">
+            <div class="mgc-score-bar"><div class="mgc-score-bar-fill" style="width:68%;background:var(--color-ui)"></div></div>
+            <div class="mgc-desc">AI 초안의 34%를 수정했습니다. 하지만 수정이 주로 단어 교체 수준에 머물러 의미 변화량이 낮게 측정됩니다.</div>
+            <div class="action-steps">
+              <div class="action-step">
+                <span class="as-icon">🔀</span>
+                <div class="as-body">
+                  <div class="as-title">단락 순서 재배치</div>
+                  <div class="as-desc">AI가 제안한 단락 구조를 그대로 쓰지 말고 자신의 논리 흐름에 맞게 순서를 바꿔보세요.</div>
+                </div>
+              </div>
+              <div class="action-step">
+                <span class="as-icon">➕</span>
+                <div class="as-body">
+                  <div class="as-title">새 정보 추가 (30% 이상)</div>
+                  <div class="as-desc">AI 답변에 없던 새로운 예시, 수치, 경험을 적어도 전체의 30% 이상 추가하세요.</div>
+                </div>
+              </div>
+              <div class="action-step">
+                <span class="as-icon">✂️</span>
+                <div class="as-body">
+                  <div class="as-title">불필요한 AI 문장 과감히 삭제</div>
+                  <div class="as-desc">AI 특유의 일반적 서술은 삭제하고 내가 말하고 싶은 핵심만 남기는 편집을 연습하세요.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OI Guide -->
+        <div class="metric-guide-card">
+          <div class="mgc-header">
+            <div class="mgc-icon" style="background:var(--color-oi-pale)">🌱</div>
+            <div>
+              <div style="font-size:14px;font-weight:800;color:var(--color-oi)">OI · Originality Index</div>
+              <div style="font-size:11px;color:var(--text-muted)">자기 관점과 독창성</div>
+            </div>
+            <div class="mgc-score-badge">
+              <div class="mgc-score" style="color:var(--color-oi)">75</div>
+              <div class="mgc-status" style="color:var(--color-success)">Excellent ↑↑</div>
+            </div>
+          </div>
+          <div class="mgc-body">
+            <div class="mgc-score-bar"><div class="mgc-score-bar-fill" style="width:75%;background:var(--color-oi)"></div></div>
+            <div class="mgc-desc">이번 과제에서 가장 높은 성장을 보인 지표입니다. 개인 경험과 독창적 관점을 글에 효과적으로 녹였습니다.</div>
+            <div class="action-steps">
+              <div class="action-step">
+                <span class="as-icon">🌟</span>
+                <div class="as-body">
+                  <div class="as-title">이 강점 유지하기</div>
+                  <div class="as-desc">개인 경험을 구체적으로 서술하는 방식이 매우 효과적입니다. 다음 과제에도 이 전략을 유지하세요.</div>
+                </div>
+              </div>
+              <div class="action-step">
+                <span class="as-icon">🎨</span>
+                <div class="as-body">
+                  <div class="as-title">반대 의견도 포함하기</div>
+                  <div class="as-desc">내 주장에 반하는 시각도 인정하고 반박하는 구조를 추가하면 OI가 더 높아집니다.</div>
+                </div>
+              </div>
+              <div class="action-step">
+                <span class="as-icon">🔗</span>
+                <div class="as-body">
+                  <div class="as-title">외부 자료 직접 연결</div>
+                  <div class="as-desc">AI 답변에 없던 최신 뉴스나 논문을 직접 찾아 인용하면 독창성 점수가 올라갑니다.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row: Teacher comments + Next assignment plan -->
+      <div class="grid-2 section-gap">
+
+        <!-- Teacher Comments History -->
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:12px">교사 피드백 전체 이력</div>
+          <div class="teacher-comments">
+            <div class="tc-item">
+              <div class="tc-header">
+                <div class="tc-avatar">김</div>
+                <div>
+                  <div class="tc-name">김선생님</div>
+                  <div class="tc-date">2025.03.20</div>
+                </div>
+                <span class="tc-assign">A5</span>
+              </div>
+              <div class="tc-body">독창적인 개인 경험 서술이 매우 인상적이었습니다. 다음에는 UI 지표 향상을 위해 AI 초안의 논리 구조를 더 적극적으로 재배치해 보세요.</div>
+            </div>
+            <div class="tc-item">
+              <div class="tc-header">
+                <div class="tc-avatar">김</div>
+                <div><div class="tc-name">김선생님</div><div class="tc-date">2025.03.06</div></div>
+                <span class="tc-assign">A4</span>
+              </div>
+              <div class="tc-body">딥러닝 개념 서술이 명확해졌습니다. PI 점수가 크게 올랐군요. 계속 이 방향으로 발전하세요.</div>
+            </div>
+            <div class="tc-item">
+              <div class="tc-header">
+                <div class="tc-avatar">김</div>
+                <div><div class="tc-name">김선생님</div><div class="tc-date">2025.02.21</div></div>
+                <span class="tc-assign">A3</span>
+              </div>
+              <div class="tc-body">이번 과제는 AI 초안을 거의 수정 없이 제출한 것 같습니다. 다음에는 자신의 목소리를 더 담아보세요.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Next Assignment Plan -->
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:12px">📋 다음 과제 실천 체크리스트</div>
+          <div class="next-plan">
+            <div class="np-title">Assignment #6 준비 행동 계획</div>
+            <div class="np-checklist">
+              <div class="np-check-item">
+                <div class="np-check" onclick="toggleCheck(this)"></div>
+                <span class="np-check-label">프롬프트에 "반론을 포함해서" 조건 추가하기</span>
+              </div>
+              <div class="np-check-item">
+                <div class="np-check" onclick="toggleCheck(this)"></div>
+                <span class="np-check-label">AI 초안 받은 후 단락 순서 1회 이상 재배치하기</span>
+              </div>
+              <div class="np-check-item">
+                <div class="np-check" onclick="toggleCheck(this)"></div>
+                <span class="np-check-label">내 개인 경험 예시 최소 1개 추가하기</span>
+              </div>
+              <div class="np-check-item">
+                <div class="np-check" onclick="toggleCheck(this)"></div>
+                <span class="np-check-label">AI 답변에 없던 새 정보 30% 이상 추가하기</span>
+              </div>
+              <div class="np-check-item">
+                <div class="np-check" onclick="toggleCheck(this)"></div>
+                <span class="np-check-label">최종 제출 전 AI 초안과 비교해서 차이 확인하기</span>
+              </div>
+              <div class="np-check-item">
+                <div class="np-check" onclick="toggleCheck(this)"></div>
+                <span class="np-check-label">프롬프트 7개 이상 사용하기 (현재 7개)</span>
+              </div>
+            </div>
+            <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06)">
+              <div style="font-size:11px;color:var(--text-muted)">목표: AIC 75점 이상 달성 (현재 71점)</div>
+              <div style="height:6px;background:var(--color-gray-200);border-radius:100px;margin-top:6px;overflow:hidden">
+                <div style="width:71%;height:100%;background:linear-gradient(90deg,var(--color-aic),var(--color-pi));border-radius:100px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+}
+</script>
+</body>
+</html>
