@@ -1,10 +1,11 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
+const featuresSection = ref(null)
 
 const features = [
   {
@@ -78,7 +79,7 @@ function goLogin(role) {
 }
 
 function scrollToFeatures() {
-  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
+  featuresSection.value?.scrollIntoView({ behavior: 'smooth' })
 }
 </script>
 
@@ -128,7 +129,7 @@ function scrollToFeatures() {
         </div>
       </section>
 
-      <section id="features" class="features">
+      <section id="features" ref="featuresSection" class="features">
         <div class="section-label">플랫폼 기능</div>
         <h2 class="section-title">4가지 핵심 지표로 학습 과정을 분석</h2>
         <div class="features-grid stagger">

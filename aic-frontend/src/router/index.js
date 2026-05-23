@@ -9,6 +9,7 @@ const routes = [
   { path: '/student/assignments', component: () => import('@/views/student/StudentAssignmentsView.vue'), meta: { role: 'student' } },
   { path: '/student/assignments/:id', component: () => import('@/views/student/StudentAssignmentDetailView.vue'), meta: { role: 'student' } },
   { path: '/student/growth', component: () => import('@/views/student/StudentGrowthView.vue'), meta: { role: 'student' } },
+  { path: '/student/feedback', component: () => import('@/views/student/StudentFeedbackView.vue'), meta: { role: 'student' } },
   { path: '/student/feedback/:assignmentId', component: () => import('@/views/student/StudentFeedbackView.vue'), meta: { role: 'student' } },
   // Teacher routes
   { path: '/teacher/dashboard', component: () => import('@/views/teacher/TeacherDashboardView.vue'), meta: { role: 'teacher' } },

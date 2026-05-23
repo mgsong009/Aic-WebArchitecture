@@ -10,8 +10,12 @@ const route = useRoute()
 const router = useRouter()
 const studentId = Number(route.params.id)
 const loading = ref(true)
+const saving = ref(false)
+const error = ref('')
+const saveMessage = ref('')
 const detail = ref(null)
 const feedbackText = ref('')
+const selectedAssignmentId = ref('')
 
 onMounted(async () => {
   await load()
@@ -19,28 +23,49 @@ onMounted(async () => {
 
 async function load() {
   loading.value = true
+  error.value = ''
   try {
     const { data } = await api.get(`/teacher/students/${studentId}`)
-    detail.value = data
+    detail.value = {
+      ...data,
+      trend: Array.isArray(data.trend) ? data.trend : [],
+      assignments: Array.isArray(data.assignments) ? data.assignments : [],
+      weak_metrics: Array.isArray(data.weak_metrics) ? data.weak_metrics : [],
+      latest_metrics: data.latest_metrics || {},
+    }
+    const assignments = detail.value.assignments
+    const latest = assignments[assignments.length - 1]
+    selectedAssignmentId.value = selectedAssignmentId.value || (latest?.id ? String(latest.id) : '')
     feedbackText.value = data.teacher_feedback?.content || ''
+  } catch (err) {
+    detail.value = null
+    error.value = err.response?.data?.detail || '학생 상세 정보를 불러오지 못했습니다.'
   } finally {
     loading.value = false
   }
 }
 
 async function saveFeedback() {
-  if (!detail.value?.assignments?.length) return
-  const latest = detail.value.assignments[detail.value.assignments.length - 1]
-  await api.post('/teacher/feedback', {
-    assignment_id: latest.id,
-    student_id: studentId,
-    content: feedbackText.value,
-  })
-  await load()
+  if (!selectedAssignmentId.value || saving.value) return
+  saving.value = true
+  error.value = ''
+  saveMessage.value = ''
+  try {
+    await api.post('/teacher/feedback', {
+      assignment_id: Number(selectedAssignmentId.value),
+      student_id: studentId,
+      content: feedbackText.value.trim(),
+    })
+    saveMessage.value = '피드백을 저장했습니다.'
+  } catch (err) {
+    error.value = err.response?.data?.detail || '피드백을 저장하지 못했습니다.'
+  } finally {
+    saving.value = false
+  }
 }
 
 const trendConfig = computed(() => {
-  if (!detail.value) return null
+  if (!detail.value?.trend?.length) return null
   return {
     type: 'line',
     data: {
@@ -50,21 +75,38 @@ const trendConfig = computed(() => {
           label: 'AIC',
           data: detail.value.trend.map((t) => t.aic),
           borderColor: '#1E3A5F',
+          backgroundColor: 'rgba(30, 58, 95, 0.08)',
           tension: 0.3,
+          pointRadius: 4,
         },
       ],
     },
     options: { scales: { y: { min: 0, max: 100 } } },
   }
 })
+
+const selectedAssignment = computed(() => (
+  detail.value?.assignments?.find((assignment) => String(assignment.id) === String(selectedAssignmentId.value)) || null
+))
+
+const canSaveFeedback = computed(() => Boolean(selectedAssignmentId.value) && Boolean(feedbackText.value.trim()) && !saving.value)
 </script>
 
 <template>
   <AppLayout title="학생 상세" :subtitle="detail ? `${detail.student.name} (${detail.student.user_id_str})` : ''">
-    <div v-if="loading" class="card">불러오는 중...</div>
+    <div v-if="loading" class="card loading-state">불러오는 중...</div>
+    <div v-else-if="error && !detail" class="card">
+      <div class="alert alert-danger">
+        <span>{{ error }}</span>
+        <button class="btn btn-secondary btn-sm" type="button" @click="load">다시 시도</button>
+      </div>
+    </div>
     <div v-else-if="detail" class="grid">
       <div class="card">
-        <h3>최신 점수</h3>
+        <div class="card-heading">
+          <h3>최신 점수</h3>
+          <strong>{{ detail.latest_metrics.aic ?? '-' }}</strong>
+        </div>
         <MetricBars
           :pi="detail.latest_metrics.pi"
           :ui="detail.latest_metrics.ui"
@@ -79,40 +121,64 @@ const trendConfig = computed(() => {
       <div class="card">
         <h3>AIC 추이</h3>
         <LineChart v-if="trendConfig" :config="trendConfig" />
+        <div v-else class="empty-state compact">표시할 추이 데이터가 없습니다.</div>
       </div>
 
       <div class="card full">
         <h3>과제 이력</h3>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>과제</th>
-              <th>AIC</th>
-              <th>PI</th>
-              <th>UI</th>
-              <th>OI</th>
-              <th>제출일</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="a in detail.assignments" :key="a.id">
-              <td>{{ a.title }}</td>
-              <td>{{ a.aic ?? '-' }}</td>
-              <td>{{ a.pi ?? '-' }}</td>
-              <td>{{ a.ui ?? '-' }}</td>
-              <td>{{ a.oi ?? '-' }}</td>
-              <td>{{ a.submitted_at ?? '-' }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div v-if="!detail.assignments.length" class="empty-state compact">제출 이력이 없습니다.</div>
+        <div v-else class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>과제</th>
+                <th>AIC</th>
+                <th>PI</th>
+                <th>UI</th>
+                <th>OI</th>
+                <th>제출일</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="a in detail.assignments"
+                :key="a.id"
+                :class="{ selected: String(a.id) === String(selectedAssignmentId) }"
+                @click="selectedAssignmentId = String(a.id)"
+              >
+                <td>{{ a.title }}</td>
+                <td>{{ a.aic ?? '-' }}</td>
+                <td>{{ a.pi ?? '-' }}</td>
+                <td>{{ a.ui ?? '-' }}</td>
+                <td>{{ a.oi ?? '-' }}</td>
+                <td>{{ a.submitted_at ?? '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card full">
-        <h3>교사 피드백</h3>
-        <textarea v-model="feedbackText" rows="5"></textarea>
+        <div class="feedback-header">
+          <div>
+            <h3>교사 피드백</h3>
+            <p v-if="selectedAssignment" class="muted-row">{{ selectedAssignment.title }} 대상</p>
+          </div>
+          <select v-model="selectedAssignmentId" class="form-control" :disabled="!detail.assignments.length">
+            <option value="" disabled>과제 선택</option>
+            <option v-for="a in detail.assignments" :key="a.id" :value="String(a.id)">
+              {{ a.title }}
+            </option>
+          </select>
+        </div>
+        <textarea v-model="feedbackText" rows="5" :disabled="!selectedAssignmentId || saving"></textarea>
+        <div v-if="error" class="alert alert-danger mt-4">{{ error }}</div>
+        <div v-else-if="saveMessage" class="alert alert-success mt-4">{{ saveMessage }}</div>
         <div class="actions">
-          <button class="btn-primary" @click="saveFeedback">저장</button>
-          <button class="btn-secondary" @click="router.push('/teacher/students')">목록</button>
+          <button class="btn btn-primary" type="button" :disabled="!canSaveFeedback" @click="saveFeedback">
+            {{ saving ? '저장 중...' : '저장' }}
+          </button>
+          <button class="btn btn-secondary" type="button" @click="router.push('/teacher/students')">목록</button>
         </div>
       </div>
     </div>
@@ -134,6 +200,21 @@ const trendConfig = computed(() => {
   padding: var(--space-5);
 }
 
+.card-heading,
+.feedback-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.card-heading strong {
+  color: var(--color-aic);
+  font-size: var(--text-2xl);
+  line-height: 1;
+}
+
 .full {
   grid-column: 1 / -1;
 }
@@ -141,6 +222,10 @@ const trendConfig = computed(() => {
 .weak {
   margin-top: 0.8rem;
   font-size: var(--text-sm);
+}
+
+.compact {
+  padding: var(--space-6);
 }
 
 textarea {
@@ -157,54 +242,39 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
 }
 
+textarea:disabled {
+  background: var(--color-gray-50);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
 .actions {
   margin-top: 0.8rem;
   display: flex;
   gap: 0.5rem;
 }
 
-.btn-primary {
-  border: 1px solid var(--color-aic);
-  background: var(--color-aic);
-  color: #fff;
-  border-radius: var(--radius-md);
-  padding: 0.55rem 0.8rem;
-  cursor: pointer;
-  font-weight: 600;
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
-.btn-secondary {
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
-  border-radius: var(--radius-md);
-  padding: 0.55rem 0.8rem;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-sm);
-}
-
-.table th,
-.table td {
-  border-bottom: 1px solid var(--border-light);
-  text-align: left;
-  padding: var(--space-3);
-}
-
-.table th {
-  background: var(--color-gray-50);
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  text-transform: uppercase;
+.data-table tbody tr.selected {
+  background: var(--color-aic-pale);
 }
 
 @media (max-width: 1024px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .card-heading,
+  .feedback-header,
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 </style>

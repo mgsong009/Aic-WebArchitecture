@@ -20,6 +20,7 @@ const studentNav = [
   { label: '대시보드', path: '/student/dashboard', icon: '▦' },
   { label: '과제 목록', path: '/student/assignments', icon: '□' },
   { label: '성장 분석', path: '/student/growth', icon: '↗' },
+  { label: '피드백', path: '/student/feedback', icon: '◇' },
 ]
 const teacherNav = [
   { label: '대시보드', path: '/teacher/dashboard', icon: '▦' },
