@@ -11,6 +11,7 @@ const initialRole = route.query.role === 'teacher' ? 'teacher' : 'student'
 const role = ref(initialRole)
 const userId = ref('')
 const password = ref('')
+const rememberMe = ref(false)
 const error = ref('')
 const loading = ref(false)
 
@@ -22,8 +23,8 @@ const metrics = [
 ]
 
 const roleOptions = [
-  { value: 'student', label: '학생', desc: 'Student' },
-  { value: 'teacher', label: '교사', desc: 'Teacher' },
+  { value: 'student', label: '학생', desc: 'Student', mark: 'S' },
+  { value: 'teacher', label: '교사', desc: 'Teacher', mark: 'T' },
 ]
 
 const roleHint = computed(() => (role.value === 'teacher' ? 'teacher_kim' : 'student_001'))
@@ -69,10 +70,11 @@ function demoLogin(nextRole) {
       <div class="ll-content">
         <h1 class="ll-title">
           AI 협업 역량을<br />
-          데이터로 읽다
+          <span class="hl">과학적으로</span> 평가
         </h1>
-        <p class="ll-subtitle">
-          결과물보다 과정을 분석해 학생의 질문, 개입, 독창성을 평가합니다.
+        <p class="ll-desc">
+          생성형 AI와의 협업 과정을 분석하여<br />
+          학생의 진짜 실력을 측정합니다.
         </p>
         <div class="metric-cards">
           <div v-for="metric in metrics" :key="metric.key" class="metric-card-mini">
@@ -104,8 +106,8 @@ function demoLogin(nextRole) {
             :aria-selected="role === option.value"
             @click="selectRole(option.value)"
           >
+            <span class="role-option-mark">{{ option.mark }}</span>
             <span class="role-option-label">{{ option.label }}</span>
-            <span class="role-option-desc">{{ option.desc }}</span>
           </button>
         </div>
 
@@ -131,15 +133,23 @@ function demoLogin(nextRole) {
               v-model="password"
               class="field-input"
               type="password"
-              placeholder="비밀번호를 입력하세요"
+              placeholder="••••••••"
               autocomplete="current-password"
               @keyup.enter="handleLogin"
             />
           </div>
         </div>
 
+        <div class="field-row">
+          <label class="remember-check" for="remember-login">
+            <input id="remember-login" v-model="rememberMe" type="checkbox" />
+            <span>로그인 상태 유지</span>
+          </label>
+          <button class="forgot-link" type="button">비밀번호 찾기</button>
+        </div>
+
         <button class="btn-login" type="button" :disabled="loading" @click="handleLogin">
-          {{ loading ? '로그인 중...' : '로그인하기' }}
+          {{ loading ? '로그인 중...' : '로그인하기 →' }}
         </button>
 
         <div class="divider">
@@ -150,15 +160,15 @@ function demoLogin(nextRole) {
 
         <div class="demo-btns">
           <button class="demo-btn demo-student" type="button" :disabled="loading" @click="demoLogin('student')">
-            학생 데모
+            <span>S</span> 학생 데모
           </button>
           <button class="demo-btn demo-teacher" type="button" :disabled="loading" @click="demoLogin('teacher')">
-            교사 데모
+            <span>T</span> 교사 데모
           </button>
         </div>
 
         <div class="lf-footer">
-          <RouterLink to="/">홈으로 돌아가기</RouterLink>
+          <RouterLink to="/">← 홈으로 돌아가기</RouterLink>
         </div>
       </section>
     </main>
@@ -169,7 +179,7 @@ function demoLogin(nextRole) {
 .login-root {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(360px, 1fr) minmax(420px, 1fr);
+  grid-template-columns: 1fr 1fr;
   background: #0b1526;
 }
 
@@ -187,16 +197,13 @@ function demoLogin(nextRole) {
 .login-left::before {
   content: '';
   position: absolute;
-  right: 0;
-  bottom: 0;
-  width: min(52vw, 440px);
-  height: min(52vw, 440px);
-  background:
-    linear-gradient(90deg, rgba(59, 130, 246, 0.11) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(16, 185, 129, 0.09) 1px, transparent 1px);
-  background-size: 32px 32px;
-  opacity: 0.8;
-  mask-image: linear-gradient(135deg, transparent 15%, black 78%);
+  right: -100px;
+  bottom: -100px;
+  width: 400px;
+  height: 400px;
+  border-radius: var(--radius-full);
+  background: rgba(59, 130, 246, 0.1);
+  filter: blur(60px);
 }
 
 .ll-brand {
@@ -236,18 +243,27 @@ function demoLogin(nextRole) {
 }
 
 .ll-title {
-  font-size: clamp(34px, 5vw, 52px);
-  line-height: 1.18;
+  color: white;
+  font-size: clamp(34px, 5vw, 36px);
+  line-height: 1.2;
   font-weight: 800;
-  margin-bottom: var(--space-5);
+  letter-spacing: -0.5px;
+  margin-bottom: var(--space-4);
 }
 
-.ll-subtitle {
+.ll-title .hl {
+  background: linear-gradient(90deg, #60a5fa, #34d399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ll-desc {
   max-width: 420px;
-  color: rgba(255, 255, 255, 0.58);
-  font-size: var(--font-size-lg);
-  line-height: 1.72;
-  margin-bottom: var(--space-8);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: var(--font-size-base);
+  line-height: 1.7;
+  margin-bottom: var(--space-10);
 }
 
 .metric-cards {
@@ -256,8 +272,7 @@ function demoLogin(nextRole) {
 }
 
 .metric-card-mini {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
   gap: var(--space-3);
   padding: 14px 16px;
@@ -273,6 +288,7 @@ function demoLogin(nextRole) {
 }
 
 .metric-mini-label {
+  flex: 1;
   color: rgba(255, 255, 255, 0.78);
   font-size: var(--font-size-sm);
   font-weight: 700;
@@ -295,7 +311,7 @@ function demoLogin(nextRole) {
 .login-form-card {
   width: 100%;
   max-width: 420px;
-  padding: clamp(var(--space-6), 5vw, 44px);
+  padding: 44px;
   border: 1px solid var(--border-light);
   border-radius: 20px;
   background: white;
@@ -322,19 +338,19 @@ function demoLogin(nextRole) {
 .role-selector {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
+  gap: 10px;
   padding: 4px;
-  border-radius: var(--radius-lg);
+  border-radius: 10px;
   background: var(--color-gray-100);
   margin-bottom: var(--space-6);
 }
 
 .role-option {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: var(--space-3);
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
@@ -342,18 +358,29 @@ function demoLogin(nextRole) {
 
 .role-option.active {
   background: var(--bg-surface);
-  color: var(--color-aic);
+  color: var(--text-primary);
   box-shadow: var(--shadow-xs);
+}
+
+.role-option-mark {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--color-gray-200);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.role-option.active .role-option-mark {
+  background: var(--color-pi-pale);
+  color: var(--color-pi);
 }
 
 .role-option-label {
   font-size: var(--font-size-sm);
   font-weight: 800;
-}
-
-.role-option-desc {
-  font-size: var(--font-size-xs);
-  color: var(--text-muted);
 }
 
 .form-error {
@@ -369,7 +396,7 @@ function demoLogin(nextRole) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-5);
 }
 
 .field-group {
@@ -401,6 +428,43 @@ function demoLogin(nextRole) {
 .field-input:focus {
   border-color: var(--color-pi);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.field-input::placeholder {
+  color: var(--color-gray-300);
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.remember-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.remember-check input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-pi);
+}
+
+.forgot-link {
+  color: var(--color-pi);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.forgot-link:hover {
+  color: #2563eb;
 }
 
 .btn-login {
@@ -457,7 +521,27 @@ function demoLogin(nextRole) {
   border-radius: var(--radius-md);
   font-size: var(--font-size-xs);
   font-weight: 800;
+  gap: 6px;
   transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.demo-btn span {
+  width: 17px;
+  height: 17px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  color: white;
+  font-size: 9px;
+}
+
+.demo-student:hover {
+  background: #dbeafe;
+}
+
+.demo-teacher:hover {
+  background: #ffedd5;
 }
 
 .demo-student {
@@ -498,6 +582,12 @@ function demoLogin(nextRole) {
 @media (max-width: 420px) {
   .demo-btns {
     grid-template-columns: 1fr;
+  }
+
+  .field-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-2);
   }
 }
 </style>

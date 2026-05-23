@@ -40,10 +40,6 @@
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
-| Frontend | P1 | Ready | reference 12개 HTML과 Vue 라우트의 1:1 매핑표를 만든다. | 각 reference 파일, 대응 Vue route/component, 필요한 API 데이터, 정적 유지 가능 요소, 누락 섹션이 표로 정리된다. | 구현 전에 동일성 기준을 고정한다. |
-| Frontend | P1 | Ready | `index.html`과 동일한 랜딩 화면을 구현한다. | `LandingView.vue`가 reference의 상단 내비게이션, 어두운 히어로, 지표 칩, CTA, 통계 카드, 지표 설명 카드, 학생/교사 선택 카드, footer를 같은 순서와 시각 밀도로 렌더링한다. | 첫 화면은 reference와 거의 픽셀 단위로 맞춘다. |
-| Frontend | P1 | Ready | `login.html`과 동일한 로그인 화면을 구현한다. | `LoginView.vue`가 reference의 중앙 카드, 학생/교사 role toggle, 입력 필드, 로그인 유지 checkbox, 비밀번호 찾기 텍스트, 데모 접속 버튼, 홈 링크를 같은 레이아웃으로 제공하고 기존 로그인 기능이 유지된다. | refresh token 저장 정책은 변경하지 않는다. |
-| Frontend | P1 | Ready | reference의 사이드바/헤더 레이아웃을 공통 컴포넌트로 이식한다. | `AppLayout.vue`와 `AppSidebar.vue`가 reference의 고정 좌측 사이드바, role badge, Navigation label, SVG 아이콘, 하단 사용자 영역, breadcrumb, search, notification, logout 버튼을 학생/교사 화면에 동일하게 적용한다. | 모바일에서는 reference 톤을 유지하면서 현재 토글 UX를 보존한다. |
 | Frontend | P1 | Ready | `student-dashboard.html`과 동일한 학생 대시보드를 구현한다. | `StudentDashboardView.vue`가 reference의 greeting banner, 5개 KPI 카드, AIC 도넛 카드, 지표별 분석, 반 내 위치, 성장 추이, 최근 과제, 과제별 지표 변화, 개선 가이드 섹션을 같은 배치로 렌더링한다. | 실제 데이터는 `getStudentDashboard`를 사용한다. |
 | Frontend | P1 | Ready | `student-assignment.html`과 동일한 학생 과제 상세 화면을 구현한다. | `StudentAssignmentDetailView.vue`가 reference의 과제 히어로, 제출/분석 상태, AIC/PI/UI/OI/Topic 지표, AI 초안과 학생 수정 비교, 상세 분석 카드, 제출/재분석 동선을 동일한 화면 구조로 제공한다. | 제출과 job polling 기능은 유지한다. |
 | Frontend | P1 | Ready | `student-growth.html`과 동일한 성장 분석 화면을 구현한다. | `StudentGrowthView.vue`가 reference의 성장 히어로, 기간/과제 필터, AIC 추이, PI/UI/OI 변화, 누적 성장/프로파일 카드, 인사이트 섹션을 같은 시각 구성으로 렌더링한다. | Chart.js 설정도 reference와 최대한 맞춘다. |

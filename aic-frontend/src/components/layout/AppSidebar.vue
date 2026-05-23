@@ -17,18 +17,28 @@ const teacherStore = useTeacherStore()
 
 const role = computed(() => auth.user?.role)
 const studentNav = [
-  { label: 'Dashboard', path: '/student/dashboard', icon: '▦' },
-  { label: 'Assignment Detail', path: '/student/assignments', icon: '▤' },
-  { label: 'Growth Analysis', path: '/student/growth', icon: '↗' },
-  { label: 'Feedback Guide', path: '/student/feedback', icon: '♧' },
+  { label: 'Dashboard', path: '/student/dashboard', icon: 'grid' },
+  { label: 'Assignment Detail', path: '/student/assignments', icon: 'file' },
+  { label: 'Growth Analysis', path: '/student/growth', icon: 'trendUp' },
+  { label: 'Feedback Guide', path: '/student/feedback', icon: 'lightbulb' },
 ]
 const teacherNav = [
-  { label: '대시보드', path: '/teacher/dashboard', icon: '▦' },
-  { label: '학생 목록', path: '/teacher/students', icon: '◎' },
-  { label: '위험군 관리', path: '/teacher/risk', icon: '!' , badge: true },
-  { label: '과제 분석', path: '/teacher/analytics/assignment', dynamicPath: true, match: '/teacher/analytics/assignment', icon: '□' },
-  { label: '심화 분석', path: '/teacher/advanced', icon: '◇' },
+  { label: '대시보드', path: '/teacher/dashboard', icon: 'grid' },
+  { label: '학생 목록', path: '/teacher/students', icon: 'users' },
+  { label: '위험군 관리', path: '/teacher/risk', icon: 'alertTriangle', badge: true },
+  { label: '과제 분석', path: '/teacher/analytics/assignment', dynamicPath: true, match: '/teacher/analytics/assignment', icon: 'barChart' },
+  { label: '심화 분석', path: '/teacher/advanced', icon: 'cpu' },
 ]
+const iconSvg = {
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  trendUp: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  lightbulb: '<path d="M9 21h6"/><path d="M12 3a6 6 0 0 1 6 6c0 2.22-1.2 4.16-3 5.2V17H9v-2.8A6 6 0 0 1 6 9a6 6 0 0 1 6-6z"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  alertTriangle: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  barChart: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
+  cpu: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>',
+}
 const navItems = computed(() => (role.value === 'teacher' ? teacherNav : studentNav))
 const homePath = computed(() => (role.value === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'))
 
@@ -79,7 +89,15 @@ async function handleLogout() {
         :class="{ active: isActive(item) }"
         @click="emit('close')"
       >
-        <span class="nav-item-icon">{{ item.icon }}</span>
+        <svg
+          class="nav-item-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+          v-html="iconSvg[item.icon]"
+        />
         <span class="nav-label">{{ item.label }}</span>
         <span v-if="item.badge && teacherStore.riskCount > 0" class="nav-badge">
           {{ teacherStore.riskCount }}
@@ -92,7 +110,13 @@ async function handleLogout() {
         <div class="user-name">{{ auth.user?.name || '사용자' }}</div>
         <div class="user-role">{{ role === 'teacher' ? 'Teacher' : `Student · ${auth.user?.class_code || 'CS101'}` }}</div>
       </div>
-      <button class="logout-btn" title="로그아웃" @click.stop="handleLogout">↪</button>
+      <button class="logout-btn" title="로그아웃" aria-label="로그아웃" @click.stop="handleLogout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16,17 21,12 16,7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+      </button>
     </div>
   </aside>
 </template>
@@ -105,6 +129,8 @@ async function handleLogout() {
 .logout-btn {
   width: 30px;
   height: 30px;
+  display: grid;
+  place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.78);
@@ -112,6 +138,11 @@ async function handleLogout() {
   font-size: var(--text-xs);
   cursor: pointer;
   flex-shrink: 0;
+}
+
+.logout-btn svg {
+  width: 15px;
+  height: 15px;
 }
 
 .logout-btn:hover {

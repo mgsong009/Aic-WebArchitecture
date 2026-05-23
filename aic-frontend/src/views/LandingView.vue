@@ -50,8 +50,10 @@ const stats = [
   { value: '4개', label: '핵심 평가 지표' },
   { value: '실시간', label: 'AI 협업 분석' },
   { value: '2가지', label: '사용자 역할' },
-  { value: '12개', label: '분석 화면' },
+  { value: '10개+', label: '분석 화면' },
 ]
+
+const navLinks = ['플랫폼 소개', '지표 체계', '사용 방법', '문의']
 
 const roles = [
   {
@@ -91,9 +93,7 @@ function scrollToFeatures() {
         <span class="nav-brand-text">AIC <span>Index</span></span>
       </button>
       <div class="nav-links">
-        <button type="button" @click="scrollToFeatures">지표 체계</button>
-        <button type="button" @click="goLogin('student')">학생</button>
-        <button type="button" @click="goLogin('teacher')">교사</button>
+        <button v-for="link in navLinks" :key="link" type="button" @click="scrollToFeatures">{{ link }}</button>
       </div>
       <div class="nav-cta">
         <button class="btn-outline-white" type="button" @click="goLogin()">로그인</button>
@@ -103,7 +103,12 @@ function scrollToFeatures() {
 
     <main>
       <section class="hero animate-fade-in">
-        <div class="hero-tag">생성형 AI 시대의 새로운 학습 평가 패러다임</div>
+        <div class="hero-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <polyline points="22,12 18,12 15,21 9,3 6,12 2,12" />
+          </svg>
+          생성형 AI 시대의 새로운 학습 평가 패러다임
+        </div>
         <div class="index-pills">
           <span class="index-pill pill-pi">PI · Prompt Insight</span>
           <span class="index-pill pill-ui">UI · User Intervention</span>
@@ -112,14 +117,27 @@ function scrollToFeatures() {
         </div>
         <h1 class="hero-title">
           AI와의 협업 과정을<br />
-          <span>정량적으로 평가</span>하다
+          <span class="gradient-text">정량적으로 평가</span>하다
         </h1>
         <p class="hero-subtitle">
           결과물이 아닌 과정을 분석합니다. 학생의 노력, AI 개입, 독창성을 AIC Index로 시각화하여 교사와 학생 모두에게 의미 있는 피드백을 제공합니다.
         </p>
         <div class="hero-cta">
-          <button class="btn-hero-primary" type="button" @click="goLogin()">로그인하여 시작하기</button>
-          <button class="btn-hero-secondary" type="button" @click="scrollToFeatures">지표 설명 보기</button>
+          <button class="btn-hero-primary" type="button" @click="goLogin()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+              <polyline points="10,17 15,12 10,7" />
+              <line x1="15" y1="12" x2="3" y2="12" />
+            </svg>
+            로그인하여 시작하기
+          </button>
+          <button class="btn-hero-secondary" type="button" @click="scrollToFeatures">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12,8 12,12 14,14" />
+            </svg>
+            지표 설명 보기
+          </button>
         </div>
         <div class="hero-stats">
           <div v-for="stat in stats" :key="stat.label" class="stat-item">
@@ -155,7 +173,7 @@ function scrollToFeatures() {
             @click="goLogin(roleCard.role)"
           >
             <div class="role-mark">{{ roleCard.role === 'student' ? 'S' : 'T' }}</div>
-            <h3 class="role-title">{{ roleCard.title }}</h3>
+            <h3 class="role-title">{{ roleCard.title }} <span>({{ roleCard.role === 'student' ? 'Student' : 'Teacher' }})</span></h3>
             <p class="role-desc">{{ roleCard.desc }}</p>
             <div class="role-features">
               <div v-for="item in roleCard.items" :key="item" class="role-feature-item">
@@ -163,7 +181,7 @@ function scrollToFeatures() {
               </div>
             </div>
             <button class="role-cta" :class="roleCard.role" type="button">
-              {{ roleCard.title }}로 입장
+              {{ roleCard.title }}로 입장 →
             </button>
           </article>
         </div>
@@ -181,12 +199,18 @@ function scrollToFeatures() {
 .landing-root {
   min-height: 100vh;
   background:
-    linear-gradient(145deg, rgba(30, 58, 95, 0.72), rgba(11, 21, 38, 0.98)),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(16, 185, 129, 0.06) 1px, transparent 1px),
+    linear-gradient(145deg, rgba(30, 58, 95, 0.62), rgba(11, 21, 38, 0.98)),
     #0b1526;
+  background-size: 44px 44px, 44px 44px, auto, auto;
   color: white;
+  overflow-x: hidden;
 }
 
 .landing-nav {
+  position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -248,6 +272,7 @@ function scrollToFeatures() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--space-2);
   border-radius: var(--radius-md);
   font-weight: 700;
   transition: transform var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
@@ -312,11 +337,15 @@ function scrollToFeatures() {
   font-size: clamp(36px, 6vw, 64px);
   font-weight: 800;
   line-height: 1.15;
+  letter-spacing: -0.5px;
   margin-bottom: var(--space-5);
 }
 
-.hero-title span {
-  color: #6ee7b7;
+.gradient-text {
+  background: linear-gradient(90deg, #60a5fa, #34d399, #a78bfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .hero-subtitle {
@@ -367,6 +396,7 @@ function scrollToFeatures() {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
   background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
 }
 
 .stat-value {
@@ -426,7 +456,14 @@ function scrollToFeatures() {
 }
 
 .feature-card {
-  padding: var(--space-6);
+  padding: 28px;
+  transition: transform var(--transition-base), background var(--transition-base), border-color var(--transition-base);
+}
+
+.feature-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
 }
 
 .feature-icon {
@@ -444,6 +481,11 @@ function scrollToFeatures() {
 .role-title {
   font-size: var(--font-size-lg);
   margin-bottom: var(--space-3);
+}
+
+.role-title span {
+  color: rgba(255, 255, 255, 0.58);
+  font-weight: 600;
 }
 
 .feature-desc,

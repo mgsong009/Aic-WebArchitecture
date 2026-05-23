@@ -22,6 +22,15 @@
 
 ## 기록
 
+## 2026-05-24
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Frontend | reference 12개 HTML과 Vue 라우트의 1:1 매핑표를 `aic-frontend/REFERENCE_ROUTE_MAP.md`에 작성했습니다. 각 reference 파일, 대응 Vue route/component, 필요한 API 데이터, 정적 유지 가능 요소, 누락/축소 섹션을 정리하고 완료된 TODO 항목을 제거했습니다. | `TODO.md`, `prototype/README.md`, `prototype/*.html`, `src/router/index.js`, `src/api/index.js`, layout 컴포넌트를 대조했습니다. | `index.html` 기준 랜딩 화면 동일성 구현을 이어갑니다. |
+| Frontend | `LandingView.vue`를 reference `index.html`에 더 가깝게 정리했습니다. 4개 네비게이션 링크, 히어로 아이콘/CTA 아이콘, gradient title, reference 통계 문구, 역할 카드 영문 병기, 카드 hover와 어두운 배경 밀도를 반영했습니다. | `npm.cmd run build` 성공. dev server에서 `/` HTTP 200 응답 확인. 인앱 브라우저 자동화는 sandbox 초기화 오류로 캡처하지 못했습니다. | `login.html` 기준 로그인 화면 동일성 구현을 이어갑니다. |
+| Frontend | `LoginView.vue`를 reference `login.html`에 맞춰 보강했습니다. 왼쪽 브랜딩 문구/gradient 강조, 중앙 카드의 role toggle 밀도, 로그인 상태 유지 checkbox, 비밀번호 찾기 텍스트, 로그인/데모 버튼 문구, 홈 링크를 reference 흐름에 맞췄고 기존 auth store 로그인 기능은 유지했습니다. | `npm.cmd run build` 성공. dev server에서 `/login` HTTP 200 응답 확인. | reference 사이드바/헤더 레이아웃 정합성 작업을 이어갑니다. |
+| Frontend | reference의 사이드바/헤더 레이아웃을 공통 컴포넌트에 반영했습니다. `AppSidebar.vue`는 reference SVG 아이콘, role badge, Navigation label, 하단 사용자 영역과 logout 아이콘을 사용하고, `AppLayout.vue`는 breadcrumb 구분자, 검색 입력, 알림 버튼, 로그아웃 버튼을 기본 헤더 액션으로 제공합니다. 모바일 사이드바 토글/백드롭과 기존 actions slot은 유지했습니다. | `npm.cmd run build` 성공. | 학생 대시보드 reference 동일성 작업을 이어갑니다. |
+
 ## 2026-05-23
 
 | 영역 | 요약 | 확인 | 후속 작업 |
