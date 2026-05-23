@@ -33,7 +33,6 @@
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
 | Backend | P1 | Blocked | 프론트 이식에 부족한 API 계약 보강 여부 결정 | 프로토타입 화면 중 현재 API로 표현할 수 없는 데이터가 목록화되고, 백엔드 추가 API 또는 프론트 표시 축소 중 하나가 결정됩니다. | 후보: 교사용 과제 목록, assignment별 상세 분포/IQR, 군집, effort-score, 초안 유사도 |
-| Frontend | P1 | Ready | 고급 분석 미지원 지표 임시 표시 | `TeacherAdvancedView.vue`에 현재 API에 없는 군집, effort-score, 초안 유사도 영역을 프로토타입 UX에 맞춰 임시 하드코딩 데이터로 렌더링하고, 추후 API 연동 시 제거할 경계가 코드에 명확히 드러납니다. | API 계약 확정 전까지 임시 표시, 실제 학생 식별 정보 사용 금지 |
 | Frontend | P1 | Ready | API 어댑터/정규화 레이어 정리 | `src/api/index.js`를 통해서만 요청하고, 화면에서 반복되는 응답 변환은 Pinia store action 또는 composable로 모읍니다. | per-view Axios 인스턴스 생성 금지 |
 | Frontend | P1 | Ready | 차트 컴포넌트 재사용 구조 확정 | 기존 `components/charts/*`, `useChart.js`, 공통 KPI/배지 컴포넌트를 프로토타입 화면에 맞게 재사용하거나 확장합니다. | Chart.js 생명주기 중복 구현 금지 |
 | Frontend | P1 | Ready | 로딩/빈 데이터/오류 상태를 전 화면에 반영 | 모든 API 화면이 skeleton 또는 명확한 empty/error 상태를 표시하고, 인증 만료는 기존 interceptor 흐름으로 로그인 화면에 복귀합니다. | null metric, 미제출 과제, 분석 대기 job 포함 |
