@@ -123,14 +123,15 @@ const trendConfig = computed(() => {
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .card {
-  background: #fff;
-  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  padding: 1.2rem;
+  padding: var(--space-5);
 }
 
 .full {
@@ -145,9 +146,15 @@ const trendConfig = computed(() => {
 textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 0.7rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  outline: none;
+}
+
+textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
 }
 
 .actions {
@@ -157,20 +164,22 @@ textarea {
 }
 
 .btn-primary {
-  border: none;
+  border: 1px solid var(--color-aic);
   background: var(--color-aic);
   color: #fff;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.8rem;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .btn-secondary {
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.8rem;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .table {
@@ -181,9 +190,16 @@ textarea {
 
 .table th,
 .table td {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-light);
   text-align: left;
-  padding: 0.6rem;
+  padding: var(--space-3);
+}
+
+.table th {
+  background: var(--color-gray-50);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
 }
 
 @media (max-width: 1024px) {

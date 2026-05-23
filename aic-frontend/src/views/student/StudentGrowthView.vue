@@ -110,14 +110,16 @@ const radarConfig = computed(() => {
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .card {
-  background: #fff;
-  border-radius: var(--radius-lg);
-  padding: 1.2rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .full {
@@ -132,9 +134,16 @@ const radarConfig = computed(() => {
 
 .table th,
 .table td {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0.6rem;
+  border-bottom: 1px solid var(--border-light);
+  padding: var(--space-3);
   text-align: left;
+}
+
+.table th {
+  background: var(--color-gray-50);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
 }
 
 @media (max-width: 1024px) {

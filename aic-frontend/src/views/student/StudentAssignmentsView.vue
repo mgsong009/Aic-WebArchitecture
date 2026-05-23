@@ -49,9 +49,10 @@ onMounted(async () => {
 
 <style scoped>
 .loading-state { padding: 3rem; text-align: center; color: var(--text-secondary); }
-.card { background: #fff; border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); }
+.card { background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-xl); padding: var(--space-5); box-shadow: var(--shadow-sm); overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-.data-table th { text-align: left; padding: 0.65rem 0.75rem; background: #f9fafb; color: var(--text-secondary); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; border-bottom: 1px solid #e5e7eb; }
-.data-table td { padding: 0.75rem; border-bottom: 1px solid #f3f4f6; }
-.btn-view { padding: 0.3rem 0.75rem; border: 1px solid var(--color-aic); color: var(--color-aic); background: transparent; border-radius: 6px; cursor: pointer; font-size: var(--text-xs); }
+.data-table th { text-align: left; padding: var(--space-3) var(--space-4); background: var(--color-gray-50); color: var(--text-muted); font-weight: 700; font-size: var(--text-xs); text-transform: uppercase; border-bottom: 1px solid var(--border-light); white-space: nowrap; }
+.data-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-gray-50); }
+.data-table tbody tr:hover { background: var(--color-gray-50); }
+.btn-view { padding: var(--space-1) var(--space-3); border: 1px solid var(--color-aic); color: var(--color-aic); background: var(--bg-surface); border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-xs); font-weight: 600; }
 </style>

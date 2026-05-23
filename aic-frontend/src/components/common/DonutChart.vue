@@ -21,7 +21,7 @@ const gap = computed(() => circumference.value - dash.value)
       <!-- Track -->
       <circle
         :cx="size / 2" :cy="size / 2" :r="radius"
-        fill="none" stroke="#e5e7eb" :stroke-width="10"
+        fill="none" stroke="var(--color-gray-100)" :stroke-width="10"
       />
       <!-- Value arc -->
       <circle
@@ -48,5 +48,5 @@ const gap = computed(() => circumference.value - dash.value)
 
 <style scoped>
 .donut-wrap { position: relative; display: inline-flex; flex-direction: column; align-items: center; }
-.donut-label { font-size: var(--text-xs); color: var(--text-secondary); margin-top: 4px; text-align: center; }
+.donut-label { font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1); text-align: center; font-weight: 600; }
 </style>

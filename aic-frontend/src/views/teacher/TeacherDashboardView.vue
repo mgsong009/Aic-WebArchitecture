@@ -122,32 +122,39 @@ const distributionConfig = computed(() => {
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .card {
-  background: #fff;
-  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  padding: 1.2rem;
+  padding: var(--space-5);
 }
 
 .row {
-  padding: 0.6rem 0.7rem;
-  border: 1px solid #e5e7eb;
+  padding: var(--space-3);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
   cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.row:hover {
+  background: var(--color-gray-50);
+  border-color: var(--border-default);
 }
 
 .row-right {

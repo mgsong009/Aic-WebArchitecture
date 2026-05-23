@@ -64,8 +64,8 @@ function demoLogin(r) {
 
         <!-- Role toggle -->
         <div class="role-toggle">
-          <button :class="{ active: role === 'student' }" @click="role = 'student'">🧑‍🎓 학생</button>
-          <button :class="{ active: role === 'teacher' }" @click="role = 'teacher'">👩‍🏫 교사</button>
+          <button :class="{ active: role === 'student' }" @click="role = 'student'">학생</button>
+          <button :class="{ active: role === 'teacher' }" @click="role = 'teacher'">교사</button>
         </div>
 
         <div v-if="error" class="form-error">{{ error }}</div>
@@ -84,8 +84,8 @@ function demoLogin(r) {
         </button>
 
         <div class="demo-btns">
-          <button class="btn-demo" @click="demoLogin('student')">🧑‍🎓 학생 데모</button>
-          <button class="btn-demo" @click="demoLogin('teacher')">👩‍🏫 교사 데모</button>
+          <button class="btn-demo" @click="demoLogin('student')">학생 데모</button>
+          <button class="btn-demo" @click="demoLogin('teacher')">교사 데모</button>
         </div>
 
         <div class="back-link">
@@ -110,11 +110,11 @@ export default {
 </script>
 
 <style scoped>
-.login-wrap { display: flex; min-height: 100vh; }
+.login-wrap { display: flex; min-height: 100vh; background: var(--bg-primary); }
 
 .login-left {
   width: 420px;
-  background: linear-gradient(135deg, #1a2438, #1E3A5F);
+  background: var(--bg-sidebar);
   display: flex; flex-direction: column; justify-content: center;
   padding: 3rem 2.5rem; color: #fff;
 }
@@ -128,13 +128,13 @@ export default {
 .metric-name { font-weight: 700; font-size: 0.9rem; }
 .metric-full { font-size: 0.75rem; opacity: 0.6; }
 
-.login-right { flex: 1; background: #F0F4F8; display: flex; align-items: center; justify-content: center; }
-.login-form-wrap { background: #fff; border-radius: 16px; padding: 2.5rem; width: 400px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+.login-right { flex: 1; background: var(--bg-primary); display: flex; align-items: center; justify-content: center; padding: var(--space-6); }
+.login-form-wrap { background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-xl); padding: 2.5rem; width: 400px; box-shadow: var(--shadow-lg); }
 .form-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--text-primary); }
 
-.role-toggle { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: #f3f4f6; padding: 4px; border-radius: 8px; }
+.role-toggle { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: var(--color-gray-100); padding: 4px; border-radius: var(--radius-md); }
 .role-toggle button { flex: 1; padding: 0.5rem; border: none; background: transparent; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); transition: all 0.15s; }
-.role-toggle button.active { background: #fff; color: var(--color-aic); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.role-toggle button.active { background: var(--bg-surface); color: var(--color-aic); font-weight: 600; box-shadow: var(--shadow-xs); }
 
 .form-error { background: #fee2e2; color: #dc2626; padding: 0.75rem; border-radius: 8px; font-size: 0.875rem; margin-bottom: 1rem; }
 
@@ -142,20 +142,48 @@ export default {
 .form-group label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.4rem; }
 .form-group input {
   width: 100%; padding: 0.65rem 0.875rem;
-  border: 1.5px solid #e5e7eb; border-radius: 8px;
+  border: 1px solid var(--border-default); border-radius: var(--radius-md);
   font-size: 0.9rem; outline: none; box-sizing: border-box;
   transition: border-color 0.15s;
 }
 .form-group input:focus { border-color: var(--color-aic); }
 
-.btn-login { width: 100%; padding: 0.75rem; background: var(--color-aic); color: #fff; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; transition: opacity 0.15s; }
+.btn-login { width: 100%; padding: 0.75rem; background: var(--color-aic); color: #fff; border: 1px solid var(--color-aic); border-radius: var(--radius-md); font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; transition: opacity 0.15s; }
 .btn-login:disabled { opacity: 0.7; }
 
 .demo-btns { display: flex; gap: 0.5rem; margin-top: 1rem; }
-.btn-demo { flex: 1; padding: 0.5rem; border: 1.5px solid #e5e7eb; background: transparent; border-radius: 8px; cursor: pointer; font-size: 0.8rem; color: var(--text-secondary); transition: all 0.15s; }
+.btn-demo { flex: 1; padding: 0.5rem; border: 1px solid var(--border-default); background: transparent; border-radius: var(--radius-md); cursor: pointer; font-size: 0.8rem; color: var(--text-secondary); transition: all 0.15s; font-weight: 600; }
 .btn-demo:hover { border-color: var(--color-aic); color: var(--color-aic); }
 
 .back-link { text-align: center; margin-top: 1.25rem; }
 .back-link a { color: var(--text-secondary); font-size: 0.875rem; text-decoration: none; }
 .back-link a:hover { color: var(--color-aic); }
+
+@media (max-width: 760px) {
+  .login-wrap {
+    flex-direction: column;
+  }
+
+  .login-left {
+    width: 100%;
+    padding: var(--space-8) var(--space-5);
+  }
+
+  .login-right {
+    width: 100%;
+    padding: var(--space-5);
+  }
+
+  .login-form-wrap {
+    width: 100%;
+    max-width: 420px;
+    padding: var(--space-6);
+  }
+}
+
+@media (max-width: 420px) {
+  .demo-btns {
+    flex-direction: column;
+  }
+}
 </style>

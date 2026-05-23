@@ -58,10 +58,12 @@ onMounted(async () => {
 
 <style scoped>
 .card {
-  background: #fff;
-  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  padding: 1rem;
+  padding: var(--space-5);
+  overflow-x: auto;
 }
 
 .table {
@@ -72,15 +74,26 @@ onMounted(async () => {
 
 .table th,
 .table td {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0.6rem;
+  border-bottom: 1px solid var(--border-light);
+  padding: var(--space-3);
   text-align: left;
 }
 
+.table th {
+  background: var(--color-gray-50);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+
+.table tbody tr:hover {
+  background: var(--color-gray-50);
+}
+
 .btn-ghost {
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  border-radius: 6px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
   padding: 0.3rem 0.55rem;
   cursor: pointer;
 }

@@ -94,14 +94,16 @@ const scatterConfig = computed(() => {
 .grid {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .card {
-  background: #fff;
-  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  padding: 1rem;
+  padding: var(--space-5);
+  overflow: hidden;
 }
 
 .full {
@@ -116,9 +118,16 @@ const scatterConfig = computed(() => {
 
 .table td,
 .table th {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0.55rem;
+  border-bottom: 1px solid var(--border-light);
+  padding: var(--space-3);
   text-align: left;
+}
+
+.table th {
+  background: var(--color-gray-50);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
 }
 
 @media (max-width: 1024px) {

@@ -103,6 +103,16 @@
   --font-size-4xl:  30px;
   --font-size-5xl:  36px;
 
+  /* Backward-compatible aliases used by existing Vue components */
+  --text-xs: var(--font-size-xs);
+  --text-sm: var(--font-size-sm);
+  --text-base: var(--font-size-base);
+  --text-md: var(--font-size-md);
+  --text-lg: var(--font-size-lg);
+  --text-xl: var(--font-size-xl);
+  --text-2xl: var(--font-size-2xl);
+  --text-3xl: var(--font-size-3xl);
+
   /* Layout */
   --sidebar-width: 240px;
   --sidebar-collapsed-width: 60px;
@@ -502,6 +512,7 @@ input, textarea, select {
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .card-header {
@@ -830,6 +841,29 @@ input, textarea, select {
    ============================================================ */
 .chart-container {
   position: relative;
+}
+
+.chart-card {
+  min-height: 260px;
+}
+
+.chart-card canvas,
+.card canvas {
+  max-height: 320px;
+}
+
+.section-title,
+.chart-title,
+.card h3 {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.muted-row {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 /* ============================================================

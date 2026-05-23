@@ -185,14 +185,15 @@ const barConfig = computed(() => {
 }
 
 .hero-banner {
-  background: linear-gradient(135deg, #1e3a5f, #1a4a3a);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, var(--color-aic), var(--color-aic-light));
+  border-radius: var(--radius-xl);
+  padding: var(--space-6) var(--space-8);
   color: #fff;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--space-5);
+  box-shadow: var(--shadow-md);
 }
 
 .hero-greeting {
@@ -221,27 +222,28 @@ const barConfig = computed(() => {
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .row-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .chart-card {
-  background: #fff;
-  border-radius: var(--radius-lg);
-  padding: 1.2rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
   box-shadow: var(--shadow-sm);
 }
 
@@ -283,14 +285,16 @@ const barConfig = computed(() => {
 }
 
 .recent-item {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  padding: 0.7rem;
+  padding: var(--space-3);
   cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .recent-item:hover {
-  background: #f9fafb;
+  background: var(--color-gray-50);
+  border-color: var(--border-default);
 }
 
 .recent-title {

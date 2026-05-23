@@ -93,14 +93,15 @@ const distributionConfig = computed(() => {
 .grid {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .card {
-  background: #fff;
-  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  padding: 1rem;
+  padding: var(--space-5);
 }
 
 .meta {
@@ -111,8 +112,8 @@ const distributionConfig = computed(() => {
 .row {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border-light);
+  padding: var(--space-2) 0;
   font-size: var(--text-sm);
 }
 
@@ -121,11 +122,12 @@ const distributionConfig = computed(() => {
 }
 
 .btn-secondary {
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.8rem;
   cursor: pointer;
+  font-weight: 600;
 }
 
 @media (max-width: 1024px) {

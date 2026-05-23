@@ -71,13 +71,14 @@ onMounted(async () => {
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .card {
-  background: #fff;
-  border-radius: var(--radius-lg);
-  padding: 1.2rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
   box-shadow: var(--shadow-sm);
 }
 
@@ -118,12 +119,13 @@ li {
 }
 
 .btn-secondary {
-  border: 1px solid #cbd5e1;
-  background: #fff;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
   color: var(--text-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.8rem;
   cursor: pointer;
+  font-weight: 600;
 }
 
 @media (max-width: 1024px) {

@@ -121,14 +121,15 @@ async function refreshAfterDone() {
 .grid {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .card {
-  background: #fff;
-  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  padding: 1.2rem;
+  padding: var(--space-5);
 }
 
 h3 {
@@ -149,10 +150,17 @@ label {
 textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 0.65rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
   font-size: var(--text-sm);
+  color: var(--text-primary);
+  outline: none;
+}
+
+textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
 }
 
 .actions {
@@ -162,28 +170,30 @@ textarea {
 }
 
 .btn-primary {
-  border: none;
   background: var(--color-aic);
   color: #fff;
-  border-radius: 8px;
+  border: 1px solid var(--color-aic);
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.8rem;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .btn-secondary {
-  border: 1px solid #cbd5e1;
-  background: #fff;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
   color: var(--text-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.55rem 0.8rem;
   cursor: pointer;
+  font-weight: 600;
 }
 
 .btn-mini {
   margin-left: 0.5rem;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  border-radius: 6px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
   padding: 0.25rem 0.4rem;
   cursor: pointer;
 }
