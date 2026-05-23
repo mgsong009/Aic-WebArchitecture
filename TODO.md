@@ -36,7 +36,6 @@
 | Frontend | P1 | Ready | API 어댑터/정규화 레이어 정리 | `src/api/index.js`를 통해서만 요청하고, 화면에서 반복되는 응답 변환은 Pinia store action 또는 composable로 모읍니다. | per-view Axios 인스턴스 생성 금지 |
 | Frontend | P1 | Ready | 차트 컴포넌트 재사용 구조 확정 | 기존 `components/charts/*`, `useChart.js`, 공통 KPI/배지 컴포넌트를 프로토타입 화면에 맞게 재사용하거나 확장합니다. | Chart.js 생명주기 중복 구현 금지 |
 | Frontend | P1 | Ready | 로딩/빈 데이터/오류 상태를 전 화면에 반영 | 모든 API 화면이 skeleton 또는 명확한 empty/error 상태를 표시하고, 인증 만료는 기존 interceptor 흐름으로 로그인 화면에 복귀합니다. | null metric, 미제출 과제, 분석 대기 job 포함 |
-| Frontend | P1 | Ready | 라우터와 네비게이션 정리 | 프로토타입 URL 흐름을 Vue Router 경로로 변환하고, 모든 링크가 `<RouterLink>` 또는 `router.push`를 사용하며 역할별 `meta.role`이 유지됩니다. | 정적 `.html` 링크 제거 |
 | Frontend | P1 | Ready | 반응형 UI 검증 | 학생/교사 핵심 화면이 모바일과 데스크톱에서 겹침 없이 표시되고 사이드바 토글, 표 스크롤, 차트 크기가 안정적으로 동작합니다. | 최소 375px, 768px, 1440px 확인 |
 | Full Stack | P1 | Ready | Docker 통합 스모크 테스트 | `docker compose up --build` 기준으로 로그인, 학생 대시보드, 제출/분석 폴링, 교사 대시보드, 학생 상세, 피드백 작성이 동작합니다. | backend/pipeline/db 서비스 경계 유지 |
 
