@@ -2,7 +2,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getStudentDashboard } from '@/api'
-import { useAuthStore } from '@/stores/auth'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import DonutChart from '@/components/common/DonutChart.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
@@ -11,7 +10,6 @@ import LineChart from '@/components/charts/LineChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 
 const router = useRouter()
-const auth = useAuthStore()
 const dashboard = ref(null)
 const loading = ref(true)
 const error = ref('')
@@ -32,11 +30,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
-async function handleLogout() {
-  await auth.logout()
-  router.push('/login')
-}
 
 const student = computed(() => dashboard.value?.student || {})
 const latestMetrics = computed(() => dashboard.value?.latest_metrics || {})
@@ -60,6 +53,14 @@ const statusText = computed(() => {
   if (score >= 70) return 'Good'
   if (score >= 55) return 'Average'
   return 'Needs Work'
+})
+const statusClass = computed(() => {
+  const score = Number(aicScore.value)
+  if (!Number.isFinite(score)) return 'status-pending'
+  if (score >= 85) return 'status-excellent'
+  if (score >= 70) return 'status-good'
+  if (score >= 55) return 'status-average'
+  return 'status-risk'
 })
 const rankPercent = computed(() => {
   if (!dashboard.value?.rank || !dashboard.value?.total_students) return null
@@ -180,20 +181,6 @@ const barConfig = computed(() => {
 
 <template>
   <AppLayout title="Dashboard" :show-page-header="false">
-    <template #actions>
-      <label class="header-search" aria-label="검색">
-        <span>⌕</span>
-        <input type="text" placeholder="Search..." />
-      </label>
-      <button class="icon-btn" type="button" title="알림">
-        ♧
-        <span class="badge"></span>
-      </button>
-      <button class="icon-btn" type="button" title="나가기" @click="handleLogout">
-        ↪
-      </button>
-    </template>
-
     <div v-if="loading" class="loading-wrap">
       <LoadingSkeleton height="160px" />
       <LoadingSkeleton height="380px" />
@@ -261,7 +248,7 @@ const barConfig = computed(() => {
               <div class="card-title">AIC Score</div>
               <div class="card-subtitle">최근 과제 기준</div>
             </div>
-            <span class="status-badge status-good">{{ statusText }}</span>
+            <span class="status-badge" :class="statusClass">{{ statusText }}</span>
           </div>
           <div class="card-body score-card-body">
             <DonutChart :score="latestMetrics.aic || 0" color="var(--color-aic)" label="AIC Score" :size="160" />
@@ -969,10 +956,6 @@ const barConfig = computed(() => {
 
   .hero-score {
     min-width: 0;
-  }
-
-  .header-search input {
-    width: 96px;
   }
 }
 </style>

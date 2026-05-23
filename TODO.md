@@ -40,8 +40,6 @@
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
-| Frontend | P1 | Ready | `student-dashboard.html`과 동일한 학생 대시보드를 구현한다. | `StudentDashboardView.vue`가 reference의 greeting banner, 5개 KPI 카드, AIC 도넛 카드, 지표별 분석, 반 내 위치, 성장 추이, 최근 과제, 과제별 지표 변화, 개선 가이드 섹션을 같은 배치로 렌더링한다. | 실제 데이터는 `getStudentDashboard`를 사용한다. |
-| Frontend | P1 | Ready | `student-assignment.html`과 동일한 학생 과제 상세 화면을 구현한다. | `StudentAssignmentDetailView.vue`가 reference의 과제 히어로, 제출/분석 상태, AIC/PI/UI/OI/Topic 지표, AI 초안과 학생 수정 비교, 상세 분석 카드, 제출/재분석 동선을 동일한 화면 구조로 제공한다. | 제출과 job polling 기능은 유지한다. |
 | Frontend | P1 | Ready | `student-growth.html`과 동일한 성장 분석 화면을 구현한다. | `StudentGrowthView.vue`가 reference의 성장 히어로, 기간/과제 필터, AIC 추이, PI/UI/OI 변화, 누적 성장/프로파일 카드, 인사이트 섹션을 같은 시각 구성으로 렌더링한다. | Chart.js 설정도 reference와 최대한 맞춘다. |
 | Frontend | P1 | Ready | `student-feedback.html`과 동일한 피드백 가이드 화면을 구현한다. | `StudentFeedbackView.vue`가 reference의 피드백 히어로, 지표별 가이드 카드, 교사 피드백, 다음 과제 체크리스트, 개선 팁 섹션을 같은 레이아웃으로 제공한다. | 과제 선택 UX와 충돌하지 않게 구성한다. |
 | Frontend | P1 | Ready | `teacher-dashboard.html`, `teacher-students.html`, `teacher-student-detail.html`과 동일한 교사 기본 화면을 구현한다. | 교사 대시보드, 학생 목록, 학생 상세가 reference의 KPI, 분포 차트, 위험/상위 학생 카드, 검색/필터/표, 학생 프로필/과제 이력/피드백 작성 UI를 같은 구조로 렌더링한다. | 기존 teacher store/API 호출은 유지한다. |
