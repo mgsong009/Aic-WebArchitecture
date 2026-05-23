@@ -40,7 +40,6 @@
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
-| Frontend | P1 | Ready | `teacher-dashboard.html`, `teacher-students.html`, `teacher-student-detail.html`과 동일한 교사 기본 화면을 구현한다. | 교사 대시보드, 학생 목록, 학생 상세가 reference의 KPI, 분포 차트, 위험/상위 학생 카드, 검색/필터/표, 학생 프로필/과제 이력/피드백 작성 UI를 같은 구조로 렌더링한다. | 기존 teacher store/API 호출은 유지한다. |
 | Frontend | P1 | Ready | `teacher-risk.html`, `teacher-assignment-analytics.html`, `teacher-advanced.html`과 동일한 교사 분석 화면을 구현한다. | 위험군, 과제 분석, 심화 분석 화면이 reference의 히어로, 필터, scatter/분포/상관/군집/상하위 분석 카드와 동일한 화면 흐름으로 제공된다. | API가 없는 심화 데이터는 명시된 fallback만 사용한다. |
 | Frontend | P2 | Ready | reference 동일성 검증 절차를 추가한다. | 12개 reference 화면과 12개 Vue 화면을 데스크톱/모바일에서 캡처해 섹션 누락, 레이아웃 차이, 텍스트 겹침, 차트 blank 상태를 비교하는 체크리스트가 문서화된다. | 최소 검증 명령은 `npm run build`와 브라우저 캡처 확인이다. |
 

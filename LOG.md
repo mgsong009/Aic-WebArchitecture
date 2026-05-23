@@ -34,6 +34,7 @@
 | Frontend | `StudentAssignmentDetailView.vue`를 reference `student-assignment.html` 흐름에 맞춰 확장했습니다. 과제 선택 탭, 과제 히어로, AIC/PI/UI/OI/Topic 점수 카드, AI/학생 기여도, PI 레이더, AI 초안-프롬프트-최종본 비교, 제출/재분석 폼, 상세 분석 카드, 교사 피드백, 자동 개선 가이드를 같은 화면 구조로 제공하며 기존 제출 및 job polling 기능은 유지했습니다. | `npm.cmd run build` 성공. Docker 스택을 `docker compose up --build -d`로 기동하고 nginx 경유 `/student/assignments/1` HTTP 200, 학생 로그인/과제 상세 API 응답을 확인했습니다. Browser 플러그인은 Windows sandbox 초기화 오류로 캡처하지 못했습니다. | 학생 성장 분석 화면 reference 동일성 작업을 이어갑니다. |
 | Frontend | `StudentGrowthView.vue`를 reference `student-growth.html` 흐름에 맞춰 확장했습니다. 성장 히어로 4개 통계, 헤더 기간 필터와 CSV 내보내기, 내 AIC/반 평균 비교, PI/UI/OI 변화, 최신 지표 구성, 누적 면적 차트, 최신 프로파일, 동적 성장 인사이트를 실제 `/student/growth` 데이터 기반으로 렌더링합니다. | `npm.cmd run build` 성공. | 학생 피드백 화면 reference 동일성 작업을 이어갑니다. |
 | Frontend | `StudentFeedbackView.vue`를 reference `student-feedback.html` 흐름에 맞춰 확장했습니다. 과제 선택 UX를 유지하면서 선택된 과제에는 피드백 히어로, PI/UI/OI 지표별 가이드 카드, 교사 피드백 이력 형태, 다음 과제 체크리스트, 자동 강점/개선/실행 팁 섹션을 실제 `/student/assignments`와 `/student/feedback/{assignment_id}` 데이터 기반으로 렌더링합니다. | `npm.cmd run build` 성공. | 교사 기본 화면 reference 동일성 작업을 이어갑니다. |
+| Frontend | `TeacherDashboardView.vue`, `TeacherStudentsView.vue`, `TeacherStudentDetailView.vue`를 reference 교사 기본 화면 흐름에 맞춰 확장했습니다. 대시보드의 수업 요약/KPI/분포/추이/위험군/상하위 학생, 학생 목록의 요약 KPI/검색/필터/표/페이지네이션, 학생 상세의 프로필/도넛/취약 지표/성장 추이/과제 이력/피드백 작성 및 이력 UI를 구현하고, API 데이터가 없을 때만 reference fallback 데이터를 사용하도록 분리했습니다. | `npm.cmd run build` 성공. | 교사 분석 화면 reference 동일성 작업을 이어갑니다. |
 
 ## 2026-05-23
 
