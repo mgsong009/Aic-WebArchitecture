@@ -36,17 +36,22 @@ const gap = computed(() => circumference.value - dash.value)
       />
       <!-- Score text -->
       <text
-        :x="size / 2" :y="size / 2 + 6"
+        :x="size / 2" :y="size / 2 - 4"
         text-anchor="middle"
-        font-size="20" font-weight="700"
+        font-size="22" font-weight="800"
         :fill="color"
       >{{ score }}</text>
+      <text
+        v-if="label"
+        :x="size / 2" :y="size / 2 + 16"
+        text-anchor="middle"
+        font-size="10" font-weight="700"
+        fill="var(--text-muted)"
+      >{{ label }}</text>
     </svg>
-    <div v-if="label" class="donut-label">{{ label }}</div>
   </div>
 </template>
 
 <style scoped>
 .donut-wrap { position: relative; display: inline-flex; flex-direction: column; align-items: center; }
-.donut-label { font-size: var(--text-xs); color: var(--text-muted); margin-top: var(--space-1); text-align: center; font-weight: 600; }
 </style>

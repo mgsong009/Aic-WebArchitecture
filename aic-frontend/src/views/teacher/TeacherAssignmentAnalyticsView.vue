@@ -2,29 +2,63 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getTeacherAssignmentAnalytics } from '@/api'
+import { useTeacherStore } from '@/stores/teacher'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 
 const route = useRoute()
 const router = useRouter()
-const assignmentId = ref(Number(route.params.id))
+const teacherStore = useTeacherStore()
+const assignmentId = ref(route.params.id ? Number(route.params.id) : null)
 const loading = ref(true)
 const error = ref('')
+const assignmentError = ref('')
 const analytics = ref(null)
+const assignments = computed(() => teacherStore.assignments)
+const hasAssignments = computed(() => assignments.value.length > 0)
+const selectedAssignmentId = computed({
+  get: () => assignmentId.value ? String(assignmentId.value) : '',
+  set: (nextId) => {
+    if (nextId) {
+      router.push(`/teacher/analytics/assignment/${nextId}`)
+    }
+  },
+})
 
 watch(
   () => route.params.id,
   async (nextId) => {
-    assignmentId.value = Number(nextId)
+    assignmentId.value = nextId ? Number(nextId) : teacherStore.firstAssignmentId
     await load()
   },
 )
 
 onMounted(async () => {
+  await loadAssignments()
+  if (!assignmentId.value && teacherStore.firstAssignmentId) {
+    router.replace(`/teacher/analytics/assignment/${teacherStore.firstAssignmentId}`)
+    return
+  }
   await load()
 })
 
+async function loadAssignments() {
+  assignmentError.value = ''
+  try {
+    if (!teacherStore.assignments.length) {
+      await teacherStore.fetchAssignments()
+    }
+  } catch (err) {
+    assignmentError.value = err.response?.data?.detail || '과제 목록을 불러오지 못했습니다.'
+  }
+}
+
 async function load() {
+  if (!assignmentId.value) {
+    analytics.value = null
+    loading.value = false
+    return
+  }
   loading.value = true
   error.value = ''
   try {
@@ -80,10 +114,48 @@ const difficultyPercent = computed(() => Math.round((analytics.value?.difficulty
 function scoreText(score) {
   return score ?? '-'
 }
+
+function formatDate(value) {
+  if (!value) return '마감일 없음'
+  return new Date(value).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
+}
 </script>
 
 <template>
   <AppLayout title="과제 분석" :subtitle="analytics?.assignment?.title || ''">
+    <section class="card selector-card">
+      <div class="card-heading">
+        <div>
+          <h3>분석 과제</h3>
+          <span class="muted-row">과제별 제출 및 분석 현황</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" type="button" @click="loadAssignments">새로고침</button>
+      </div>
+      <div v-if="assignmentError" class="alert alert-danger">
+        <span>{{ assignmentError }}</span>
+      </div>
+      <div v-else-if="!hasAssignments" class="empty-state compact">
+        분석할 과제가 없습니다.
+      </div>
+      <div v-else class="assignment-selector">
+        <select v-model="selectedAssignmentId" class="form-control" aria-label="분석 과제 선택">
+          <option v-for="assignment in assignments" :key="assignment.id" :value="String(assignment.id)">
+            {{ assignment.title }}
+          </option>
+        </select>
+        <div class="assignment-meta">
+          <span
+            v-for="assignment in assignments"
+            v-show="String(assignment.id) === selectedAssignmentId"
+            :key="`meta-${assignment.id}`"
+          >
+            {{ assignment.course_code || '코드 없음' }} · {{ formatDate(assignment.due_date) }} ·
+            제출 {{ assignment.submission_count }}명 · 분석 {{ assignment.analyzed_submission_count }}명
+          </span>
+        </div>
+      </div>
+    </section>
+
     <div v-if="loading" class="card loading-state">불러오는 중...</div>
 
     <div v-else-if="error" class="card">
@@ -169,8 +241,8 @@ function scoreText(score) {
       </div>
     </div>
 
-    <div v-else class="card">
-      <div class="empty-state">과제 분석 데이터가 없습니다.</div>
+    <div v-else-if="!assignmentError" class="card">
+      <div class="empty-state">선택된 과제가 없습니다.</div>
       <div class="actions">
         <button class="btn btn-secondary" type="button" @click="router.push('/teacher/dashboard')">대시보드</button>
       </div>
@@ -199,12 +271,28 @@ function scoreText(score) {
   padding: var(--space-5);
 }
 
+.selector-card {
+  margin-bottom: var(--space-4);
+}
+
 .card-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
   margin-bottom: var(--space-4);
+}
+
+.assignment-selector {
+  display: grid;
+  grid-template-columns: minmax(220px, 360px) 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.assignment-meta {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
 }
 
 .chart-box {
@@ -285,6 +373,10 @@ function scoreText(score) {
 
 @media (max-width: 1024px) {
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .assignment-selector {
     grid-template-columns: 1fr;
   }
 }

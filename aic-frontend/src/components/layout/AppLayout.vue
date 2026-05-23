@@ -6,12 +6,13 @@ import AppSidebar from './AppSidebar.vue'
 const props = defineProps({
   title: { type: String, default: '' },
   subtitle: { type: String, default: '' },
+  showPageHeader: { type: Boolean, default: true },
 })
 
 const auth = useAuthStore()
 const isSidebarOpen = ref(false)
 
-const roleLabel = computed(() => (auth.user?.role === 'teacher' ? 'Teacher Workspace' : 'Student Workspace'))
+const roleLabel = computed(() => (auth.user?.role === 'teacher' ? 'Teacher' : 'Student'))
 const currentTitle = computed(() => props.title || 'AIC Index')
 
 function toggleSidebar() {
@@ -58,7 +59,7 @@ function closeSidebar() {
         </div>
       </div>
       <section class="page-content">
-        <header v-if="title" class="page-header">
+        <header v-if="title && showPageHeader" class="page-header">
           <div>
             <h1 class="page-title">{{ title }}</h1>
             <p v-if="subtitle" class="page-subtitle">{{ subtitle }}</p>

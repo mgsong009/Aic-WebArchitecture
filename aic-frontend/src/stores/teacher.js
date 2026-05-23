@@ -1,12 +1,16 @@
 import { defineStore } from 'pinia'
-import { getTeacherDashboard, getTeacherStudents } from '@/api'
+import { getTeacherAssignments, getTeacherDashboard, getTeacherStudents } from '@/api'
 
 export const useTeacherStore = defineStore('teacher', {
   state: () => ({
     dashboard: null,
     studentList: null,
+    assignments: [],
     riskCount: 0,
   }),
+  getters: {
+    firstAssignmentId: (state) => state.assignments[0]?.id || null,
+  },
   actions: {
     async fetchDashboard() {
       const data = await getTeacherDashboard()
@@ -15,6 +19,10 @@ export const useTeacherStore = defineStore('teacher', {
     },
     async fetchStudents(params = {}) {
       this.studentList = await getTeacherStudents(params)
+    },
+    async fetchAssignments() {
+      this.assignments = await getTeacherAssignments()
+      return this.assignments
     },
   },
 })

@@ -16,6 +16,7 @@ const routes = [
   { path: '/teacher/students', component: () => import('@/views/teacher/TeacherStudentsView.vue'), meta: { role: 'teacher' } },
   { path: '/teacher/students/:id', component: () => import('@/views/teacher/TeacherStudentDetailView.vue'), meta: { role: 'teacher' } },
   { path: '/teacher/risk', component: () => import('@/views/teacher/TeacherRiskView.vue'), meta: { role: 'teacher' } },
+  { path: '/teacher/analytics/assignment', component: () => import('@/views/teacher/TeacherAssignmentAnalyticsView.vue'), meta: { role: 'teacher' } },
   { path: '/teacher/analytics/assignment/:id', component: () => import('@/views/teacher/TeacherAssignmentAnalyticsView.vue'), meta: { role: 'teacher' } },
   { path: '/teacher/advanced', component: () => import('@/views/teacher/TeacherAdvancedView.vue'), meta: { role: 'teacher' } },
   // Fallback

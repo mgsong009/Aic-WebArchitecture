@@ -371,6 +371,7 @@ input, textarea, select {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
 }
 
 /* ============================================================
@@ -479,6 +480,7 @@ input, textarea, select {
   padding: var(--space-6);
   max-width: var(--content-max-width);
   width: 100%;
+  min-width: 0;
   margin: 0 auto;
 }
 
@@ -513,6 +515,7 @@ input, textarea, select {
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  min-width: 0;
 }
 
 .card-header {
@@ -743,6 +746,7 @@ input, textarea, select {
    ============================================================ */
 .data-table-wrapper {
   overflow-x: auto;
+  max-width: 100%;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-light);
   background: var(--bg-surface);
@@ -751,6 +755,7 @@ input, textarea, select {
 
 .data-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
   font-size: var(--font-size-sm);
 }
@@ -845,6 +850,7 @@ input, textarea, select {
    ============================================================ */
 .chart-container {
   position: relative;
+  min-width: 0;
 }
 
 .chart-card {
@@ -897,6 +903,13 @@ input, textarea, select {
   gap: var(--space-2);
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 /* ============================================================
    Grid Layouts
    ============================================================ */
@@ -925,6 +938,8 @@ input, textarea, select {
 }
 
 .form-control {
+  width: 100%;
+  min-width: 0;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);

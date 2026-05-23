@@ -84,6 +84,17 @@ export function normalizeTeacherAdvancedAnalytics(data = {}) {
   }
 }
 
+export function normalizeTeacherAssignmentList(data = {}) {
+  return asArray(data.assignments).map((assignment) => ({
+    id: assignment.id,
+    title: assignment.title || `과제 ${assignment.id}`,
+    course_code: assignment.course_code || '',
+    due_date: assignment.due_date || null,
+    submission_count: asNumber(assignment.submission_count),
+    analyzed_submission_count: asNumber(assignment.analyzed_submission_count),
+  }))
+}
+
 export async function getStudentDashboard() {
   const { data } = await api.get('/student/dashboard')
   return normalizeStudentDashboard(data)
@@ -140,6 +151,11 @@ export async function getTeacherStudentDetail(studentId) {
 export async function getTeacherRiskStudents() {
   const { data } = await api.get('/teacher/risk-students')
   return asArray(data.risk_students)
+}
+
+export async function getTeacherAssignments() {
+  const { data } = await api.get('/teacher/assignments')
+  return normalizeTeacherAssignmentList(data)
 }
 
 export async function saveTeacherFeedback(body) {
