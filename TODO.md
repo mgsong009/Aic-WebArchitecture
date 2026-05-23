@@ -38,7 +38,6 @@
 | Frontend | P1 | Ready | 로딩/빈 데이터/오류 상태를 전 화면에 반영 | 모든 API 화면이 skeleton 또는 명확한 empty/error 상태를 표시하고, 인증 만료는 기존 interceptor 흐름으로 로그인 화면에 복귀합니다. | null metric, 미제출 과제, 분석 대기 job 포함 |
 | Frontend | P1 | Ready | 라우터와 네비게이션 정리 | 프로토타입 URL 흐름을 Vue Router 경로로 변환하고, 모든 링크가 `<RouterLink>` 또는 `router.push`를 사용하며 역할별 `meta.role`이 유지됩니다. | 정적 `.html` 링크 제거 |
 | Frontend | P1 | Ready | 반응형 UI 검증 | 학생/교사 핵심 화면이 모바일과 데스크톱에서 겹침 없이 표시되고 사이드바 토글, 표 스크롤, 차트 크기가 안정적으로 동작합니다. | 최소 375px, 768px, 1440px 확인 |
-| Frontend | P1 | Ready | 프론트엔드 빌드 검증 | `cd aic-frontend && npm run build`가 성공하고 Vite 번들에서 명백한 경고/오류가 없습니다. | 의존성 추가 시 `npm install` 후 lockfile 갱신 |
 | Full Stack | P1 | Ready | Docker 통합 스모크 테스트 | `docker compose up --build` 기준으로 로그인, 학생 대시보드, 제출/분석 폴링, 교사 대시보드, 학생 상세, 피드백 작성이 동작합니다. | backend/pipeline/db 서비스 경계 유지 |
 
 ## 결정된 방향
