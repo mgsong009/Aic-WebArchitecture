@@ -71,7 +71,7 @@ const distributionConfig = computed(() => {
 
 <template>
   <AppLayout title="교사 대시보드" :subtitle="dashboard ? `${dashboard.cls.code} ${dashboard.cls.name}` : ''">
-    <div v-if="loading" class="card">불러오는 중...</div>
+    <div v-if="loading" class="card card-body loading-state">불러오는 중...</div>
     <div v-else-if="dashboard">
       <div class="kpi-grid">
         <KpiCard label="반 평균 AIC" :value="dashboard.class_avg.aic" color="var(--color-aic)" />
@@ -81,21 +81,21 @@ const distributionConfig = computed(() => {
         <KpiCard label="위험군 수" :value="dashboard.risk_count" color="#dc2626" />
       </div>
 
-      <div class="grid">
-        <div class="card">
+      <div class="grid-2 mb-4">
+        <div class="card card-body chart-card">
           <h3>클래스 추이</h3>
           <LineChart v-if="trendConfig" :config="trendConfig" />
         </div>
-        <div class="card">
+        <div class="card card-body chart-card">
           <h3>AIC 분포</h3>
           <BarChart v-if="distributionConfig" :config="distributionConfig" />
         </div>
       </div>
 
-      <div class="grid">
-        <div class="card">
+      <div class="grid-2">
+        <div class="card card-body">
           <h3>위험군 학생</h3>
-          <div v-for="s in dashboard.risk_students" :key="s.id" class="row" @click="router.push(`/teacher/students/${s.id}`)">
+          <div v-for="s in dashboard.risk_students" :key="s.id" class="interactive-row" @click="router.push(`/teacher/students/${s.id}`)">
             <span>{{ s.name }}</span>
             <div class="row-right">
               <span>{{ s.aic ?? '-' }}</span>
@@ -103,9 +103,9 @@ const distributionConfig = computed(() => {
             </div>
           </div>
         </div>
-        <div class="card">
+        <div class="card card-body">
           <h3>우수 학생</h3>
-          <div v-for="s in dashboard.top_students" :key="s.id" class="row" @click="router.push(`/teacher/students/${s.id}`)">
+          <div v-for="s in dashboard.top_students" :key="s.id" class="interactive-row" @click="router.push(`/teacher/students/${s.id}`)">
             <span>{{ s.name }}</span>
             <div class="row-right">
               <span>{{ s.aic ?? '-' }}</span>
@@ -117,59 +117,3 @@ const distributionConfig = computed(() => {
     </div>
   </AppLayout>
 </template>
-
-<style scoped>
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-
-.card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-5);
-}
-
-.row {
-  padding: var(--space-3);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: var(--space-2);
-  cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
-}
-
-.row:hover {
-  background: var(--color-gray-50);
-  border-color: var(--border-default);
-}
-
-.row-right {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-@media (max-width: 1200px) {
-  .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

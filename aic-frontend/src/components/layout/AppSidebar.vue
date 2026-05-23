@@ -4,6 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTeacherStore } from '@/stores/teacher'
 
+defineProps({
+  open: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['close'])
+
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
@@ -19,20 +25,31 @@ const teacherNav = [
   { label: '대시보드', path: '/teacher/dashboard', icon: '▦' },
   { label: '학생 목록', path: '/teacher/students', icon: '◎' },
   { label: '위험군 관리', path: '/teacher/risk', icon: '!' , badge: true },
-  { label: '과제 분석', path: '/teacher/analytics/assignment/1', icon: '□' },
+  { label: '과제 분석', path: '/teacher/analytics/assignment/1', match: '/teacher/analytics/assignment', icon: '□' },
   { label: '심화 분석', path: '/teacher/advanced', icon: '◇' },
 ]
 const navItems = computed(() => (role.value === 'teacher' ? teacherNav : studentNav))
+const homePath = computed(() => (role.value === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'))
+
+function isActive(item) {
+  return route.path === item.path || route.path.startsWith(item.match || `${item.path}/`)
+}
+
+function goHome() {
+  router.push(homePath.value)
+  emit('close')
+}
 
 async function handleLogout() {
   await auth.logout()
+  emit('close')
   router.push('/login')
 }
 </script>
 
 <template>
-  <aside class="app-sidebar">
-    <div class="sidebar-logo" @click="router.push(role === 'teacher' ? '/teacher/dashboard' : '/student/dashboard')">
+  <aside class="app-sidebar" :class="{ open }">
+    <div class="sidebar-logo" @click="goHome">
       <span class="sidebar-logo-icon">AI</span>
       <span class="sidebar-logo-text">AIC <span>Index</span></span>
     </div>
@@ -43,7 +60,8 @@ async function handleLogout() {
         :key="item.path"
         :to="item.path"
         class="nav-item"
-        :class="{ active: route.path.startsWith(item.path) }"
+        :class="{ active: isActive(item) }"
+        @click="emit('close')"
       >
         <span class="nav-item-icon">{{ item.icon }}</span>
         <span class="nav-label">{{ item.label }}</span>
@@ -82,18 +100,5 @@ async function handleLogout() {
 
 .logout-btn:hover {
   background: rgba(255, 255, 255, 0.2);
-}
-
-@media (max-width: 1024px) {
-  .app-sidebar {
-    position: static;
-    width: 100%;
-    min-height: auto;
-  }
-
-  .sidebar-nav {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  }
 }
 </style>

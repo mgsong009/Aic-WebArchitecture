@@ -14,6 +14,7 @@ import BarChart from '@/components/charts/BarChart.vue'
 const router = useRouter()
 const dashboard = ref(null)
 const loading = ref(true)
+const error = ref('')
 
 const subMetrics = [
   { key: 'pi', label: 'PI', color: '#3B82F6' },
@@ -22,18 +23,46 @@ const subMetrics = [
   { key: 'topic', label: 'Topic', color: '#8B5CF6' },
 ]
 
+function normalizeDashboard(data = {}) {
+  return {
+    student: data.student || {},
+    latest_metrics: data.latest_metrics || {},
+    latest_delta: data.latest_delta || {},
+    class_avg: data.class_avg || {},
+    rank: data.rank ?? null,
+    total_students: data.total_students ?? 0,
+    trend: Array.isArray(data.trend) ? data.trend : [],
+    recent_assignments: Array.isArray(data.recent_assignments) ? data.recent_assignments : [],
+    metrics_history: Array.isArray(data.metrics_history) ? data.metrics_history : [],
+  }
+}
+
 onMounted(async () => {
   try {
     const res = await api.get('/student/dashboard')
-    dashboard.value = res.data
+    dashboard.value = normalizeDashboard(res.data)
+  } catch (e) {
+    error.value = '대시보드 데이터를 불러오지 못했습니다.'
   } finally {
     loading.value = false
   }
 })
 
+const student = computed(() => dashboard.value?.student || {})
+const latestMetrics = computed(() => dashboard.value?.latest_metrics || {})
+const latestDelta = computed(() => dashboard.value?.latest_delta || {})
+const classAvg = computed(() => dashboard.value?.class_avg || {})
+const trend = computed(() => dashboard.value?.trend || [])
+const metricsHistory = computed(() => dashboard.value?.metrics_history || [])
+const recentAssignments = computed(() => dashboard.value?.recent_assignments || [])
+const hasAnyMetrics = computed(() => Object.values(latestMetrics.value).some((value) => value !== null && value !== undefined))
+const hasTrend = computed(() => trend.value.length > 0)
+const hasMetricHistory = computed(() => metricsHistory.value.length > 0)
+const hasRecentAssignments = computed(() => recentAssignments.value.length > 0)
+
 const lineConfig = computed(() => {
-  if (!dashboard.value) return null
-  const labels = dashboard.value.trend.map((t) => t.label)
+  if (!hasTrend.value) return null
+  const labels = trend.value.map((t) => t.label)
   return {
     type: 'line',
     data: {
@@ -41,7 +70,7 @@ const lineConfig = computed(() => {
       datasets: [
         {
           label: '나의 AIC',
-          data: dashboard.value.trend.map((t) => t.aic),
+          data: trend.value.map((t) => t.aic),
           borderColor: '#1E3A5F',
           backgroundColor: 'rgba(30,58,95,0.08)',
           tension: 0.3,
@@ -50,7 +79,7 @@ const lineConfig = computed(() => {
         },
         {
           label: '반 평균',
-          data: dashboard.value.trend.map((t) => t.class_avg),
+          data: trend.value.map((t) => t.class_avg),
           borderColor: '#94a3b8',
           borderDash: [5, 5],
           tension: 0.3,
@@ -68,16 +97,16 @@ const lineConfig = computed(() => {
 })
 
 const barConfig = computed(() => {
-  if (!dashboard.value) return null
-  const labels = dashboard.value.metrics_history.map((h) => h.label)
+  if (!hasMetricHistory.value) return null
+  const labels = metricsHistory.value.map((h) => h.label)
   return {
     type: 'bar',
     data: {
       labels,
       datasets: [
-        { label: 'PI', data: dashboard.value.metrics_history.map((h) => h.pi), backgroundColor: '#3B82F6' },
-        { label: 'UI', data: dashboard.value.metrics_history.map((h) => h.ui), backgroundColor: '#F97316' },
-        { label: 'OI', data: dashboard.value.metrics_history.map((h) => h.oi), backgroundColor: '#10B981' },
+        { label: 'PI', data: metricsHistory.value.map((h) => h.pi), backgroundColor: '#3B82F6' },
+        { label: 'UI', data: metricsHistory.value.map((h) => h.ui), backgroundColor: '#F97316' },
+        { label: 'OI', data: metricsHistory.value.map((h) => h.oi), backgroundColor: '#10B981' },
       ],
     },
     options: {
@@ -90,20 +119,25 @@ const barConfig = computed(() => {
 </script>
 
 <template>
-  <AppLayout title="내 대시보드" :subtitle="dashboard ? `${dashboard.student.class_code} 최신 분석` : ''">
+  <AppLayout title="내 대시보드" :subtitle="dashboard ? `${student.class_code || '소속 반'} 최신 분석` : ''">
     <div v-if="loading" class="loading-wrap">
       <LoadingSkeleton height="160px" />
       <LoadingSkeleton height="380px" />
     </div>
 
+    <div v-else-if="error" class="card card-body empty-state">
+      <strong>{{ error }}</strong>
+      <button class="btn btn-secondary btn-sm mt-4" type="button" @click="router.go(0)">다시 시도</button>
+    </div>
+
     <div v-else-if="dashboard">
       <div class="hero-banner">
         <div>
-          <div class="hero-greeting">안녕하세요, {{ dashboard.student.name }} 학생</div>
-          <div class="hero-sub">{{ dashboard.student.class_code }}</div>
+          <div class="hero-greeting">안녕하세요, {{ student.name || '학생' }}님</div>
+          <div class="hero-sub">{{ student.class_code || '반 정보 없음' }}</div>
         </div>
         <div class="hero-score">
-          <div class="score-big">{{ dashboard.latest_metrics.aic ?? '-' }}</div>
+          <div class="score-big">{{ latestMetrics.aic ?? '-' }}</div>
           <div class="score-label">AIC</div>
           <div v-if="dashboard.rank" class="score-rank">
             {{ dashboard.rank }}위 / {{ dashboard.total_students }}명
@@ -112,46 +146,50 @@ const barConfig = computed(() => {
       </div>
 
       <div class="kpi-grid">
-        <KpiCard label="AIC 종합" :value="dashboard.latest_metrics.aic" :delta="dashboard.latest_delta.aic" color="var(--color-aic)" />
-        <KpiCard label="PI" :value="dashboard.latest_metrics.pi" :delta="dashboard.latest_delta.pi" color="var(--color-pi)" />
-        <KpiCard label="UI" :value="dashboard.latest_metrics.ui" :delta="dashboard.latest_delta.ui" color="var(--color-ui)" />
-        <KpiCard label="OI" :value="dashboard.latest_metrics.oi" :delta="dashboard.latest_delta.oi" color="var(--color-oi)" />
-        <KpiCard label="Topic" :value="dashboard.latest_metrics.topic" color="var(--color-topic)" />
+        <KpiCard label="AIC 종합" :value="latestMetrics.aic" :delta="latestDelta.aic" color="var(--color-aic)" />
+        <KpiCard label="PI" :value="latestMetrics.pi" :delta="latestDelta.pi" color="var(--color-pi)" />
+        <KpiCard label="UI" :value="latestMetrics.ui" :delta="latestDelta.ui" color="var(--color-ui)" />
+        <KpiCard label="OI" :value="latestMetrics.oi" :delta="latestDelta.oi" color="var(--color-oi)" />
+        <KpiCard label="Topic" :value="latestMetrics.topic" color="var(--color-topic)" />
       </div>
 
-      <div class="chart-grid">
-        <div class="chart-card">
+      <div v-if="!hasAnyMetrics && !hasTrend && !hasRecentAssignments" class="card card-body empty-state">
+        아직 분석된 제출 데이터가 없습니다. 과제를 제출하면 이곳에 AIC 지표와 성장 추이가 표시됩니다.
+      </div>
+
+      <div class="grid-3 mb-4">
+        <div class="card card-body chart-card">
           <h3 class="chart-title">AIC 도넛</h3>
           <div class="donut-row">
-            <DonutChart :score="dashboard.latest_metrics.aic || 0" color="var(--color-aic)" label="AIC" :size="130" />
+            <DonutChart :score="latestMetrics.aic || 0" color="var(--color-aic)" label="AIC" :size="130" />
             <div class="donut-details">
               <div v-for="m in subMetrics" :key="m.key" class="metric-line">
                 <span class="dot" :style="{ background: m.color }"></span>
                 <span>{{ m.label }}</span>
-                <strong>{{ dashboard.latest_metrics[m.key] ?? '-' }}</strong>
+                <strong>{{ latestMetrics[m.key] ?? '-' }}</strong>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="chart-card">
+        <div class="card card-body chart-card">
           <h3 class="chart-title">나와 반 평균 비교</h3>
           <MetricBars
-            :pi="dashboard.latest_metrics.pi"
-            :ui="dashboard.latest_metrics.ui"
-            :oi="dashboard.latest_metrics.oi"
-            :topic="dashboard.latest_metrics.topic"
-            :compare-values="dashboard.class_avg"
+            :pi="latestMetrics.pi"
+            :ui="latestMetrics.ui"
+            :oi="latestMetrics.oi"
+            :topic="latestMetrics.topic"
+            :compare-values="classAvg"
           />
         </div>
 
-        <div class="chart-card">
+        <div class="card card-body chart-card">
           <h3 class="chart-title">최근 과제</h3>
-          <div class="recent-list">
+          <div v-if="hasRecentAssignments" class="recent-list">
             <div
-              v-for="a in dashboard.recent_assignments"
+              v-for="a in recentAssignments"
               :key="a.id"
-              class="recent-item"
+              class="interactive-row"
               @click="router.push(`/student/assignments/${a.id}`)"
             >
               <div class="recent-title">{{ a.title }}</div>
@@ -161,18 +199,21 @@ const barConfig = computed(() => {
               </div>
             </div>
           </div>
+          <div v-else class="empty-state compact">최근 과제가 없습니다.</div>
         </div>
       </div>
 
-      <div class="row-grid">
-        <div class="chart-card" v-if="lineConfig">
+      <div class="grid-2">
+        <div class="card card-body chart-card" v-if="lineConfig">
           <h3 class="chart-title">AIC 성장 추이</h3>
           <LineChart :config="lineConfig" />
         </div>
-        <div class="chart-card" v-if="barConfig">
+        <div v-else class="card card-body chart-card empty-state compact">성장 추이 데이터가 없습니다.</div>
+        <div class="card card-body chart-card" v-if="barConfig">
           <h3 class="chart-title">PI UI OI 추이</h3>
           <BarChart :config="barConfig" />
         </div>
+        <div v-else class="card card-body chart-card empty-state compact">세부 지표 추이 데이터가 없습니다.</div>
       </div>
     </div>
   </AppLayout>
@@ -219,34 +260,6 @@ const barConfig = computed(() => {
   opacity: 0.8;
 }
 
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-
-.chart-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-
-.row-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
-}
-
-.chart-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-xl);
-  padding: var(--space-5);
-  box-shadow: var(--shadow-sm);
-}
-
 .chart-title {
   font-size: var(--text-sm);
   font-weight: 600;
@@ -281,20 +294,7 @@ const barConfig = computed(() => {
 .recent-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-}
-
-.recent-item {
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
-}
-
-.recent-item:hover {
-  background: var(--color-gray-50);
-  border-color: var(--border-default);
+  gap: var(--space-2);
 }
 
 .recent-title {
@@ -311,13 +311,19 @@ const barConfig = computed(() => {
   color: var(--text-secondary);
 }
 
-@media (max-width: 1200px) {
-  .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.compact {
+  padding: var(--space-6);
+}
 
-  .chart-grid,
-  .row-grid {
+@media (max-width: 1200px) {
+  .hero-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-3 {
     grid-template-columns: 1fr;
   }
 }

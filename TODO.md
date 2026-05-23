@@ -32,12 +32,6 @@
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
-| Frontend | P1 | Ready | 프로토타입 디자인 시스템을 Vue 자산으로 이식 | `prototype/design-system.css`의 토큰, 레이아웃, 테이블, 배지, 차트 스타일이 `aic-frontend/src/assets/design-system.css`에 통합되고 중복/미사용 스타일이 정리됩니다. | 기존 CSS 변수명과 충돌 여부 확인 필요 |
-| Frontend | P1 | Ready | 공통 레이아웃을 프로토타입 기준으로 재구성 | `AppLayout.vue`, `AppSidebar.vue`, 공통 헤더/브레드크럼/모바일 사이드바가 프로토타입 UX와 동일하게 동작하고 역할별 메뉴가 현재 라우터와 연결됩니다. | 프론트엔드는 백엔드만 호출하고 pipeline 직접 호출 금지 |
-| Frontend | P1 | Ready | 로그인/랜딩 화면 이식 및 실제 인증 연결 유지 | `index.html`, `login.html`의 시각 구조가 Vue 화면으로 이식되고, 로그인은 `useAuthStore`와 `/auth/login`, `/auth/refresh`, `/auth/logout` 흐름을 그대로 사용합니다. | 데모 로그인 계정은 시드 데이터 기준으로만 유지 |
-| Frontend | P1 | Ready | 학생 대시보드 API 동적화 | `StudentDashboardView.vue`가 `/student/dashboard` 응답으로 AIC 도넛, KPI, 반 평균 비교, 최근 과제, 성장 차트를 렌더링하고 정적 점수 배열이 제거됩니다. | 빈 값/null 상태와 로딩/오류 상태 포함 |
-| Frontend | P1 | Ready | 학생 과제 목록/상세/제출 흐름 동적화 | `/student/assignments`, `/student/assignments/{id}`, `/submissions`, `/jobs/{job_uuid}/status`를 사용해 과제 목록, 제출 폼, 분석 대기/완료 폴링, 결과 차트를 구현합니다. | 기존 `useJobPoller.js` 재사용 |
-| Frontend | P1 | Ready | 학생 성장 분석 화면 동적화 | `StudentGrowthView.vue`가 `/student/growth` 응답으로 AIC/PI/UI/OI 추세, 반 평균 비교, 과제별 변화 시각화를 렌더링하고 하드코딩 배열을 제거합니다. | 프로토타입의 stacked area는 Chart.js 구현 가능성 확인 |
 | Frontend | P1 | Ready | 학생 피드백 화면 동적화 | `StudentFeedbackView.vue`가 `/student/feedback/{assignment_id}` 응답으로 교사 피드백과 자동 개선 가이드를 보여주고 과제 선택/이동 흐름을 제공합니다. | assignment id가 없는 진입 경로를 라우터에서 어떻게 처리할지 결정 필요 |
 | Frontend | P1 | Ready | 교사 대시보드 API 동적화 | `TeacherDashboardView.vue`가 `/teacher/dashboard` 응답으로 반 KPI, AIC 분포, 성장 추세, 위험군, 상위 학생을 렌더링하고 정적 차트 데이터를 제거합니다. | 분포 bucket 라벨은 backend 응답과 UI 표기 통일 |
 | Frontend | P1 | Ready | 교사 학생 목록 동적화 | `TeacherStudentsView.vue`가 `/teacher/students`의 `search`, `status`, `sort`, `page`, `per_page` 파라미터를 사용하고 검색/필터/정렬/페이지네이션을 API 기반으로 동작시킵니다. | 클라이언트 필터링 중복 제거 |
