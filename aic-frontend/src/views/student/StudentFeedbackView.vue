@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { api } from '@/api'
+import { getStudentAssignments, getStudentFeedback } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSkeleton from '@/components/common/LoadingSkeleton.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
@@ -63,8 +63,7 @@ async function loadAssignments() {
   assignmentsLoading.value = true
   assignmentsError.value = ''
   try {
-    const { data } = await api.get('/student/assignments')
-    assignments.value = Array.isArray(data.assignments) ? data.assignments : []
+    assignments.value = await getStudentAssignments()
   } catch {
     assignmentsError.value = '과제 목록을 불러오지 못했습니다.'
   } finally {
@@ -77,8 +76,7 @@ async function loadFeedback() {
   feedbackLoading.value = true
   feedbackError.value = ''
   try {
-    const { data } = await api.get(`/student/feedback/${assignmentId.value}`)
-    feedback.value = data
+    feedback.value = await getStudentFeedback(assignmentId.value)
   } catch {
     feedbackError.value = '피드백을 불러오지 못했습니다.'
   } finally {

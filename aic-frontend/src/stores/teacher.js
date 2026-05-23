@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { api } from '@/api'
+import { getTeacherDashboard, getTeacherStudents } from '@/api'
 
 export const useTeacherStore = defineStore('teacher', {
   state: () => ({
@@ -9,13 +9,12 @@ export const useTeacherStore = defineStore('teacher', {
   }),
   actions: {
     async fetchDashboard() {
-      const { data } = await api.get('/teacher/dashboard')
+      const data = await getTeacherDashboard()
       this.dashboard = data
       this.riskCount = data.risk_count || 0
     },
     async fetchStudents(params = {}) {
-      const { data } = await api.get('/teacher/students', { params })
-      this.studentList = data
+      this.studentList = await getTeacherStudents(params)
     },
   },
 })

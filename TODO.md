@@ -32,10 +32,7 @@
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
-| Backend | P1 | Blocked | 프론트 이식에 부족한 API 계약 보강 여부 결정 | 프로토타입 화면 중 현재 API로 표현할 수 없는 데이터가 목록화되고, 백엔드 추가 API 또는 프론트 표시 축소 중 하나가 결정됩니다. | 후보: 교사용 과제 목록, assignment별 상세 분포/IQR, 군집, effort-score, 초안 유사도 |
-| Frontend | P1 | Ready | API 어댑터/정규화 레이어 정리 | `src/api/index.js`를 통해서만 요청하고, 화면에서 반복되는 응답 변환은 Pinia store action 또는 composable로 모읍니다. | per-view Axios 인스턴스 생성 금지 |
-| Frontend | P1 | Ready | 차트 컴포넌트 재사용 구조 확정 | 기존 `components/charts/*`, `useChart.js`, 공통 KPI/배지 컴포넌트를 프로토타입 화면에 맞게 재사용하거나 확장합니다. | Chart.js 생명주기 중복 구현 금지 |
-| Frontend | P1 | Ready | 로딩/빈 데이터/오류 상태를 전 화면에 반영 | 모든 API 화면이 skeleton 또는 명확한 empty/error 상태를 표시하고, 인증 만료는 기존 interceptor 흐름으로 로그인 화면에 복귀합니다. | null metric, 미제출 과제, 분석 대기 job 포함 |
+| Frontend | P1 | Ready | 교사 과제 분석 네비게이션 동적화 | 사이드바/과제 분석 화면이 하드코딩된 `/teacher/analytics/assignment/1` 대신 backend 과제 목록을 사용하고, 과제가 없으면 명확한 empty state를 표시합니다. | backend 과제 목록 API 필요 |
 | Frontend | P1 | Ready | 반응형 UI 검증 | 학생/교사 핵심 화면이 모바일과 데스크톱에서 겹침 없이 표시되고 사이드바 토글, 표 스크롤, 차트 크기가 안정적으로 동작합니다. | 최소 375px, 768px, 1440px 확인 |
 | Full Stack | P1 | Ready | Docker 통합 스모크 테스트 | `docker compose up --build` 기준으로 로그인, 학생 대시보드, 제출/분석 폴링, 교사 대시보드, 학생 상세, 피드백 작성이 동작합니다. | backend/pipeline/db 서비스 경계 유지 |
 
@@ -49,4 +46,3 @@
 ## 열린 질문
 
 - 기존 `aic-frontend/src/views/**`를 전면 교체할지, 화면별로 프로토타입 UX를 점진 반영할지 결정이 필요합니다.
-- 프로토타입의 고급 분석 요소 중 군집, effort-score, 초안 유사도, box plot/IQR 데이터를 어떤 API 계약으로 교체할지 결정이 필요합니다.

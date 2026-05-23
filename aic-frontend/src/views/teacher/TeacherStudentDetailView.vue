@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { api } from '@/api'
+import { getTeacherStudentDetail, saveTeacherFeedback } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import MetricBars from '@/components/common/MetricBars.vue'
 import LineChart from '@/components/charts/LineChart.vue'
@@ -25,14 +25,8 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get(`/teacher/students/${studentId}`)
-    detail.value = {
-      ...data,
-      trend: Array.isArray(data.trend) ? data.trend : [],
-      assignments: Array.isArray(data.assignments) ? data.assignments : [],
-      weak_metrics: Array.isArray(data.weak_metrics) ? data.weak_metrics : [],
-      latest_metrics: data.latest_metrics || {},
-    }
+    const data = await getTeacherStudentDetail(studentId)
+    detail.value = data
     const assignments = detail.value.assignments
     const latest = assignments[assignments.length - 1]
     selectedAssignmentId.value = selectedAssignmentId.value || (latest?.id ? String(latest.id) : '')
@@ -51,7 +45,7 @@ async function saveFeedback() {
   error.value = ''
   saveMessage.value = ''
   try {
-    await api.post('/teacher/feedback', {
+    await saveTeacherFeedback({
       assignment_id: Number(selectedAssignmentId.value),
       student_id: studentId,
       content: feedbackText.value.trim(),

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '@/api'
+import { getTeacherRiskStudents } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import ScatterChart from '@/components/charts/ScatterChart.vue'
@@ -19,8 +19,7 @@ async function loadRiskStudents() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get('/teacher/risk-students')
-    riskStudents.value = Array.isArray(data.risk_students) ? data.risk_students : []
+    riskStudents.value = await getTeacherRiskStudents()
   } catch (err) {
     riskStudents.value = []
     error.value = err.response?.data?.detail || '위험군 학생 목록을 불러오지 못했습니다.'

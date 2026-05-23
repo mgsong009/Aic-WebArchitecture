@@ -64,6 +64,42 @@ async def get_submission_counts_for_class(class_id: int, db: AsyncSession):
     return {student_id: count for student_id, count in result.all()}
 
 
+async def get_teacher_assignments(class_id: int, db: AsyncSession):
+    submission_counts = (
+        select(
+            Submission.assignment_id.label("assignment_id"),
+            func.count(Submission.id).label("submission_count"),
+        )
+        .group_by(Submission.assignment_id)
+        .subquery()
+    )
+    analyzed_counts = (
+        select(
+            Submission.assignment_id.label("assignment_id"),
+            func.count(Metric.id).label("analyzed_submission_count"),
+        )
+        .join(Metric, Metric.submission_id == Submission.id)
+        .group_by(Submission.assignment_id)
+        .subquery()
+    )
+
+    result = await db.execute(
+        select(
+            Assignment.id,
+            Assignment.title,
+            Assignment.course_code,
+            Assignment.due_date,
+            func.coalesce(submission_counts.c.submission_count, 0).label("submission_count"),
+            func.coalesce(analyzed_counts.c.analyzed_submission_count, 0).label("analyzed_submission_count"),
+        )
+        .outerjoin(submission_counts, submission_counts.c.assignment_id == Assignment.id)
+        .outerjoin(analyzed_counts, analyzed_counts.c.assignment_id == Assignment.id)
+        .where(Assignment.class_id == class_id)
+        .order_by(Assignment.due_date.asc(), Assignment.created_at.asc(), Assignment.id.asc())
+    )
+    return result.mappings().all()
+
+
 async def get_all_student_latest_metrics(class_id: int, db: AsyncSession):
     # Get the latest assignment per class
     asgn_result = await db.execute(

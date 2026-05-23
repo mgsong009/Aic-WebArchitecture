@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '@/api'
+import { getStudentDashboard } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import KpiCard from '@/components/common/KpiCard.vue'
 import DonutChart from '@/components/common/DonutChart.vue'
@@ -23,24 +23,9 @@ const subMetrics = [
   { key: 'topic', label: 'Topic', color: '#8B5CF6' },
 ]
 
-function normalizeDashboard(data = {}) {
-  return {
-    student: data.student || {},
-    latest_metrics: data.latest_metrics || {},
-    latest_delta: data.latest_delta || {},
-    class_avg: data.class_avg || {},
-    rank: data.rank ?? null,
-    total_students: data.total_students ?? 0,
-    trend: Array.isArray(data.trend) ? data.trend : [],
-    recent_assignments: Array.isArray(data.recent_assignments) ? data.recent_assignments : [],
-    metrics_history: Array.isArray(data.metrics_history) ? data.metrics_history : [],
-  }
-}
-
 onMounted(async () => {
   try {
-    const res = await api.get('/student/dashboard')
-    dashboard.value = normalizeDashboard(res.data)
+    dashboard.value = await getStudentDashboard()
   } catch (e) {
     error.value = '대시보드 데이터를 불러오지 못했습니다.'
   } finally {

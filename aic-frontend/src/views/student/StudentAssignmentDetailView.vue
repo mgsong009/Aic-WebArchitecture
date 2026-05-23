@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { api } from '@/api'
+import { getStudentAssignmentDetail, submitStudentSubmission } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import MetricBars from '@/components/common/MetricBars.vue'
 import LoadingSkeleton from '@/components/common/LoadingSkeleton.vue'
@@ -50,7 +50,7 @@ async function load() {
   loading.value = true
   loadError.value = ''
   try {
-    const { data } = await api.get(`/student/assignments/${assignmentId}`)
+    const data = await getStudentAssignmentDetail(assignmentId)
     payload.value = data
     if (data.submission) {
       form.value = {
@@ -80,7 +80,7 @@ async function submitEssay() {
   }
   submitting.value = true
   try {
-    const { data } = await api.post('/submissions', body)
+    const data = await submitStudentSubmission(body)
     await startPolling(data.job_id)
   } catch {
     submitError.value = '제출을 저장하지 못했습니다.'

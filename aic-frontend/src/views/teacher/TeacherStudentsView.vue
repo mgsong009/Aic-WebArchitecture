@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '@/api'
+import { getTeacherStudents } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 
@@ -31,17 +31,15 @@ async function fetchStudents() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get('/teacher/students', {
-      params: {
-        search: filters.value.search,
-        status: filters.value.status,
-        sort: filters.value.sort,
-        page: page.value,
-        per_page: perPage.value,
-      },
+    const data = await getTeacherStudents({
+      search: filters.value.search,
+      status: filters.value.status,
+      sort: filters.value.sort,
+      page: page.value,
+      per_page: perPage.value,
     })
-    rows.value = Array.isArray(data.students) ? data.students : []
-    total.value = Number(data.total || 0)
+    rows.value = data.students
+    total.value = data.total
     if (page.value > totalPages.value) {
       page.value = totalPages.value
       await fetchStudents()

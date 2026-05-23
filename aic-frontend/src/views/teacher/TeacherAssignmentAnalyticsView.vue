@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { api } from '@/api'
+import { getTeacherAssignmentAnalytics } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 
@@ -28,16 +28,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get(`/teacher/analytics/assignment/${assignmentId.value}`)
-    analytics.value = {
-      ...data,
-      assignment: data.assignment || { id: assignmentId.value, title: `과제 ${assignmentId.value}` },
-      class_avg: data.class_avg || {},
-      distribution: Array.isArray(data.distribution) ? data.distribution : [],
-      top5: Array.isArray(data.top5) ? data.top5 : [],
-      bottom5: Array.isArray(data.bottom5) ? data.bottom5 : [],
-      difficulty: Number(data.difficulty || 0),
-    }
+    analytics.value = await getTeacherAssignmentAnalytics(assignmentId.value)
   } catch (err) {
     analytics.value = null
     error.value = err.response?.data?.detail || '과제 분석 데이터를 불러오지 못했습니다.'

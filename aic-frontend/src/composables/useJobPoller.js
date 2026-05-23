@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { api } from '@/api'
+import { getJobStatus } from '@/api'
 
 export function useJobPoller() {
   const status = ref('idle')
@@ -14,7 +14,7 @@ export function useJobPoller() {
 
     intervalId = setInterval(async () => {
       try {
-        const { data } = await api.get(`/jobs/${jobId}/status`)
+        const data = await getJobStatus(jobId)
         status.value = data.status
         if (data.status === 'done') {
           metrics.value = data.metrics

@@ -4,7 +4,7 @@ from sqlalchemy import select, func
 from app.database import get_db
 from app.dependencies import require_role
 from app.models.db_models import User, Assignment, Submission, Metric, ClassEnrollment
-from app.schemas.teacher import FeedbackCreate, FeedbackCreated
+from app.schemas.teacher import FeedbackCreate, FeedbackCreated, TeacherAssignmentList
 from app.services import teacher_service as svc
 
 router = APIRouter()
@@ -134,6 +134,28 @@ async def teacher_students(
     total = len(students)
     start = (page - 1) * per_page
     return {"total": total, "students": students[start: start + per_page]}
+
+
+@router.get("/assignments", response_model=TeacherAssignmentList)
+async def teacher_assignments(user: dict = Depends(teacher_only), db: AsyncSession = Depends(get_db)):
+    cls = await svc.get_teacher_class(user["id"], db)
+    if not cls:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    rows = await svc.get_teacher_assignments(cls.id, db)
+    assignments = []
+    for row in rows:
+        due_date = row["due_date"].strftime("%Y-%m-%dT%H:%M:%S") if row["due_date"] else None
+        assignments.append({
+            "id": row["id"],
+            "title": row["title"],
+            "course_code": row["course_code"],
+            "due_date": due_date,
+            "submission_count": int(row["submission_count"] or 0),
+            "analyzed_submission_count": int(row["analyzed_submission_count"] or 0),
+        })
+
+    return {"assignments": assignments}
 
 
 @router.get("/students/{student_id}")

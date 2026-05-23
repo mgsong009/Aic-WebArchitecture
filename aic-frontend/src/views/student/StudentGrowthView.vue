@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { api } from '@/api'
+import { getStudentGrowth } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import LoadingSkeleton from '@/components/common/LoadingSkeleton.vue'
 import LineChart from '@/components/charts/LineChart.vue'
@@ -21,19 +21,11 @@ onMounted(async () => {
   await loadGrowth()
 })
 
-function normalizeGrowth(data = {}) {
-  return {
-    assignments: Array.isArray(data.assignments) ? data.assignments : [],
-    class_avg_trend: Array.isArray(data.class_avg_trend) ? data.class_avg_trend : [],
-  }
-}
-
 async function loadGrowth() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get('/student/growth')
-    growth.value = normalizeGrowth(data)
+    growth.value = await getStudentGrowth()
   } catch {
     error.value = '성장 분석 데이터를 불러오지 못했습니다.'
   } finally {

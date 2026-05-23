@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { api } from '@/api'
+import { getTeacherAdvancedAnalytics } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 import ScatterChart from '@/components/charts/ScatterChart.vue'
@@ -47,11 +47,9 @@ async function loadAdvancedAnalytics() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get('/teacher/analytics/advanced')
-    scatterData.value = Array.isArray(data.scatter_data) ? data.scatter_data : []
-    correlationMatrix.value = data.correlation_matrix && typeof data.correlation_matrix === 'object'
-      ? data.correlation_matrix
-      : {}
+    const data = await getTeacherAdvancedAnalytics()
+    scatterData.value = data.scatter_data
+    correlationMatrix.value = data.correlation_matrix
   } catch (err) {
     scatterData.value = []
     correlationMatrix.value = {}

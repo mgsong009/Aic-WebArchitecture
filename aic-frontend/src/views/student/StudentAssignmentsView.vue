@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '@/api'
+import { getStudentAssignments } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import LoadingSkeleton from '@/components/common/LoadingSkeleton.vue'
@@ -21,8 +21,7 @@ async function loadAssignments() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get('/student/assignments')
-    assignments.value = Array.isArray(data.assignments) ? data.assignments : []
+    assignments.value = await getStudentAssignments()
   } catch {
     error.value = '과제 목록을 불러오지 못했습니다.'
   } finally {

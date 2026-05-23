@@ -18,17 +18,17 @@ const distributionLabels = ['<40', '40-49', '50-59', '60-69', '70-79', '80-89', 
 const dashboard = computed(() => teacherStore.dashboard || null)
 const cls = computed(() => dashboard.value?.cls || {})
 const classAvg = computed(() => dashboard.value?.class_avg || {})
-const trend = computed(() => Array.isArray(dashboard.value?.trend) ? dashboard.value.trend : [])
+const trend = computed(() => dashboard.value?.trend || [])
 const distribution = computed(() =>
-  Array.isArray(dashboard.value?.aic_distribution)
+  dashboard.value?.aic_distribution
     ? distributionLabels.map((_, index) => Number(dashboard.value.aic_distribution[index] || 0))
     : []
 )
 const riskStudents = computed(() =>
-  Array.isArray(dashboard.value?.risk_students) ? dashboard.value.risk_students : []
+  dashboard.value?.risk_students || []
 )
 const topStudents = computed(() =>
-  Array.isArray(dashboard.value?.top_students) ? dashboard.value.top_students : []
+  dashboard.value?.top_students || []
 )
 const hasTrend = computed(() => trend.value.some((point) => point.aic !== null || point.pi !== null))
 const hasDistribution = computed(() => distribution.value.some((count) => count > 0))
