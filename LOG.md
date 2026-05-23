@@ -35,6 +35,7 @@
 | Frontend | `StudentGrowthView.vue`를 reference `student-growth.html` 흐름에 맞춰 확장했습니다. 성장 히어로 4개 통계, 헤더 기간 필터와 CSV 내보내기, 내 AIC/반 평균 비교, PI/UI/OI 변화, 최신 지표 구성, 누적 면적 차트, 최신 프로파일, 동적 성장 인사이트를 실제 `/student/growth` 데이터 기반으로 렌더링합니다. | `npm.cmd run build` 성공. | 학생 피드백 화면 reference 동일성 작업을 이어갑니다. |
 | Frontend | `StudentFeedbackView.vue`를 reference `student-feedback.html` 흐름에 맞춰 확장했습니다. 과제 선택 UX를 유지하면서 선택된 과제에는 피드백 히어로, PI/UI/OI 지표별 가이드 카드, 교사 피드백 이력 형태, 다음 과제 체크리스트, 자동 강점/개선/실행 팁 섹션을 실제 `/student/assignments`와 `/student/feedback/{assignment_id}` 데이터 기반으로 렌더링합니다. | `npm.cmd run build` 성공. | 교사 기본 화면 reference 동일성 작업을 이어갑니다. |
 | Frontend | `TeacherDashboardView.vue`, `TeacherStudentsView.vue`, `TeacherStudentDetailView.vue`를 reference 교사 기본 화면 흐름에 맞춰 확장했습니다. 대시보드의 수업 요약/KPI/분포/추이/위험군/상하위 학생, 학생 목록의 요약 KPI/검색/필터/표/페이지네이션, 학생 상세의 프로필/도넛/취약 지표/성장 추이/과제 이력/피드백 작성 및 이력 UI를 구현하고, API 데이터가 없을 때만 reference fallback 데이터를 사용하도록 분리했습니다. | `npm.cmd run build` 성공. | 교사 분석 화면 reference 동일성 작업을 이어갑니다. |
+| Frontend | `TeacherRiskView.vue`, `TeacherAssignmentAnalyticsView.vue`, `TeacherAdvancedView.vue`를 reference 교사 분석 화면 흐름에 맞춰 재구성했습니다. 위험군 히어로/학생 카드/Effort-AI 의존도 산점도/위험군 비교 차트, 과제별 KPI/평균/분포/지표/편차/상세 표, 심화 분석 히어로/군집/전략 유형/상관 히트맵/Effort/Topic/유사도 카드를 구현하고 API가 없는 분석 데이터는 `teacherReferenceData.js` fallback으로 분리했습니다. | `npm.cmd run build` 성공. Vite dev server에서 `/teacher/risk` HTTP 200 응답 확인. Browser 플러그인은 Windows sandbox 초기화 오류로 캡처하지 못했습니다. | reference 동일성 검증 절차 문서화를 이어갑니다. |
 
 ## 2026-05-23
 

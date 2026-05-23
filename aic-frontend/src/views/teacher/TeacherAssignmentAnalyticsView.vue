@@ -1,383 +1,248 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getTeacherAssignmentAnalytics } from '@/api'
-import { useTeacherStore } from '@/stores/teacher'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BarChart from '@/components/charts/BarChart.vue'
+import { referenceAssignments } from './teacherReferenceData'
 
 const route = useRoute()
 const router = useRouter()
-const teacherStore = useTeacherStore()
-const assignmentId = ref(route.params.id ? Number(route.params.id) : null)
 const loading = ref(true)
 const error = ref('')
-const assignmentError = ref('')
-const analytics = ref(null)
-const assignments = computed(() => teacherStore.assignments)
-const hasAssignments = computed(() => assignments.value.length > 0)
-const selectedAssignmentId = computed({
-  get: () => assignmentId.value ? String(assignmentId.value) : '',
-  set: (nextId) => {
-    if (nextId) {
-      router.push(`/teacher/analytics/assignment/${nextId}`)
-    }
-  },
-})
+const selectedLabel = ref(route.params.id ? `A${route.params.id}` : 'ALL')
+const assignmentRows = ref(referenceAssignments)
+const selectedAnalytics = ref(null)
 
-watch(
-  () => route.params.id,
-  async (nextId) => {
-    assignmentId.value = nextId ? Number(nextId) : teacherStore.firstAssignmentId
-    await load()
-  },
-)
-
-onMounted(async () => {
-  await loadAssignments()
-  if (!assignmentId.value && teacherStore.firstAssignmentId) {
-    router.replace(`/teacher/analytics/assignment/${teacherStore.firstAssignmentId}`)
-    return
-  }
-  await load()
-})
-
-async function loadAssignments() {
-  assignmentError.value = ''
-  try {
-    if (!teacherStore.assignments.length) {
-      await teacherStore.fetchAssignments()
-    }
-  } catch (err) {
-    assignmentError.value = err.response?.data?.detail || '과제 목록을 불러오지 못했습니다.'
-  }
-}
+onMounted(load)
 
 async function load() {
-  if (!assignmentId.value) {
-    analytics.value = null
+  loading.value = true
+  error.value = ''
+  selectedAnalytics.value = null
+  if (!route.params.id) {
     loading.value = false
     return
   }
-  loading.value = true
-  error.value = ''
   try {
-    analytics.value = await getTeacherAssignmentAnalytics(assignmentId.value)
+    selectedAnalytics.value = await getTeacherAssignmentAnalytics(Number(route.params.id))
   } catch (err) {
-    analytics.value = null
-    error.value = err.response?.data?.detail || '과제 분석 데이터를 불러오지 못했습니다.'
+    error.value = err.response?.data?.detail || '과제별 API 데이터 대신 reference 비교 fallback을 표시합니다.'
   } finally {
     loading.value = false
   }
 }
 
-const distributionConfig = computed(() => {
-  if (!analytics.value?.distribution?.length) return null
-  return {
-    type: 'bar',
-    data: {
-      labels: ['<40', '40-49', '50-59', '60-69', '70-79', '80-89', '90+'],
-      datasets: [
-        {
-          label: '학생 수',
-          data: analytics.value.distribution,
-          backgroundColor: ['#EF4444', '#F97316', '#F59E0B', '#EAB308', '#3B82F6', '#10B981', '#1E3A5F'],
-          borderRadius: 6,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: { beginAtZero: true, ticks: { precision: 0 } },
-      },
-      plugins: {
-        legend: { display: false },
-      },
-    },
+function handleFilter(next) {
+  selectedLabel.value = next
+  if (next === 'ALL') {
+    router.push('/teacher/analytics/assignment')
+  } else {
+    router.push(`/teacher/analytics/assignment/${next.replace('A', '')}`)
   }
-})
-
-const metricCards = computed(() => {
-  const avg = analytics.value?.class_avg || {}
-  return [
-    { key: 'aic', label: 'AIC 평균', value: avg.aic, className: 'aic-card' },
-    { key: 'pi', label: 'PI 평균', value: avg.pi, className: 'pi-card' },
-    { key: 'ui', label: 'UI 평균', value: avg.ui, className: 'ui-card' },
-    { key: 'oi', label: 'OI 평균', value: avg.oi, className: 'oi-card' },
-  ]
-})
-
-const difficultyPercent = computed(() => Math.round((analytics.value?.difficulty || 0) * 100))
-
-function scoreText(score) {
-  return score ?? '-'
 }
 
-function formatDate(value) {
-  if (!value) return '마감일 없음'
-  return new Date(value).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
+const rows = computed(() => assignmentRows.value)
+const labels = computed(() => rows.value.map((row) => row.label))
+const averageAic = computed(() => rows.value.reduce((sum, row) => sum + row.aic, 0) / rows.value.length)
+const hardest = computed(() => rows.value.reduce((lowest, row) => row.aic < lowest.aic ? row : lowest, rows.value[0]))
+const easiest = computed(() => rows.value.reduce((highest, row) => row.aic > highest.aic ? row : highest, rows.value[0]))
+const averageDeviation = computed(() => rows.value.reduce((sum, row) => sum + row.deviation, 0) / rows.value.length)
+
+const statCards = computed(() => [
+  { label: '총 과제 수', value: rows.value.length, sub: `${labels.value[0]}~${labels.value.at(-1)}` },
+  { label: '전체 평균 AIC', value: averageAic.value.toFixed(1), sub: `${rows.value.length}개 과제 평균`, tone: 'aic' },
+  { label: '최고 난이도', value: hardest.value.label, sub: `평균 AIC ${hardest.value.aic} (최저)`, tone: 'danger' },
+  { label: '최저 난이도', value: easiest.value.label, sub: `평균 AIC ${easiest.value.aic} (최고)`, tone: 'success' },
+  { label: '평균 표준편차', value: averageDeviation.value.toFixed(1), sub: 'AIC 분포 폭' },
+])
+
+const avgAicConfig = computed(() => ({
+  type: 'bar',
+  data: {
+    labels: labels.value,
+    datasets: [{
+      label: '평균 AIC',
+      data: rows.value.map((row) => row.aic),
+      backgroundColor: rows.value.map((row) => row.aic < 61 ? 'rgba(239,68,68,0.7)' : row.aic < 65 ? 'rgba(249,115,22,0.7)' : 'rgba(30,58,95,0.7)'),
+      borderRadius: 6,
+    }],
+  },
+  options: chartOptions({ min: 50, max: 75, legend: false }),
+}))
+
+const boxConfig = computed(() => ({
+  type: 'bar',
+  data: {
+    labels: labels.value,
+    datasets: [
+      { label: 'IQR (25-75)', data: rows.value.map((row) => [row.q1, row.q3]), backgroundColor: 'rgba(59,130,246,0.3)', borderColor: '#3B82F6', borderWidth: 1.5, borderRadius: 4 },
+      { label: '중앙값', data: rows.value.map((row) => [row.median - 1, row.median + 1]), backgroundColor: '#1E3A5F', borderRadius: 2 },
+    ],
+  },
+  options: chartOptions({ min: 30, max: 90 }),
+}))
+
+const metricsConfig = computed(() => ({
+  type: 'bar',
+  data: {
+    labels: labels.value,
+    datasets: [
+      { label: 'PI', data: rows.value.map((row) => row.pi), backgroundColor: 'rgba(59,130,246,0.75)', borderRadius: 4 },
+      { label: 'UI', data: rows.value.map((row) => row.ui), backgroundColor: 'rgba(249,115,22,0.75)', borderRadius: 4 },
+      { label: 'OI', data: rows.value.map((row) => row.oi), backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 4 },
+    ],
+  },
+  options: chartOptions({ min: 50, max: 80 }),
+}))
+
+const deviationConfig = computed(() => ({
+  type: 'line',
+  data: {
+    labels: labels.value,
+    datasets: [{
+      label: '표준편차',
+      data: rows.value.map((row) => row.deviation),
+      borderColor: '#8B5CF6',
+      backgroundColor: 'rgba(139,92,246,0.1)',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2.5,
+      pointBackgroundColor: '#8B5CF6',
+      pointRadius: 5,
+    }],
+  },
+  options: chartOptions({ min: 10, max: 20 }),
+}))
+
+function chartOptions({ min, max, legend = true }) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: legend, position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } },
+    scales: {
+      y: { min, max, grid: { color: '#F3F4F6' }, ticks: { font: { size: 10 } } },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+    },
+  }
+}
+
+function difficultyClass(value) {
+  return value === '어려움' ? 'badge-danger' : value === '쉬움' ? 'badge-success' : 'badge-warning'
 }
 </script>
 
 <template>
-  <AppLayout title="과제 분석" :subtitle="analytics?.assignment?.title || ''">
-    <section class="card selector-card">
-      <div class="card-heading">
-        <div>
-          <h3>분석 과제</h3>
-          <span class="muted-row">과제별 제출 및 분석 현황</span>
-        </div>
-        <button class="btn btn-secondary btn-sm" type="button" @click="loadAssignments">새로고침</button>
-      </div>
-      <div v-if="assignmentError" class="alert alert-danger">
-        <span>{{ assignmentError }}</span>
-      </div>
-      <div v-else-if="!hasAssignments" class="empty-state compact">
-        분석할 과제가 없습니다.
-      </div>
-      <div v-else class="assignment-selector">
-        <select v-model="selectedAssignmentId" class="form-control" aria-label="분석 과제 선택">
-          <option v-for="assignment in assignments" :key="assignment.id" :value="String(assignment.id)">
-            {{ assignment.title }}
-          </option>
-        </select>
-        <div class="assignment-meta">
-          <span
-            v-for="assignment in assignments"
-            v-show="String(assignment.id) === selectedAssignmentId"
-            :key="`meta-${assignment.id}`"
-          >
-            {{ assignment.course_code || '코드 없음' }} · {{ formatDate(assignment.due_date) }} ·
-            제출 {{ assignment.submission_count }}명 · 분석 {{ assignment.analyzed_submission_count }}명
-          </span>
-        </div>
-      </div>
-    </section>
+  <AppLayout title="과제 분석" subtitle="CS101 · Assignment #1~#5 분포 및 난이도 분석">
+    <template #actions>
+      <select class="header-select" :value="selectedLabel" @change="handleFilter($event.target.value)">
+        <option value="ALL">CS101 전체</option>
+        <option v-for="row in rows" :key="row.label" :value="row.label">{{ row.label }} · {{ row.title }}</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" type="button">내보내기</button>
+    </template>
 
+    <div v-if="error" class="alert alert-warning mb-4">{{ error }}</div>
     <div v-if="loading" class="card loading-state">불러오는 중...</div>
 
-    <div v-else-if="error" class="card">
-      <div class="alert alert-danger">
-        <span>{{ error }}</span>
-        <button class="btn btn-secondary btn-sm" type="button" @click="load">다시 시도</button>
-      </div>
-      <div class="actions">
-        <button class="btn btn-secondary" type="button" @click="router.push('/teacher/dashboard')">대시보드</button>
-      </div>
-    </div>
-
-    <div v-else-if="analytics" class="analytics-stack">
-      <div class="kpi-grid">
-        <div v-for="metric in metricCards" :key="metric.key" class="kpi-card" :class="metric.className">
-          <div class="kpi-label">{{ metric.label }}</div>
-          <div class="kpi-value">{{ scoreText(metric.value) }}</div>
-        </div>
-        <div class="kpi-card topic-card">
-          <div class="kpi-label">난이도 지표</div>
-          <div class="kpi-value">{{ difficultyPercent }}%</div>
+    <div v-else>
+      <div class="assign-stat-grid">
+        <div v-for="card in statCards" :key="card.label" class="assign-stat-card">
+          <div class="asc-label">{{ card.label }}</div>
+          <div class="asc-val" :class="card.tone">{{ card.value }}</div>
+          <div class="asc-sub">{{ card.sub }}</div>
         </div>
       </div>
 
-      <div class="grid">
+      <div class="grid-2 section-gap">
         <section class="card">
-          <div class="card-heading">
-            <h3>AIC 분포</h3>
-            <span class="muted-row">점수 구간별 제출 학생 수</span>
-          </div>
-          <div v-if="distributionConfig" class="chart-box">
-            <BarChart :config="distributionConfig" />
-          </div>
-          <div v-else class="empty-state compact">분포 데이터가 없습니다.</div>
+          <div class="card-header"><div><div class="card-title">과제별 평균 AIC</div><div class="card-subtitle">A1~A5 비교</div></div></div>
+          <div class="card-body"><div class="chart-box"><BarChart :config="avgAicConfig" /></div></div>
         </section>
-
         <section class="card">
-          <div class="card-heading">
-            <h3>난이도 해석</h3>
-          </div>
-          <div class="difficulty">
-            <div class="difficulty-value">{{ difficultyPercent }}%</div>
-            <div class="difficulty-track">
-              <div class="difficulty-fill" :style="{ width: `${difficultyPercent}%` }"></div>
-            </div>
-            <p class="muted-row">AIC 평균이 낮을수록 난이도 지표가 높아집니다.</p>
-          </div>
+          <div class="card-header"><div><div class="card-title">과제별 분포 (Box Plot)</div><div class="card-subtitle">최솟값, 25th, 중앙값, 75th, 최댓값</div></div></div>
+          <div class="card-body"><div class="chart-box"><BarChart :config="boxConfig" /></div></div>
         </section>
       </div>
 
-      <div class="grid">
+      <div class="grid-2 section-gap">
         <section class="card">
-          <div class="card-heading">
-            <h3>상위 5명</h3>
-          </div>
-          <div v-if="!analytics.top5.length" class="empty-state compact">상위 학생 데이터가 없습니다.</div>
-          <div v-else class="rank-list">
-            <div v-for="(s, index) in analytics.top5" :key="`${s.name}-${index}`" class="rank-row">
-              <span>{{ index + 1 }}</span>
-              <strong>{{ s.name }}</strong>
-              <em>{{ scoreText(s.aic) }}</em>
-            </div>
-          </div>
+          <div class="card-header"><div><div class="card-title">과제별 PI / UI / OI 평균</div></div></div>
+          <div class="card-body"><div class="chart-box"><BarChart :config="metricsConfig" /></div></div>
         </section>
-
         <section class="card">
-          <div class="card-heading">
-            <h3>하위 5명</h3>
-          </div>
-          <div v-if="!analytics.bottom5.length" class="empty-state compact">하위 학생 데이터가 없습니다.</div>
-          <div v-else class="rank-list">
-            <div v-for="(s, index) in analytics.bottom5" :key="`${s.name}-${index}`" class="rank-row">
-              <span>{{ index + 1 }}</span>
-              <strong>{{ s.name }}</strong>
-              <em>{{ scoreText(s.aic) }}</em>
-            </div>
-          </div>
+          <div class="card-header"><div><div class="card-title">과제별 편차</div><div class="card-subtitle">표준편차 시각화</div></div></div>
+          <div class="card-body"><div class="chart-box"><BarChart :config="deviationConfig" /></div></div>
         </section>
       </div>
 
-      <div class="actions">
-        <button class="btn btn-secondary" type="button" @click="router.push('/teacher/dashboard')">대시보드</button>
-      </div>
-    </div>
+      <section v-if="selectedAnalytics" class="card section-gap">
+        <div class="card-header"><div><div class="card-title">선택 과제 API 요약</div><div class="card-subtitle">{{ selectedAnalytics.assignment.title }}</div></div></div>
+        <div class="api-summary">
+          <div>AIC 평균 <strong>{{ selectedAnalytics.class_avg.aic ?? '-' }}</strong></div>
+          <div>난이도 <strong>{{ Math.round((selectedAnalytics.difficulty || 0) * 100) }}%</strong></div>
+          <div>상위 {{ selectedAnalytics.top5.length }}명 · 하위 {{ selectedAnalytics.bottom5.length }}명</div>
+        </div>
+      </section>
 
-    <div v-else-if="!assignmentError" class="card">
-      <div class="empty-state">선택된 과제가 없습니다.</div>
-      <div class="actions">
-        <button class="btn btn-secondary" type="button" @click="router.push('/teacher/dashboard')">대시보드</button>
-      </div>
+      <section class="card section-gap">
+        <div class="card-header"><div><div class="card-title">과제별 상세 요약</div></div></div>
+        <div class="table-scroll">
+          <table class="assign-compare-table">
+            <thead>
+              <tr>
+                <th>과제</th><th>주제</th><th>평균 AIC</th><th>평균 PI</th><th>평균 UI</th><th>평균 OI</th><th>표준편차</th><th>위험군 비율</th><th>난이도</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in rows" :key="row.label">
+                <td><span class="badge badge-neutral">{{ row.label }}</span></td>
+                <td>{{ row.title }}</td>
+                <td class="aic">{{ row.aic }}</td>
+                <td class="pi">{{ row.pi }}</td>
+                <td class="ui">{{ row.ui }}</td>
+                <td class="oi">{{ row.oi }}</td>
+                <td>{{ row.deviation }}</td>
+                <td :class="{ danger: row.riskRate >= 25 }">{{ row.riskRate }}%</td>
+                <td><span class="badge" :class="difficultyClass(row.difficulty)">{{ row.difficulty }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </AppLayout>
 </template>
 
 <style scoped>
-.analytics-stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+.header-select { padding: 6px 10px; border: 1px solid var(--border-default); border-radius: var(--radius-md); font-size: var(--font-size-sm); background: white; outline: none; }
+.assign-stat-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-4); }
+.assign-stat-card { padding: var(--space-5); border: 1px solid var(--border-light); border-radius: var(--radius-xl); background: var(--bg-surface); box-shadow: var(--shadow-sm); }
+.asc-label { color: var(--text-muted); font-size: var(--font-size-xs); font-weight: 800; text-transform: uppercase; }
+.asc-val { margin-top: var(--space-2); color: var(--text-primary); font-size: 30px; font-weight: 800; line-height: 1; }
+.asc-val.aic { color: var(--color-aic); }
+.asc-val.danger { color: var(--color-danger); }
+.asc-val.success { color: var(--color-success); }
+.asc-sub { margin-top: var(--space-2); color: var(--text-muted); font-size: var(--font-size-xs); }
+.section-gap { margin-top: var(--space-6); }
+.chart-box { height: 220px; }
+.api-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); padding: var(--space-5); color: var(--text-secondary); }
+.api-summary strong { color: var(--color-aic); }
+.table-scroll { overflow-x: auto; }
+.assign-compare-table { width: 100%; min-width: 860px; border-collapse: collapse; font-size: var(--font-size-sm); }
+.assign-compare-table th { padding: 10px 14px; background: var(--color-gray-50); border-bottom: 2px solid var(--border-light); color: var(--text-muted); font-size: var(--font-size-xs); text-align: left; text-transform: uppercase; }
+.assign-compare-table td { padding: 12px 14px; border-bottom: 1px solid var(--color-gray-100); color: var(--text-primary); }
+.assign-compare-table tr:hover td { background: var(--color-gray-50); }
+.aic { color: var(--color-aic); font-weight: 800; }
+.pi { color: var(--color-pi); }
+.ui { color: var(--color-ui); }
+.oi { color: var(--color-oi); }
+.danger { color: var(--color-danger); font-weight: 800; }
+@media (max-width: 1100px) {
+  .assign-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: var(--space-4);
-}
-
-.card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-5);
-}
-
-.selector-card {
-  margin-bottom: var(--space-4);
-}
-
-.card-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-
-.assignment-selector {
-  display: grid;
-  grid-template-columns: minmax(220px, 360px) 1fr;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.assignment-meta {
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-}
-
-.chart-box {
-  height: 300px;
-}
-
-.compact {
-  padding: var(--space-6);
-}
-
-.difficulty {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.difficulty-value {
-  color: var(--color-aic);
-  font-size: 42px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.difficulty-track {
-  height: 10px;
-  overflow: hidden;
-  border-radius: var(--radius-full);
-  background: var(--color-gray-100);
-}
-
-.difficulty-fill {
-  height: 100%;
-  border-radius: var(--radius-full);
-  background: linear-gradient(90deg, var(--color-oi), var(--color-ui), var(--color-danger));
-}
-
-.rank-list {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.rank-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  justify-content: space-between;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  font-size: var(--text-sm);
-}
-
-.rank-row span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-full);
-  background: var(--color-gray-100);
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-  font-weight: 700;
-}
-
-.rank-row strong {
-  flex: 1;
-}
-
-.rank-row em {
-  color: var(--color-aic);
-  font-style: normal;
-  font-weight: 800;
-}
-
-.actions {
-  margin-top: 1rem;
-}
-
-@media (max-width: 1024px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-
-  .assignment-selector {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 760px) {
+  .grid-2, .api-summary { grid-template-columns: 1fr; }
+  .assign-stat-grid { grid-template-columns: 1fr; }
 }
 </style>

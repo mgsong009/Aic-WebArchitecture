@@ -46,6 +46,50 @@ export const referenceActivities = [
   { name: '정승호', text: '재제출 완료', time: '6h ago', color: 'var(--color-topic)' },
 ]
 
+export const referenceAssignments = [
+  { label: 'A1', title: 'AI 개요 리뷰', aic: 58.2, pi: 56.1, ui: 61.3, oi: 57.0, deviation: 14.2, riskRate: 22, difficulty: '보통', min: 32, q1: 42, median: 58, q3: 72, max: 84 },
+  { label: 'A2', title: '알고리즘 분석', aic: 61.4, pi: 59.2, ui: 64.8, oi: 60.3, deviation: 13.1, riskRate: 18, difficulty: '쉬움', min: 36, q1: 45, median: 62, q3: 76, max: 86 },
+  { label: 'A3', title: '데이터 분석 보고서', aic: 60.2, pi: 58.0, ui: 62.5, oi: 60.1, deviation: 15.8, riskRate: 28, difficulty: '어려움', min: 30, q1: 38, median: 60, q3: 78, max: 88 },
+  { label: 'A4', title: '딥러닝 설계 보고서', aic: 64.1, pi: 62.0, ui: 67.3, oi: 63.0, deviation: 12.4, riskRate: 15, difficulty: '보통', min: 41, q1: 48, median: 65, q3: 80, max: 90 },
+  { label: 'A5', title: '생성형 AI 윤리 에세이', aic: 66.3, pi: 64.5, ui: 69.2, oi: 62.8, deviation: 12.8, riskRate: 14, difficulty: '쉬움', min: 44, q1: 50, median: 67, q3: 82, max: 91 },
+]
+
+export const referenceAdvancedInsights = {
+  clusters: [
+    { label: '고역량', count: 7, color: '#10B981', points: [{ x: 0.8, y: 0.9 }, { x: 0.7, y: 0.85 }, { x: 0.9, y: 0.8 }, { x: 0.75, y: 0.95 }, { x: 0.85, y: 0.78 }, { x: 0.6, y: 0.88 }, { x: 0.92, y: 0.72 }] },
+    { label: '중상위', count: 10, color: '#3B82F6', points: [{ x: 0.3, y: 0.5 }, { x: 0.4, y: 0.6 }, { x: 0.35, y: 0.55 }, { x: 0.5, y: 0.45 }, { x: 0.45, y: 0.65 }, { x: 0.2, y: 0.58 }, { x: 0.55, y: 0.42 }, { x: 0.28, y: 0.62 }, { x: 0.48, y: 0.38 }, { x: 0.38, y: 0.7 }] },
+    { label: '성장형', count: 7, color: '#F97316', points: [{ x: -0.2, y: 0.1 }, { x: -0.1, y: 0.2 }, { x: 0.0, y: 0.0 }, { x: -0.3, y: 0.15 }, { x: -0.15, y: -0.1 }, { x: 0.1, y: -0.05 }, { x: -0.25, y: 0.25 }] },
+    { label: '위험군', count: 4, color: '#EF4444', points: [{ x: -0.7, y: -0.6 }, { x: -0.8, y: -0.5 }, { x: -0.65, y: -0.75 }, { x: -0.75, y: -0.55 }] },
+  ],
+  strategies: [
+    { key: 'expert', title: 'Expert', desc: '질문도 좋고 수정도 많음', count: 7, tone: 'blue' },
+    { key: 'thinker', title: 'Thinker', desc: '질문은 좋지만 수정 적음', count: 6, tone: 'yellow' },
+    { key: 'editor', title: 'Editor', desc: '질문은 약하나 수정 많음', count: 11, tone: 'orange' },
+    { key: 'passive', title: 'Passive', desc: '질문도 약하고 수정도 적음', count: 4, tone: 'red' },
+  ],
+  effortSamples: [{ x: 3, y: 42 }, { x: 5, y: 48 }, { x: 7, y: 58 }, { x: 8, y: 61 }, { x: 10, y: 69 }, { x: 12, y: 73 }, { x: 15, y: 81 }, { x: 17, y: 86 }],
+  topicOiSamples: [{ x: 52, y: 41 }, { x: 58, y: 46 }, { x: 62, y: 55 }, { x: 70, y: 61 }, { x: 76, y: 70 }, { x: 82, y: 75 }, { x: 88, y: 84 }],
+  similarityBands: [
+    { label: '유형 A', value: 38 },
+    { label: '유형 B', value: 52 },
+    { label: '유형 C', value: 64 },
+    { label: '유형 D', value: 81 },
+    { label: '유형 E', value: 89 },
+  ],
+  correlation: {
+    pi_ui: 0.68,
+    pi_oi: 0.54,
+    pi_topic: 0.48,
+    pi_aic: 0.82,
+    ui_oi: 0.61,
+    ui_topic: 0.42,
+    ui_aic: 0.88,
+    oi_topic: 0.72,
+    oi_aic: 0.79,
+    topic_aic: 0.63,
+  },
+}
+
 export const referenceStudentDetail = {
   student: referenceStudents.find((student) => student.user_id_str === 'STU006'),
   latest_metrics: { aic: 71, pi: 72, ui: 68, oi: 75, topic: 83 },
