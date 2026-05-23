@@ -28,28 +28,37 @@
 | `P2` | 유용한 개선, 정리, 낮은 위험도의 수정 작업입니다. |
 | `P3` | 나중에 검토할 아이디어 또는 선택적인 개선입니다. |
 
+## 참고 기준
+
+- 기준 사이트: https://genspark.genspark.site/api/code_sandbox_light/preview/c66a59ad-6a9b-45f6-bda6-5cbf0f5ea36d/index.html
+- 목표: 참고 사이트의 12개 HTML 화면을 `aic-frontend` Vue 라우트에서 최대한 동일하게 재현합니다.
+- 기준 화면: `index.html`, `login.html`, `student-dashboard.html`, `student-assignment.html`, `student-growth.html`, `student-feedback.html`, `teacher-dashboard.html`, `teacher-students.html`, `teacher-student-detail.html`, `teacher-risk.html`, `teacher-assignment-analytics.html`, `teacher-advanced.html`.
+- 동일성 기준: 화면 구조, 섹션 순서, 색상, 카드/버튼/배지 스타일, 여백, 타이포그래피, 차트 배치, 사이드바/헤더 구성을 reference와 맞춥니다.
+- 구현 원칙: 정적 HTML을 그대로 배포하지 않고 Vue 3 SFC, Pinia, Vue Router, 기존 Axios API 경계를 유지하며 reference를 화면별로 이식합니다.
+
 ## 작업 목록
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
-| Frontend | P1 | Ready | 프로토타입과 Vue 화면의 디자인 동일성 기준을 화면별 체크리스트로 확정한다. | `prototype/README.md`의 12개 화면과 Vue 라우트별 핵심 섹션, 차트, 카드, 테이블, 상태 UI가 비교표로 정리되고 제외/축소할 항목이 명시된다. | 현재 라우트와 공통 디자인 토큰은 대체로 정렬되어 있으나 화면별 구현 밀도 차이가 큼. |
-| Frontend | P1 | Ready | 학생 과제 상세 화면을 `prototype/student-assignment.html` 구조에 맞춰 보강한다. | 탭 UI, 과제 히어로, AIC 도넛, PI/UI/OI/TS 막대, AI vs 학생 기여도, Essay Evolution, 레이더/상세 분석 섹션이 Vue 데이터 흐름 안에서 재현된다. | 현재 Vue 화면은 제출 폼과 기본 분석 결과 중심이라 프로토타입 시각 섹션이 많이 축약됨. |
-| Frontend | P1 | Ready | 학생 대시보드와 성장 분석 화면의 프로토타입 시각 구성을 맞춘다. | 학생 대시보드의 greeting banner, KPI/도넛/반 평균 비교/최근 과제/성장 차트 구성이 프로토타입과 동일한 밀도로 보이고, 성장 분석에는 히어로, 기간 필터, 멀티라인/누적 영역/프로파일 섹션이 반영된다. | 현재 차트 컴포넌트는 있으나 프로토타입 전용 히어로와 보조 섹션 일부가 다름. |
-| Frontend | P1 | Ready | 학생 피드백 화면을 `prototype/student-feedback.html`의 가이드형 UX로 맞춘다. | 피드백 히어로, 지표별 개선 가이드 카드, 다음 과제 체크리스트, 교사 피드백 영역이 프로토타입과 같은 시각 계층으로 제공되고 과제 선택 UX와 충돌하지 않는다. | 현재는 과제 선택/교사 피드백/강점/개선/팁 중심의 축약형 레이아웃. |
-| Frontend | P1 | Ready | 교사 대시보드와 위험군 화면의 프로토타입 요약/분포/카드 구성을 맞춘다. | 교사 대시보드의 class summary, KPI, 분포 히스토그램, 위험군 요약, 상위 학생 표가 프로토타입과 같은 정보 밀도로 보이고, 위험군 화면은 히어로, 위험 유형 카드, 필터 버튼, Scatter plot, 위험 학생 카드/목록 구성을 모두 제공한다. | 현재 Vue는 API 기반 데이터 표시는 있으나 프로토타입의 강조 카드와 필터형 시각 구조가 축소됨. |
-| Frontend | P1 | Ready | 교사 학생 목록/학생 상세 화면의 프로토타입 UI 패턴을 복원한다. | 학생 목록의 검색/정렬/필터 바, 상태 배지, 점수 표 레이아웃이 프로토타입과 맞고, 학생 상세에는 프로필 카드, 취약 지표, AIC 도넛/추이, 과제 이력, 피드백 작성/이력 UI가 동일한 화면 구조로 제공된다. | 현재 기능은 존재하지만 프로토타입 전용 프로필/취약 지표/피드백 시각 계층이 다름. |
-| Frontend | P1 | Ready | 교사 과제 분석 화면의 분포/난이도/편차 시각화를 프로토타입과 맞춘다. | 과제 선택, 평균 KPI, AIC 분포, 난이도/편차, 상위/하위 학생, 박스 플롯 또는 IQR 대체 표현이 `prototype/teacher-assignment-analytics.html`와 같은 분석 흐름으로 제공된다. | 현재 Vue에는 분포와 난이도, 상하위 목록은 있으나 프로토타입의 박스 플롯/IQR 흐름은 축소됨. |
-| Frontend | P2 | Ready | 심화 분석 화면의 임시 데이터 기반 섹션을 API 계약 기준으로 정리한다. | 군집 분석, 협업 전략 유형, Effort vs AIC, 초안 유사도, 상관관계 히트맵이 실제 backend 응답 또는 명시된 축소 정책으로 렌더링되고 임시 하드코딩 의존이 제거된다. | 현재 일부 심화 섹션은 임시 인사이트 상수로 프로토타입을 흉내 냄. |
-| Frontend | P2 | Ready | 공통 레이아웃의 프로토타입 헤더/사이드바 디테일을 맞춘다. | 사이드바 Navigation 라벨, SVG 아이콘 스타일, role badge, 사용자 영역, 헤더 검색/알림/설정 액션이 프로토타입과 동일한 시각 규칙으로 동작하고 모바일 토글도 깨지지 않는다. | 현재 Vue는 텍스트 기호 아이콘과 축약된 헤더 액션을 사용함. |
-| Frontend | P2 | Ready | 프로토타입 동일성 검증용 시각 회귀 확인 절차를 추가한다. | 12개 프로토타입 화면과 대응 Vue 라우트를 데스크톱/모바일에서 캡처해 주요 섹션 누락, 레이아웃 깨짐, 텍스트 겹침을 확인하는 수동 또는 Playwright 기반 체크 절차가 문서화된다. | UI 변경 후 `npm run build`와 함께 화면 캡처 검증 필요. |
+| Frontend | P1 | Ready | reference 12개 HTML과 Vue 라우트의 1:1 매핑표를 만든다. | 각 reference 파일, 대응 Vue route/component, 필요한 API 데이터, 정적 유지 가능 요소, 누락 섹션이 표로 정리된다. | 구현 전에 동일성 기준을 고정한다. |
+| Frontend | P1 | Ready | `index.html`과 동일한 랜딩 화면을 구현한다. | `LandingView.vue`가 reference의 상단 내비게이션, 어두운 히어로, 지표 칩, CTA, 통계 카드, 지표 설명 카드, 학생/교사 선택 카드, footer를 같은 순서와 시각 밀도로 렌더링한다. | 첫 화면은 reference와 거의 픽셀 단위로 맞춘다. |
+| Frontend | P1 | Ready | `login.html`과 동일한 로그인 화면을 구현한다. | `LoginView.vue`가 reference의 중앙 카드, 학생/교사 role toggle, 입력 필드, 로그인 유지 checkbox, 비밀번호 찾기 텍스트, 데모 접속 버튼, 홈 링크를 같은 레이아웃으로 제공하고 기존 로그인 기능이 유지된다. | refresh token 저장 정책은 변경하지 않는다. |
+| Frontend | P1 | Ready | reference의 사이드바/헤더 레이아웃을 공통 컴포넌트로 이식한다. | `AppLayout.vue`와 `AppSidebar.vue`가 reference의 고정 좌측 사이드바, role badge, Navigation label, SVG 아이콘, 하단 사용자 영역, breadcrumb, search, notification, logout 버튼을 학생/교사 화면에 동일하게 적용한다. | 모바일에서는 reference 톤을 유지하면서 현재 토글 UX를 보존한다. |
+| Frontend | P1 | Ready | `student-dashboard.html`과 동일한 학생 대시보드를 구현한다. | `StudentDashboardView.vue`가 reference의 greeting banner, 5개 KPI 카드, AIC 도넛 카드, 지표별 분석, 반 내 위치, 성장 추이, 최근 과제, 과제별 지표 변화, 개선 가이드 섹션을 같은 배치로 렌더링한다. | 실제 데이터는 `getStudentDashboard`를 사용한다. |
+| Frontend | P1 | Ready | `student-assignment.html`과 동일한 학생 과제 상세 화면을 구현한다. | `StudentAssignmentDetailView.vue`가 reference의 과제 히어로, 제출/분석 상태, AIC/PI/UI/OI/Topic 지표, AI 초안과 학생 수정 비교, 상세 분석 카드, 제출/재분석 동선을 동일한 화면 구조로 제공한다. | 제출과 job polling 기능은 유지한다. |
+| Frontend | P1 | Ready | `student-growth.html`과 동일한 성장 분석 화면을 구현한다. | `StudentGrowthView.vue`가 reference의 성장 히어로, 기간/과제 필터, AIC 추이, PI/UI/OI 변화, 누적 성장/프로파일 카드, 인사이트 섹션을 같은 시각 구성으로 렌더링한다. | Chart.js 설정도 reference와 최대한 맞춘다. |
+| Frontend | P1 | Ready | `student-feedback.html`과 동일한 피드백 가이드 화면을 구현한다. | `StudentFeedbackView.vue`가 reference의 피드백 히어로, 지표별 가이드 카드, 교사 피드백, 다음 과제 체크리스트, 개선 팁 섹션을 같은 레이아웃으로 제공한다. | 과제 선택 UX와 충돌하지 않게 구성한다. |
+| Frontend | P1 | Ready | `teacher-dashboard.html`, `teacher-students.html`, `teacher-student-detail.html`과 동일한 교사 기본 화면을 구현한다. | 교사 대시보드, 학생 목록, 학생 상세가 reference의 KPI, 분포 차트, 위험/상위 학생 카드, 검색/필터/표, 학생 프로필/과제 이력/피드백 작성 UI를 같은 구조로 렌더링한다. | 기존 teacher store/API 호출은 유지한다. |
+| Frontend | P1 | Ready | `teacher-risk.html`, `teacher-assignment-analytics.html`, `teacher-advanced.html`과 동일한 교사 분석 화면을 구현한다. | 위험군, 과제 분석, 심화 분석 화면이 reference의 히어로, 필터, scatter/분포/상관/군집/상하위 분석 카드와 동일한 화면 흐름으로 제공된다. | API가 없는 심화 데이터는 명시된 fallback만 사용한다. |
+| Frontend | P2 | Ready | reference 동일성 검증 절차를 추가한다. | 12개 reference 화면과 12개 Vue 화면을 데스크톱/모바일에서 캡처해 섹션 누락, 레이아웃 차이, 텍스트 겹침, 차트 blank 상태를 비교하는 체크리스트가 문서화된다. | 최소 검증 명령은 `npm run build`와 브라우저 캡처 확인이다. |
 
 ## 결정된 방향
 
-- 프로토타입은 최종 UX 기준으로 사용하고, 데이터는 `aic-frontend`가 기존 FastAPI backend의 `/api/v1`만 호출해 공급받습니다.
-- `aic-frontend`의 인증 스토어, Axios interceptor, 라우터 role guard, Chart.js 기반 컴포넌트는 가능한 한 보존합니다.
-- 정적 HTML 파일을 그대로 복사하지 않고 Vue 3 SFC, Pinia action, router 기반 화면으로 이식합니다.
-- frontend가 pipeline을 직접 호출하지 않고, 제출과 분석 상태는 backend의 `/submissions`, `/jobs/{job_uuid}/status`를 통해 처리합니다.
+- 기존 TODO 작업은 초기화하고, 참고 사이트 12개 화면을 Vue 프론트엔드에서 동일하게 재현하는 작업으로 새로 관리합니다.
+- “비슷한 디자인”이 아니라 reference HTML의 화면 구조와 시각 구성을 기준으로 구현합니다.
+- 구현은 `aic-frontend` 내부 Vue 화면과 공통 컴포넌트에 한정하고, 인증/권한/서비스 경계는 유지합니다.
+- 정적 HTML을 그대로 복사해 배포하지 않고, 실제 화면은 backend API 데이터와 기존 라우팅에 맞게 구성합니다.
 
 ## 열린 질문
 
-- 기존 `aic-frontend/src/views/**`를 전면 교체할지, 화면별로 프로토타입 UX를 점진 반영할지 결정이 필요합니다.
+- 없음. 참고 사이트의 전체 12개 HTML 화면을 최종 시각 기준으로 삼습니다.
