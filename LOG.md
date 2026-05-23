@@ -32,6 +32,7 @@
 | Frontend | reference의 사이드바/헤더 레이아웃을 공통 컴포넌트에 반영했습니다. `AppSidebar.vue`는 reference SVG 아이콘, role badge, Navigation label, 하단 사용자 영역과 logout 아이콘을 사용하고, `AppLayout.vue`는 breadcrumb 구분자, 검색 입력, 알림 버튼, 로그아웃 버튼을 기본 헤더 액션으로 제공합니다. 모바일 사이드바 토글/백드롭과 기존 actions slot은 유지했습니다. | `npm.cmd run build` 성공. | 학생 대시보드 reference 동일성 작업을 이어갑니다. |
 | Frontend | `StudentDashboardView.vue`를 reference `student-dashboard.html` 흐름에 맞춰 정리했습니다. greeting banner, 5개 KPI, AIC 도넛, 지표별 비교, 반 내 위치, 성장 추이, 최근 과제, 과제별 지표 변화, 개선 가이드 구성을 유지하면서 공통 헤더와 중복되던 검색/알림/로그아웃 액션을 제거하고 AIC 상태 배지가 실제 점수 구간을 반영하도록 조정했습니다. | `npm.cmd run build` 성공. | 학생 과제 상세 화면 reference 동일성 작업을 이어갑니다. |
 | Frontend | `StudentAssignmentDetailView.vue`를 reference `student-assignment.html` 흐름에 맞춰 확장했습니다. 과제 선택 탭, 과제 히어로, AIC/PI/UI/OI/Topic 점수 카드, AI/학생 기여도, PI 레이더, AI 초안-프롬프트-최종본 비교, 제출/재분석 폼, 상세 분석 카드, 교사 피드백, 자동 개선 가이드를 같은 화면 구조로 제공하며 기존 제출 및 job polling 기능은 유지했습니다. | `npm.cmd run build` 성공. Docker 스택을 `docker compose up --build -d`로 기동하고 nginx 경유 `/student/assignments/1` HTTP 200, 학생 로그인/과제 상세 API 응답을 확인했습니다. Browser 플러그인은 Windows sandbox 초기화 오류로 캡처하지 못했습니다. | 학생 성장 분석 화면 reference 동일성 작업을 이어갑니다. |
+| Frontend | `StudentGrowthView.vue`를 reference `student-growth.html` 흐름에 맞춰 확장했습니다. 성장 히어로 4개 통계, 헤더 기간 필터와 CSV 내보내기, 내 AIC/반 평균 비교, PI/UI/OI 변화, 최신 지표 구성, 누적 면적 차트, 최신 프로파일, 동적 성장 인사이트를 실제 `/student/growth` 데이터 기반으로 렌더링합니다. | `npm.cmd run build` 성공. | 학생 피드백 화면 reference 동일성 작업을 이어갑니다. |
 
 ## 2026-05-23
 
