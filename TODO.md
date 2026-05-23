@@ -32,9 +32,6 @@
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
-| Docs | P2 | Ready | 프로젝트 TODO/LOG 파일 사용 시작 | 합의한 운영 규칙을 담은 `TODO.md`와 `LOG.md`가 존재합니다. | 초기 템플릿 작업입니다. |
-| Frontend | P1 | Ready | 프로토타입-현재 Vue 화면 매핑표 작성 | `prototype/*.html` 11개 화면이 `aic-frontend/src/views/**` 라우트와 1:1 또는 통합 화면으로 매핑되고, 제외할 프로토타입 요소가 명시됩니다. | 기준: `prototype/README.md`, `aic-frontend/src/router/index.js` |
-| Frontend | P1 | Ready | 기존 Vue 프론트엔드 제거/보존 범위 결정 | 제거할 파일, 재사용할 파일, 새로 이식할 파일 목록이 정리되고 `src/api/index.js`, Pinia auth, router guard, Chart 컴포넌트의 보존 여부가 확정됩니다. | 추천: 인증/API/라우터/차트 기반은 보존하고 view/layout/style을 프로토타입 기준으로 교체 |
 | Frontend | P1 | Ready | 프로토타입 디자인 시스템을 Vue 자산으로 이식 | `prototype/design-system.css`의 토큰, 레이아웃, 테이블, 배지, 차트 스타일이 `aic-frontend/src/assets/design-system.css`에 통합되고 중복/미사용 스타일이 정리됩니다. | 기존 CSS 변수명과 충돌 여부 확인 필요 |
 | Frontend | P1 | Ready | 공통 레이아웃을 프로토타입 기준으로 재구성 | `AppLayout.vue`, `AppSidebar.vue`, 공통 헤더/브레드크럼/모바일 사이드바가 프로토타입 UX와 동일하게 동작하고 역할별 메뉴가 현재 라우터와 연결됩니다. | 프론트엔드는 백엔드만 호출하고 pipeline 직접 호출 금지 |
 | Frontend | P1 | Ready | 로그인/랜딩 화면 이식 및 실제 인증 연결 유지 | `index.html`, `login.html`의 시각 구조가 Vue 화면으로 이식되고, 로그인은 `useAuthStore`와 `/auth/login`, `/auth/refresh`, `/auth/logout` 흐름을 그대로 사용합니다. | 데모 로그인 계정은 시드 데이터 기준으로만 유지 |

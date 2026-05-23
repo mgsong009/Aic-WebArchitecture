@@ -27,3 +27,5 @@
 | 영역 | 요약 | 확인 | 후속 작업 |
 | --- | --- | --- | --- |
 | Docs | 공식 프로젝트 작업 관리를 위한 루트 `TODO.md`와 `LOG.md` 템플릿을 생성했습니다. | 파일 생성과 내용을 확인했습니다. | 앞으로 의미 있는 변경을 시작하기 전에 `TODO.md`에 작업을 추가합니다. |
+| Frontend | 정적 프로토타입 화면과 현재 Vue 라우트/뷰의 매핑표를 `aic-frontend/PROTOTYPE_ROUTE_MAP.md`에 작성하고, 제외하거나 축소할 프로토타입 요소를 명시했습니다. | `prototype/README.md`, `prototype/*.html`, `aic-frontend/src/router/index.js`, `aic-frontend/src/views/**`를 대조했습니다. | Vue 제거/보존 범위 결정과 API 부족분 결정 작업을 이어갑니다. |
+| Frontend | Vue 프론트엔드 마이그레이션에서 보존할 기반 파일, 교체할 view/layout/style 범위, 새로 필요한 UX/API 결정 항목을 `aic-frontend/FRONTEND_MIGRATION_SCOPE.md`에 정리했습니다. | `src/api/index.js`, Pinia stores, router, chart composables/components, layout/components 구조를 확인했습니다. | 디자인 시스템 이식과 공통 레이아웃 재구성을 이어갑니다. |
