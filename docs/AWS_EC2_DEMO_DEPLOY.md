@@ -161,7 +161,7 @@ Use `down -v` only when you intentionally want to erase the demo database and mo
 
 ## 9. GitHub Actions Auto Deploy
 
-The workflow at `.github/workflows/deploy-ec2.yml` deploys automatically when `main` receives a push.
+The workflow at `.github/workflows/deploy-ec2.yml` deploys automatically when `dev` receives a push.
 
 It uses this flow:
 
