@@ -179,6 +179,15 @@ Configure these GitHub repository secrets:
 | `EC2_USER` | SSH user, usually `ubuntu` |
 | `EC2_SSH_KEY` | Private key contents for the EC2 key pair |
 
+The EC2 security group must allow the GitHub Actions runner to reach SSH port `22`.
+For a quick demo, the simplest option is:
+
+- SSH `22` from `0.0.0.0/0`
+- HTTP `80` from `0.0.0.0/0`
+
+This keeps password login disabled and still requires the private key in `EC2_SSH_KEY`.
+For a longer-lived deployment, replace broad SSH access with a narrower option such as a self-hosted runner, AWS SSM, or a workflow step that temporarily opens the current runner IP.
+
 The EC2 deployment directory is fixed to:
 
 ```text

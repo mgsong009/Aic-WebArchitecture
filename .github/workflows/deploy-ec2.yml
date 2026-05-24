@@ -32,20 +32,39 @@ jobs:
             -czf "$RUNNER_TEMP/aic-release.tar.gz" .
 
       - name: Prepare SSH key
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
+          if [ -z "$EC2_HOST" ] || [ -z "$EC2_USER" ] || [ -z "$EC2_SSH_KEY" ]; then
+            echo "Missing one or more required secrets: EC2_HOST, EC2_USER, EC2_SSH_KEY."
+            exit 1
+          fi
+
           install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/ec2_key
           chmod 600 ~/.ssh/ec2_key
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          if ! timeout 15 ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts; then
+            echo "Unable to reach EC2 SSH on $EC2_HOST:22."
+            echo "Check the EC2 security group allows SSH from GitHub Actions runners, or temporarily allow TCP 22 from 0.0.0.0/0 for this demo."
+            exit 1
+          fi
 
       - name: Upload deployment archive
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
         run: |
           scp -i ~/.ssh/ec2_key "$RUNNER_TEMP/aic-release.tar.gz" \
-            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/aic-release.tar.gz"
+            "$EC2_USER@$EC2_HOST:~/aic-release.tar.gz"
 
       - name: Deploy with Docker Compose
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
         run: |
-          ssh -i ~/.ssh/ec2_key "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" <<'REMOTE'
+          ssh -i ~/.ssh/ec2_key "$EC2_USER@$EC2_HOST" <<'REMOTE'
           set -euo pipefail
 
           DEPLOY_DIR="$HOME/Aic-WebArchitecture"
