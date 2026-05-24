@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Create deployment archive
         run: |
@@ -29,7 +29,7 @@ jobs:
             --exclude='**/node_modules' \
             --exclude='**/dist' \
             --exclude='aic-frontend/qa-captures' \
-            -czf aic-release.tar.gz .
+            -czf "$RUNNER_TEMP/aic-release.tar.gz" .
 
       - name: Prepare SSH key
         run: |
@@ -40,7 +40,7 @@ jobs:
 
       - name: Upload deployment archive
         run: |
-          scp -i ~/.ssh/ec2_key aic-release.tar.gz \
+          scp -i ~/.ssh/ec2_key "$RUNNER_TEMP/aic-release.tar.gz" \
             "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:~/aic-release.tar.gz"
 
       - name: Deploy with Docker Compose
