@@ -40,7 +40,7 @@
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
-| Frontend | P2 | Ready | reference 동일성 검증 절차를 추가한다. | 12개 reference 화면과 12개 Vue 화면을 데스크톱/모바일에서 캡처해 섹션 누락, 레이아웃 차이, 텍스트 겹침, 차트 blank 상태를 비교하는 체크리스트가 문서화된다. | 최소 검증 명령은 `npm run build`와 브라우저 캡처 확인이다. |
+| Frontend | P2 | In Progress | reference 동일성 검증 pass를 수행한다. | `REFERENCE_VISUAL_QA.md`의 12개 route matrix에 데스크톱/모바일 검증 결과가 기록되고, 발견한 차이 또는 blocker가 정리된다. | `npm run build`, local dev target, browser capture 확인을 포함한다. |
 
 ## 결정된 방향
 

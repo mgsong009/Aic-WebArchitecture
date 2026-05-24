@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "qa:reference": "node ../scripts/reference-visual-qa.mjs"
   },
   "dependencies": {
     "axios": "^1.7.2",
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.5",
+    "playwright-core": "^1.52.0",
     "vite": "^5.3.1"
   }
 }
