@@ -40,7 +40,6 @@
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
-| Frontend | P2 | In Progress | reference 동일성 검증 pass를 수행한다. | `REFERENCE_VISUAL_QA.md`의 12개 route matrix에 데스크톱/모바일 검증 결과가 기록되고, 발견한 차이 또는 blocker가 정리된다. | `npm run build`, local dev target, browser capture 확인을 포함한다. |
 
 ## 결정된 방향
 

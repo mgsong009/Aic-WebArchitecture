@@ -242,6 +242,7 @@ function difficultyClass(value) {
   .assign-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
+  .header-select { max-width: 100%; min-width: 0; }
   .grid-2, .api-summary { grid-template-columns: 1fr; }
   .assign-stat-grid { grid-template-columns: 1fr; }
 }

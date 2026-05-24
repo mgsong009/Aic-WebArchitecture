@@ -505,6 +505,7 @@ function exportCsv() {
 .insight-list {
   display: grid;
   gap: var(--space-4);
+  min-width: 0;
 }
 
 .period-filter {
@@ -767,6 +768,11 @@ function exportCsv() {
     grid-template-columns: 1fr;
   }
 
+  .chart-card,
+  .data-table-wrapper {
+    min-width: 0;
+  }
+
   .period-filter {
     order: 2;
     width: 100%;
@@ -774,6 +780,7 @@ function exportCsv() {
 
   .period-btn {
     flex: 1;
+    min-width: 0;
   }
 
   .legend-row {

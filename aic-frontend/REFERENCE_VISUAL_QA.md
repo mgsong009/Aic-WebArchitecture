@@ -50,18 +50,29 @@ Reference site base URL:
 
 | Reference HTML | Vue route | Desktop capture | Mobile capture | Required comparison notes |
 | --- | --- | --- | --- | --- |
-| `index.html` | `/` | Pending | Pending | Hero, navigation links, role cards, metric/stat sections, footer. |
-| `login.html` | `/login` | Pending | Pending | Branding panel, role toggle, login card, demo actions, home link. |
-| `student-dashboard.html` | `/student/dashboard` | Pending | Pending | Greeting, KPI cards, AIC donut, trend/chart cards, recent assignments, guide sections. |
-| `student-assignment.html` | `/student/assignments/:id` | Pending | Pending | Assignment hero, metric cards, comparison blocks, submit/reanalysis form, feedback and guide cards. |
-| `student-growth.html` | `/student/growth` | Pending | Pending | Growth hero, period controls, trend charts, profile cards, insights. |
-| `student-feedback.html` | `/student/feedback/:assignmentId` | Pending | Pending | Assignment selector, feedback hero, metric guides, teacher feedback, checklist. |
-| `teacher-dashboard.html` | `/teacher/dashboard` | Pending | Pending | Class KPI grid, distribution/trend charts, risk and top student sections. |
-| `teacher-students.html` | `/teacher/students` | Pending | Pending | Summary cards, search/filter controls, table density, badges, pagination. |
-| `teacher-student-detail.html` | `/teacher/students/:id` | Pending | Pending | Profile hero, metric breakdown, growth chart, assignment history, feedback composer. |
-| `teacher-risk.html` | `/teacher/risk` | Pending | Pending | Risk hero, risk cards, scatter chart, comparison chart, action/status badges. |
-| `teacher-assignment-analytics.html` | `/teacher/analytics/assignment/:id` | Pending | Pending | Assignment selector, KPI cards, distribution chart, metric panels, student table. |
-| `teacher-advanced.html` | `/teacher/advanced` | Pending | Pending | Advanced hero, cluster/strategy panels, heatmap, scatter charts, student table. |
+| `index.html` | `/` | `2026-05-24T04-37-17`: pass | `2026-05-24T04-37-17`: pass | Hero, navigation links, role cards, metric/stat sections, footer. |
+| `login.html` | `/login` | `2026-05-24T04-37-17`: pass | `2026-05-24T04-37-17`: pass | Branding panel, role toggle, login card, demo actions, home link. |
+| `student-dashboard.html` | `/student/dashboard` | `2026-05-24T04-37-17`: pass | `2026-05-24T04-37-17`: pass | Greeting, KPI cards, AIC donut, trend/chart cards, recent assignments, guide sections. |
+| `student-assignment.html` | `/student/assignments/:id` | `2026-05-24T04-37-17`: pass | `2026-05-24T04-37-17`: pass | Assignment hero, metric cards, comparison blocks, submit/reanalysis form, feedback and guide cards. |
+| `student-growth.html` | `/student/growth` | `2026-05-24T04-37-17`: pass | `2026-05-24T04-37-17`: horizontal overflow | Growth hero, period controls, trend charts, profile cards, insights. |
+| `student-feedback.html` | `/student/feedback/:assignmentId` | `2026-05-24T04-37-17`: pass | `2026-05-24T04-37-17`: pass | Assignment selector, feedback hero, metric guides, teacher feedback, checklist. |
+| `teacher-dashboard.html` | `/teacher/dashboard` | `2026-05-24T04-37-17`: pass | `2026-05-24T04-37-17`: 2/2 blank canvas | Class KPI grid, distribution/trend charts, risk and top student sections. |
+| `teacher-students.html` | `/teacher/students` | `2026-05-24T04-37-17`: pass | `2026-05-24T04-37-17`: pass | Summary cards, search/filter controls, table density, badges, pagination. |
+| `teacher-student-detail.html` | `/teacher/students/:id` | `2026-05-24T04-37-17`: 1/1 blank canvas | `2026-05-24T04-37-17`: horizontal overflow, 1/1 blank canvas | Profile hero, metric breakdown, growth chart, assignment history, feedback composer. |
+| `teacher-risk.html` | `/teacher/risk` | `2026-05-24T04-37-17`: 2/2 blank canvas | `2026-05-24T04-37-17`: horizontal overflow, 2/2 blank canvas | Risk hero, risk cards, scatter chart, comparison chart, action/status badges. |
+| `teacher-assignment-analytics.html` | `/teacher/analytics/assignment/:id` | `2026-05-24T04-37-17`: pass | `2026-05-24T04-37-17`: horizontal overflow | Assignment selector, KPI cards, distribution chart, metric panels, student table. |
+| `teacher-advanced.html` | `/teacher/advanced` | `2026-05-24T04-37-17`: pass | `2026-05-24T04-37-17`: pass | Advanced hero, cluster/strategy panels, heatmap, scatter charts, student table. |
+
+## Latest Verification
+
+- Run directory: `aic-frontend/qa-captures/2026-05-24T04-37-17/`
+- Summary files: `summary.json`, `summary.md`
+- Command: `QA_READY_TIMEOUT_MS=60000`, `QA_SETTLE_MS=2500`, `npm run qa:reference`
+- Result: all 24 reference/Vue captures completed.
+- Automated findings:
+  - Mobile horizontal overflow: `/student/growth`, `/teacher/students/:id`, `/teacher/risk`, `/teacher/analytics/assignment/:id`.
+  - Blank chart canvas: mobile `/teacher/dashboard`; desktop/mobile `/teacher/students/:id`; desktop/mobile `/teacher/risk`.
+  - Console errors, page errors, failed requests, and broken images: none detected.
 
 ## Capture Setup Notes
 

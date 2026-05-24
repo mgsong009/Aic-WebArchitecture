@@ -235,10 +235,12 @@ async function inspectPage(page) {
       if (!width || !height) return true
       const context = canvas.getContext('2d')
       if (!context) return true
-      const sampleWidth = Math.min(width, 120)
-      const sampleHeight = Math.min(height, 120)
-      const data = context.getImageData(0, 0, sampleWidth, sampleHeight).data
-      for (let index = 3; index < data.length; index += 4) {
+      const data = context.getImageData(0, 0, width, height).data
+      const maxSamples = 12000
+      const pixelCount = data.length / 4
+      const pixelStep = Math.max(1, Math.floor(pixelCount / maxSamples))
+      for (let pixel = 0; pixel < pixelCount; pixel += pixelStep) {
+        const index = pixel * 4 + 3
         if (data[index] !== 0) return false
       }
       return true

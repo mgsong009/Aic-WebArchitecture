@@ -231,16 +231,16 @@ const weaknessCards = computed(() => [
 </template>
 
 <style scoped>
-.detail-page { display: grid; gap: var(--space-4); }
+.detail-page { display: grid; gap: var(--space-4); min-width: 0; }
 .fallback-note { padding: var(--space-3) var(--space-4); background: var(--color-ui-pale); border: 1px solid rgba(249, 115, 22, 0.2); border-radius: var(--radius-lg); color: var(--text-secondary); font-size: var(--text-sm); }
-.student-profile-card { background: white; border: 1px solid var(--border-light); border-radius: var(--radius-xl); padding: 24px 28px; display: flex; align-items: center; gap: 20px; box-shadow: var(--shadow-sm); }
+.student-profile-card { background: white; border: 1px solid var(--border-light); border-radius: var(--radius-xl); padding: 24px 28px; display: flex; align-items: center; gap: 20px; box-shadow: var(--shadow-sm); min-width: 0; }
 .sp-avatar { width: 64px; height: 64px; border-radius: 999px; display: grid; place-items: center; font-size: 24px; font-weight: 800; color: white; background: linear-gradient(135deg, #3B82F6, #10B981); flex-shrink: 0; }
 .sp-info { flex: 1; min-width: 0; }
 .sp-name { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px; margin: 0 0 4px; }
 .sp-meta, .sp-badges { display: flex; gap: 8px 16px; flex-wrap: wrap; }
 .sp-meta { font-size: 13px; color: var(--text-muted); }
 .sp-badges { margin-top: 8px; }
-.sp-aic-display { text-align: right; display: grid; gap: 2px; }
+.sp-aic-display { text-align: right; display: grid; gap: 2px; min-width: 0; }
 .sp-aic-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
 .sp-aic-val { font-size: 44px; font-weight: 800; color: var(--color-aic); letter-spacing: -2px; line-height: 1; }
 .growth-text { font-size: 11px; color: var(--color-success); }
@@ -297,5 +297,5 @@ const weaknessCards = computed(() => [
 .pf-item p { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 1100px) { .score-grid { grid-template-columns: 1fr; } .weakness-grid { grid-template-columns: 1fr; } }
-@media (max-width: 768px) { .student-profile-card { align-items: flex-start; flex-direction: column; } .sp-aic-display { text-align: left; } .fe-footer { align-items: stretch; flex-direction: column; } }
+@media (max-width: 768px) { .student-profile-card { align-items: flex-start; flex-direction: column; } .sp-aic-display { width: 100%; text-align: left; } .sp-meta, .sp-badges, .fe-header { gap: 6px; } .fe-footer { align-items: stretch; flex-direction: column; } }
 </style>

@@ -198,6 +198,7 @@ const riskBarConfig = computed(() => ({
   border-radius: var(--radius-xl);
   background: linear-gradient(135deg, #FEF2F2 0%, #FFF7ED 100%);
   border: 1px solid #FECACA;
+  min-width: 0;
 }
 .rh-title { color: var(--color-danger); font-size: var(--font-size-3xl); font-weight: 800; line-height: 1.2; }
 .rh-sub { margin-top: var(--space-1); color: var(--text-secondary); font-size: var(--font-size-sm); }
@@ -207,9 +208,9 @@ const riskBarConfig = computed(() => ({
 .rh-stat-val { color: var(--color-danger); font-size: 28px; font-weight: 800; line-height: 1; }
 .rh-stat-label { margin-top: var(--space-1); color: var(--text-muted); font-size: var(--font-size-xs); font-weight: 700; }
 .risk-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6); }
-.risk-card { padding: var(--space-5); background: var(--bg-surface); border: 1px solid var(--border-light); border-left: 4px solid var(--color-danger); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); cursor: pointer; }
+.risk-card { padding: var(--space-5); background: var(--bg-surface); border: 1px solid var(--border-light); border-left: 4px solid var(--color-danger); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); cursor: pointer; min-width: 0; }
 .risk-card:hover { box-shadow: var(--shadow-md); }
-.rc-header { display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: var(--space-3); }
+.rc-header { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); }
 .rc-avatar { display: grid; place-items: center; width: 42px; height: 42px; border-radius: var(--radius-full); background: var(--color-danger); color: white; font-weight: 800; }
 .rc-name { color: var(--text-primary); font-weight: 800; }
 .rc-id { color: var(--text-muted); font-size: var(--font-size-xs); }
@@ -241,5 +242,8 @@ const riskBarConfig = computed(() => ({
 }
 @media (max-width: 520px) {
   .rh-stats { grid-template-columns: 1fr; }
+  .rc-action { justify-content: stretch; flex-wrap: wrap; }
+  .rc-action .btn { flex: 1; justify-content: center; }
+  .chart-box { height: 220px; }
 }
 </style>
