@@ -18,81 +18,35 @@ const items = computed(() => [
 </script>
 
 <template>
-  <div class="metric-bars">
-    <div v-for="item in items" :key="item.key" class="metric-bar-row">
-      <div class="metric-bar-label">
-        <span class="metric-dot" :style="{ background: item.color }"></span>
+  <div class="score-bar-group">
+    <div v-for="item in items" :key="item.key" class="score-bar-item">
+      <div class="score-bar-label" :style="{ color: item.color }">
         {{ item.label }}
       </div>
-      <div class="metric-bar-track">
-        <div class="metric-bar-fill" :style="{ width: (item.value || 0) + '%', background: item.color }"></div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" :style="{ width: (item.value || 0) + '%', background: item.color }"></div>
         <div
           v-if="compareValues && item.compare != null"
-          class="metric-bar-compare"
+          class="score-bar-compare"
           :style="{ left: item.compare + '%' }"
         ></div>
       </div>
-      <div class="metric-bar-score">{{ item.value ?? '-' }}</div>
+      <div class="score-bar-value">{{ item.value ?? '-' }}</div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.metric-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.metric-bar-row {
-  display: grid;
-  grid-template-columns: 80px 1fr 40px;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.metric-bar-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--text-sm);
-  font-weight: 500;
-}
-
-.metric-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.metric-bar-track {
+.score-bar-track {
   position: relative;
-  height: 8px;
-  background: #e5e7eb;
-  border-radius: 4px;
 }
-
-.metric-bar-fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.6s ease;
-}
-
-.metric-bar-compare {
+.score-bar-compare {
   position: absolute;
   top: -4px;
   width: 2px;
   height: 16px;
-  background: #374151;
+  background: var(--color-gray-700);
   border-radius: 1px;
   transform: translateX(-50%);
-}
-
-.metric-bar-score {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  text-align: right;
-  color: var(--text-primary);
 }
 </style>

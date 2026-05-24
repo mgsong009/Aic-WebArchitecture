@@ -1,8 +1,14 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTeacherStore } from '@/stores/teacher'
+
+defineProps({
+  open: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['close'])
 
 const route = useRoute()
 const router = useRouter()
@@ -11,40 +17,87 @@ const teacherStore = useTeacherStore()
 
 const role = computed(() => auth.user?.role)
 const studentNav = [
-  { label: '대시보드', path: '/student/dashboard', icon: 'D' },
-  { label: '과제 목록', path: '/student/assignments', icon: 'A' },
-  { label: '성장 분석', path: '/student/growth', icon: 'G' },
+  { label: 'Dashboard', path: '/student/dashboard', icon: 'grid' },
+  { label: 'Assignment Detail', path: '/student/assignments', icon: 'file' },
+  { label: 'Growth Analysis', path: '/student/growth', icon: 'trendUp' },
+  { label: 'Feedback Guide', path: '/student/feedback', icon: 'lightbulb' },
 ]
 const teacherNav = [
-  { label: '대시보드', path: '/teacher/dashboard', icon: 'D' },
-  { label: '학생 목록', path: '/teacher/students', icon: 'S' },
-  { label: '위험군 관리', path: '/teacher/risk', icon: 'R', badge: true },
-  { label: '과제 분석', path: '/teacher/analytics/assignment/1', icon: 'A' },
-  { label: '심화 분석', path: '/teacher/advanced', icon: 'X' },
+  { label: '대시보드', path: '/teacher/dashboard', icon: 'grid' },
+  { label: '학생 목록', path: '/teacher/students', icon: 'users' },
+  { label: '위험군 관리', path: '/teacher/risk', icon: 'alertTriangle', badge: true },
+  { label: '과제 분석', path: '/teacher/analytics/assignment', dynamicPath: true, match: '/teacher/analytics/assignment', icon: 'barChart' },
+  { label: '심화 분석', path: '/teacher/advanced', icon: 'cpu' },
 ]
+const iconSvg = {
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  trendUp: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  lightbulb: '<path d="M9 21h6"/><path d="M12 3a6 6 0 0 1 6 6c0 2.22-1.2 4.16-3 5.2V17H9v-2.8A6 6 0 0 1 6 9a6 6 0 0 1 6-6z"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  alertTriangle: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  barChart: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
+  cpu: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>',
+}
 const navItems = computed(() => (role.value === 'teacher' ? teacherNav : studentNav))
+const homePath = computed(() => (role.value === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'))
+
+onMounted(() => {
+  if (role.value === 'teacher' && !teacherStore.assignments.length) {
+    teacherStore.fetchAssignments().catch(() => {})
+  }
+})
+
+function itemPath(item) {
+  if (item.dynamicPath && teacherStore.firstAssignmentId) {
+    return `/teacher/analytics/assignment/${teacherStore.firstAssignmentId}`
+  }
+  return item.path
+}
+
+function isActive(item) {
+  const path = itemPath(item)
+  return route.path === path || route.path.startsWith(item.match || `${path}/`)
+}
+
+function goHome() {
+  router.push(homePath.value)
+  emit('close')
+}
 
 async function handleLogout() {
   await auth.logout()
+  emit('close')
   router.push('/login')
 }
 </script>
 
 <template>
-  <aside class="sidebar" :class="role === 'teacher' ? 'sidebar--teacher' : ''">
-    <div class="sidebar-logo">
-      <span class="logo-text">AIC</span>
-      <span class="logo-sub">Index Platform</span>
+  <aside class="app-sidebar" :class="{ open }">
+    <div class="sidebar-logo" @click="goHome">
+      <span class="sidebar-logo-icon">AIC</span>
+      <span class="sidebar-logo-text">AIC <span>Index</span></span>
     </div>
+    <div class="sidebar-role-badge">{{ role === 'teacher' ? 'Teacher' : 'Student' }}</div>
     <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
       <RouterLink
         v-for="item in navItems"
         :key="item.path"
-        :to="item.path"
+        :to="itemPath(item)"
         class="nav-item"
-        :class="{ active: route.path.startsWith(item.path) }"
+        :class="{ active: isActive(item) }"
+        @click="emit('close')"
       >
-        <span class="nav-icon">{{ item.icon }}</span>
+        <svg
+          class="nav-item-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+          v-html="iconSvg[item.icon]"
+        />
         <span class="nav-label">{{ item.label }}</span>
         <span v-if="item.badge && teacherStore.riskCount > 0" class="nav-badge">
           {{ teacherStore.riskCount }}
@@ -52,143 +105,47 @@ async function handleLogout() {
       </RouterLink>
     </nav>
     <div class="sidebar-user">
-      <div class="user-name">{{ auth.user?.name || '사용자' }}</div>
-      <div class="user-role">{{ role === 'teacher' ? '교사' : '학생' }}</div>
-      <button class="logout-btn" @click="handleLogout">로그아웃</button>
+      <div class="user-avatar">{{ (auth.user?.name || 'A').slice(0, 1) }}</div>
+      <div class="user-info">
+        <div class="user-name">{{ auth.user?.name || '사용자' }}</div>
+        <div class="user-role">{{ role === 'teacher' ? 'Teacher' : `Student · ${auth.user?.class_code || 'CS101'}` }}</div>
+      </div>
+      <button class="logout-btn" title="로그아웃" aria-label="로그아웃" @click.stop="handleLogout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16,17 21,12 16,7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+      </button>
     </div>
   </aside>
 </template>
 
 <style scoped>
-.sidebar {
-  width: 240px;
-  min-height: 100vh;
-  background: var(--color-aic);
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1rem;
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  z-index: 100;
-}
-
-.sidebar--teacher {
-  background: #1a2438;
-}
-
-.sidebar-logo {
-  padding: 0.5rem 0 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  margin-bottom: 1.5rem;
-}
-
-.logo-text {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 0.1em;
-}
-
-.logo-sub {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.6);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: var(--radius-md);
-  color: rgba(255, 255, 255, 0.75);
-  text-decoration: none;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  transition: all 0.15s;
-}
-
-.nav-item:hover,
-.nav-item.active {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-}
-
-.nav-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  display: grid;
-  place-items: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
 .nav-label {
   flex: 1;
 }
 
-.nav-badge {
-  background: #ef4444;
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 9999px;
-  min-width: 18px;
-  text-align: center;
-}
-
-.sidebar-user {
-  padding-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.user-name {
-  font-weight: 600;
-  color: #fff;
-  font-size: var(--text-sm);
-}
-
-.user-role {
-  font-size: var(--text-xs);
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 0.75rem;
-}
-
 .logout-btn {
-  width: 100%;
-  padding: 0.45rem;
-  background: rgba(255, 255, 255, 0.1);
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.85);
-  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+  border-radius: var(--radius-full);
   font-size: var(--text-xs);
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+.logout-btn svg {
+  width: 15px;
+  height: 15px;
 }
 
 .logout-btn:hover {
   background: rgba(255, 255, 255, 0.2);
-}
-
-@media (max-width: 1024px) {
-  .sidebar {
-    position: static;
-    width: 100%;
-    min-height: auto;
-    border-radius: 0;
-  }
 }
 </style>

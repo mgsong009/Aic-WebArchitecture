@@ -72,6 +72,19 @@ class StudentList(BaseModel):
     students: List[StudentListItem]
 
 
+class TeacherAssignmentItem(BaseModel):
+    id: int
+    title: str
+    course_code: Optional[str] = None
+    due_date: Optional[str] = None
+    submission_count: int
+    analyzed_submission_count: int
+
+
+class TeacherAssignmentList(BaseModel):
+    assignments: List[TeacherAssignmentItem]
+
+
 class AssignmentHistoryItem(BaseModel):
     id: int
     title: str

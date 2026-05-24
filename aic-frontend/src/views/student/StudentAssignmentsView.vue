@@ -1,25 +1,49 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '@/api'
+import { getStudentAssignments } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
+import LoadingSkeleton from '@/components/common/LoadingSkeleton.vue'
 
 const router = useRouter()
 const assignments = ref([])
 const loading = ref(true)
+const error = ref('')
+
+const hasAssignments = computed(() => assignments.value.length > 0)
 
 onMounted(async () => {
-  const { data } = await api.get('/student/assignments')
-  assignments.value = data.assignments
-  loading.value = false
+  await loadAssignments()
 })
+
+async function loadAssignments() {
+  loading.value = true
+  error.value = ''
+  try {
+    assignments.value = await getStudentAssignments()
+  } catch {
+    error.value = '과제 목록을 불러오지 못했습니다.'
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
   <AppLayout title="과제 목록" subtitle="제출한 모든 과제와 점수를 확인하세요">
-    <div v-if="loading" class="loading-state">로딩 중...</div>
-    <div v-else class="card">
+    <div v-if="loading" class="loading-wrap">
+      <LoadingSkeleton height="72px" />
+      <LoadingSkeleton height="260px" />
+    </div>
+    <div v-else-if="error" class="card card-body empty-state">
+      <strong>{{ error }}</strong>
+      <button class="btn btn-secondary btn-sm mt-4" type="button" @click="loadAssignments">다시 시도</button>
+    </div>
+    <div v-else-if="!hasAssignments" class="card card-body empty-state">
+      아직 표시할 과제가 없습니다.
+    </div>
+    <div v-else class="data-table-wrapper">
       <table class="data-table">
         <thead>
           <tr>
@@ -38,7 +62,7 @@ onMounted(async () => {
             <td style="color: var(--color-oi)">{{ a.oi ?? '—' }}</td>
             <td><StatusBadge :score="a.aic" /></td>
             <td>
-              <button class="btn-view" @click="router.push(`/student/assignments/${a.id}`)">보기</button>
+              <button class="btn btn-secondary btn-sm" type="button" @click="router.push(`/student/assignments/${a.id}`)">보기</button>
             </td>
           </tr>
         </tbody>
@@ -48,10 +72,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.loading-state { padding: 3rem; text-align: center; color: var(--text-secondary); }
-.card { background: #fff; border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); }
-.data-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-.data-table th { text-align: left; padding: 0.65rem 0.75rem; background: #f9fafb; color: var(--text-secondary); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; border-bottom: 1px solid #e5e7eb; }
-.data-table td { padding: 0.75rem; border-bottom: 1px solid #f3f4f6; }
-.btn-view { padding: 0.3rem 0.75rem; border: 1px solid var(--color-aic); color: var(--color-aic); background: transparent; border-radius: 6px; cursor: pointer; font-size: var(--text-xs); }
+.loading-wrap {
+  display: grid;
+  gap: var(--space-4);
+}
 </style>

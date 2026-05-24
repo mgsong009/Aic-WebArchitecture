@@ -103,6 +103,16 @@
   --font-size-4xl:  30px;
   --font-size-5xl:  36px;
 
+  /* Backward-compatible aliases used by existing Vue components */
+  --text-xs: var(--font-size-xs);
+  --text-sm: var(--font-size-sm);
+  --text-base: var(--font-size-base);
+  --text-md: var(--font-size-md);
+  --text-lg: var(--font-size-lg);
+  --text-xl: var(--font-size-xl);
+  --text-2xl: var(--font-size-2xl);
+  --text-3xl: var(--font-size-3xl);
+
   /* Layout */
   --sidebar-width: 240px;
   --sidebar-collapsed-width: 60px;
@@ -361,6 +371,7 @@ input, textarea, select {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
 }
 
 /* ============================================================
@@ -405,6 +416,7 @@ input, textarea, select {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .header-search {
@@ -469,6 +481,7 @@ input, textarea, select {
   padding: var(--space-6);
   max-width: var(--content-max-width);
   width: 100%;
+  min-width: 0;
   margin: 0 auto;
 }
 
@@ -502,6 +515,8 @@ input, textarea, select {
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  min-width: 0;
 }
 
 .card-header {
@@ -668,6 +683,9 @@ input, textarea, select {
 .status-risk      { background: #FEE2E2; color: #B91C1C; }
 .status-risk::before { background: #EF4444; }
 
+.status-pending   { background: var(--color-gray-100); color: var(--text-secondary); }
+.status-pending::before { background: var(--color-gray-400); }
+
 /* ============================================================
    Buttons
    ============================================================ */
@@ -729,13 +747,16 @@ input, textarea, select {
    ============================================================ */
 .data-table-wrapper {
   overflow-x: auto;
+  max-width: 100%;
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-light);
   background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .data-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
   font-size: var(--font-size-sm);
 }
@@ -830,6 +851,64 @@ input, textarea, select {
    ============================================================ */
 .chart-container {
   position: relative;
+  min-width: 0;
+}
+
+.chart-card {
+  min-height: 260px;
+}
+
+.chart-card canvas,
+.card canvas {
+  max-height: 320px;
+}
+
+.section-title,
+.chart-title,
+.card h3 {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.muted-row {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.interactive-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.interactive-row + .interactive-row {
+  margin-top: var(--space-2);
+}
+
+.interactive-row:hover {
+  background: var(--color-gray-50);
+  border-color: var(--border-default);
+}
+
+.row-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 /* ============================================================
@@ -860,6 +939,8 @@ input, textarea, select {
 }
 
 .form-control {
+  width: 100%;
+  min-width: 0;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
@@ -1004,6 +1085,12 @@ input, textarea, select {
   .app-sidebar { transform: translateX(-100%); }
   .app-sidebar.open { transform: translateX(0); width: 240px; }
   .app-main { margin-left: 0; }
+  .app-header { gap: var(--space-2); }
+  .header-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
   .grid-2 { grid-template-columns: 1fr; }
   .grid-4 { grid-template-columns: 1fr 1fr; }
   .page-content { padding: var(--space-4); }
@@ -1052,6 +1139,13 @@ input, textarea, select {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius-md);
+}
+
+.loading-state,
+.empty-state {
+  padding: var(--space-12);
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 @keyframes shimmer {

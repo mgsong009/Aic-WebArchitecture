@@ -12,6 +12,7 @@
 # node
 **/node_modules/
 **/dist/
+aic-frontend/qa-captures/
 
 # editor/os
 .vscode/
