@@ -22,6 +22,17 @@
 
 ## 기록
 
+## 2026-05-25
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Frontend | 신뢰성 검증 탭의 AIC 신뢰구간 그래프를 compact chart로 다듬었습니다. 제목을 `선택 대상의 AIC 신뢰구간`으로 바꾸고, 선택 대상명을 설명에 포함했으며, 큰 사각형 CI 음영을 제거하고 얇은 CI bracket과 lower/mean/upper 수치 라벨을 표시했습니다. 평균 marker는 AIC primary 계열로 완화했고 선택된 테이블 행 강조를 보강했습니다. | `npm run build` 성공. `docker compose up --build -d frontend` 성공. Chrome headless에서 그래프 제목, 220px SVG 높이, CI bracket 1개, 기존 `ci-band` 0개, lower/mean/upper 수치 라벨 3개, primary 계열 mean marker, 테이블 행 클릭 선택 변경, horizontal overflow 없음 확인. | None. |
+| Backend/Frontend | AIC 통계 검증 페이지를 공정성/신뢰성/해석 안정성 3개 탭 전환형 화면으로 재구성했습니다. `/teacher/statistics/validation` 전용 API를 추가해 난이도 보정 AIC, AIC 신뢰구간, 이상패턴 신호를 기본값 포함 계약으로 반환하고, `/teacher/statistics?tab=fairness|confidence|anomaly`에서 탭 상태를 유지합니다. 신뢰성 탭에는 새 chart library 없이 SVG 기반 단일 CI Curve Graph를 추가했습니다. | `python -m compileall app` 성공. `npm run build` 성공. `docker compose up --build -d backend frontend` 성공. 교사 로그인 후 `/api/v1/teacher/statistics/validation`에서 `difficulty_adjusted_aic`, `confidence_intervals`, `anomaly_detection.rule_counts`, `ci_width` 반환 확인. Chrome headless에서 3개 탭 전환, query 유지, CI SVG 렌더링, 테이블 행 클릭 선택 변경, Top 5/탐지 규칙 접힘 영역, 금지 표현 미노출, horizontal overflow 없음 확인. 기존 `/teacher/advanced`도 정상 렌더링 확인. | None. |
+| Frontend | 고급 분석 화면 내부의 `통계 검증` 버튼과 탭 링크를 제거하고, 통계 검증 페이지 헤더를 심화 분석 화면과 동일한 gradient hero, 태그, 제목, pill 항목 규격으로 맞췄습니다. 별도 `/teacher/statistics` 페이지와 사이드바 진입은 유지했습니다. | `npm run build` 성공. `docker compose up --build -d frontend` 성공. Chrome headless에서 `/teacher/advanced` hero와 main에 통계 검증 링크가 없고, `/teacher/statistics` hero가 심화 분석 hero와 같은 gradient/background 및 16px radius를 쓰며 horizontal overflow가 없음을 확인했습니다. | None. |
+| Frontend | 고급 분석 화면에서 별도 통계 검증 페이지로 이동하는 버튼과 탭 링크를 추가했습니다. `/teacher/advanced`의 상단 actions와 분석 탭 영역에서 `통계 검증`을 누르면 `/teacher/statistics`로 이동합니다. | `npm run build` 성공. `docker compose up --build -d frontend` 성공. Chrome headless에서 `/teacher/advanced`의 통계 검증 링크를 클릭해 `/teacher/statistics`로 이동하고 `통계 검증` 페이지 제목이 렌더링되는 것을 확인했습니다. | None. |
+| Backend/Frontend | 교사 심화분석 API와 화면에 통계 검증 레이어를 추가했습니다. 기존 `/api/v1/teacher/analytics/advanced`의 `scatter_data`, `correlation_matrix` 타입은 유지하고, 난이도 보정 AIC, AIC 95% 신뢰구간, 이상패턴/해석 주의 신호를 기본값 포함 응답으로 확장했습니다. 프론트는 `TeacherAdvancedView.vue`에 과제 난이도 보정, 신뢰구간, 교사 확인 필요 신호 섹션을 추가했습니다. | `python -m compileall app` 성공. `npm ci` 성공. `npm run build` 성공. helper edge-case 인메모리 검증 성공. `docker compose up --build -d backend frontend` 성공. 교사 로그인 후 `/api/v1/teacher/analytics/advanced`에서 신규 필드와 기존 `correlation_matrix` 객체 유지 확인. Chrome headless에서 desktop/mobile `/teacher/advanced` 렌더링 확인, mobile horizontal overflow 없음. | None. |
+| Frontend | 통계 검증 화면을 고급 분석 화면과 별도 교사 페이지로 분리했습니다. `TeacherAdvancedView.vue`는 군집/상관/전략/Effort 분석 전용으로 되돌리고, `TeacherStatisticalValidationView.vue`와 `/teacher/statistics` 라우트, 사이드바 `통계 검증` 메뉴를 추가했습니다. | `npm run build` 성공. `docker compose up --build -d frontend` 성공. Chrome headless에서 `/teacher/advanced`에 통계 섹션이 없고 `/teacher/statistics`가 독립 렌더링되는지 확인했습니다. 모바일 `/teacher/statistics` horizontal overflow 없음. | None. |
+
 ## 2026-05-24
 
 | 영역 | 요약 | 확인 | 후속 작업 |

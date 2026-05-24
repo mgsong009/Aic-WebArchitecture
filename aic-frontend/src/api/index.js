@@ -78,9 +78,51 @@ export function normalizeTeacherStudentDetail(data = {}) {
 }
 
 export function normalizeTeacherAdvancedAnalytics(data = {}) {
+  const difficultyAdjusted = asObject(data.difficulty_adjusted_aic)
+  const anomalyDetection = asObject(data.anomaly_detection)
+
   return {
     scatter_data: asArray(data.scatter_data),
     correlation_matrix: asObject(data.correlation_matrix),
+    difficulty_adjusted_aic: {
+      overall_mean_aic: difficultyAdjusted.overall_mean_aic ?? null,
+      summary: asArray(difficultyAdjusted.summary),
+      students: asArray(difficultyAdjusted.students),
+      method_note: difficultyAdjusted.method_note || '',
+    },
+    confidence_intervals: asArray(data.confidence_intervals),
+    anomaly_detection: {
+      items: asArray(anomalyDetection.items),
+      summary_counts: asObject(anomalyDetection.summary_counts),
+      rule_counts: asArray(anomalyDetection.rule_counts),
+      method_note: anomalyDetection.method_note || '',
+    },
+  }
+}
+
+export function normalizeTeacherStatisticsValidation(data = {}) {
+  const difficultyAdjusted = asObject(data.difficulty_adjusted_aic)
+  const anomalyDetection = asObject(data.anomaly_detection)
+
+  return {
+    difficulty_adjusted_aic: {
+      overall_mean_aic: difficultyAdjusted.overall_mean_aic ?? null,
+      summary: asArray(difficultyAdjusted.summary),
+      students: asArray(difficultyAdjusted.students),
+      method_note: difficultyAdjusted.method_note || '',
+    },
+    confidence_intervals: asArray(data.confidence_intervals),
+    anomaly_detection: {
+      items: asArray(anomalyDetection.items),
+      summary_counts: {
+        total: asNumber(asObject(anomalyDetection.summary_counts).total),
+        high: asNumber(asObject(anomalyDetection.summary_counts).high),
+        caution: asNumber(asObject(anomalyDetection.summary_counts).caution),
+        low: asNumber(asObject(anomalyDetection.summary_counts).low),
+      },
+      rule_counts: asArray(anomalyDetection.rule_counts),
+      method_note: anomalyDetection.method_note || '',
+    },
   }
 }
 
@@ -171,6 +213,11 @@ export async function getTeacherAssignmentAnalytics(assignmentId) {
 export async function getTeacherAdvancedAnalytics() {
   const { data } = await api.get('/teacher/analytics/advanced')
   return normalizeTeacherAdvancedAnalytics(data)
+}
+
+export async function getTeacherStatisticsValidation() {
+  const { data } = await api.get('/teacher/statistics/validation')
+  return normalizeTeacherStatisticsValidation(data)
 }
 
 api.interceptors.request.use((cfg) => {

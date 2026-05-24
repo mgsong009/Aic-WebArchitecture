@@ -141,6 +141,22 @@ async def get_class_trend(class_id: int, db: AsyncSession):
     return result.all()
 
 
+async def get_class_analyzed_metric_rows(class_id: int, db: AsyncSession):
+    result = await db.execute(
+        select(User, Assignment, Submission, Metric)
+        .join(ClassEnrollment, ClassEnrollment.student_id == User.id)
+        .join(Submission, Submission.student_id == User.id)
+        .join(Assignment, Assignment.id == Submission.assignment_id)
+        .join(Metric, Metric.submission_id == Submission.id)
+        .where(ClassEnrollment.class_id == class_id)
+        .where(Assignment.class_id == class_id)
+        .where(User.role == "student")
+        .where(Metric.aic_score.is_not(None))
+        .order_by(Assignment.created_at.asc(), Assignment.id.asc(), User.name.asc())
+    )
+    return result.all()
+
+
 async def get_student_all_submissions(student_id: int, class_id: int, db: AsyncSession):
     result = await db.execute(
         select(Submission, Assignment, Metric)

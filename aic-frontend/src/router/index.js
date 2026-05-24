@@ -19,6 +19,7 @@ const routes = [
   { path: '/teacher/analytics/assignment', component: () => import('@/views/teacher/TeacherAssignmentAnalyticsView.vue'), meta: { role: 'teacher' } },
   { path: '/teacher/analytics/assignment/:id', component: () => import('@/views/teacher/TeacherAssignmentAnalyticsView.vue'), meta: { role: 'teacher' } },
   { path: '/teacher/advanced', component: () => import('@/views/teacher/TeacherAdvancedView.vue'), meta: { role: 'teacher' } },
+  { path: '/teacher/statistics', component: () => import('@/views/teacher/TeacherStatisticalValidationView.vue'), meta: { role: 'teacher' } },
   // Fallback
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]

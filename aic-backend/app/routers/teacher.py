@@ -6,6 +6,7 @@ from app.dependencies import require_role
 from app.models.db_models import User, Assignment, Submission, Metric, ClassEnrollment
 from app.schemas.teacher import FeedbackCreate, FeedbackCreated, TeacherAssignmentList
 from app.services import teacher_service as svc
+from app.services import teacher_analytics_stats as stats
 
 router = APIRouter()
 teacher_only = require_role("teacher")
@@ -315,38 +316,60 @@ async def teacher_advanced_analytics(user: dict = Depends(teacher_only), db: Asy
         raise HTTPException(status_code=404, detail="Class not found")
 
     rows = await svc.get_all_student_latest_metrics(cls.id, db)
+    stats_rows = await svc.get_class_analyzed_metric_rows(cls.id, db)
 
     scatter_data = []
     for student, sub, m in rows:
         if m:
             scatter_data.append({
                 "student_id": student.id, "name": student.name,
-                "pi": m.pi_score, "ui": m.ui_score, "oi": m.oi_score, "aic": m.aic_score,
+                "pi": m.pi_score, "ui": m.ui_score, "oi": m.oi_score,
+                "topic": m.topic_score, "aic": m.aic_score,
             })
 
-    # Simple correlation: pi vs ui (Pearson)
     def pearson(xs, ys):
-        n = len(xs)
+        pairs = [(x, y) for x, y in zip(xs, ys) if x is not None and y is not None]
+        n = len(pairs)
         if n < 2:
             return 0
+        xs, ys = zip(*pairs)
         mx, my = sum(xs) / n, sum(ys) / n
         num = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
         dx = (sum((x - mx) ** 2 for x in xs)) ** 0.5
         dy = (sum((y - my) ** 2 for y in ys)) ** 0.5
         return round(num / (dx * dy), 2) if dx * dy else 0
 
-    pi_list = [d["pi"] or 0 for d in scatter_data]
-    ui_list = [d["ui"] or 0 for d in scatter_data]
-    oi_list = [d["oi"] or 0 for d in scatter_data]
-    aic_list = [d["aic"] or 0 for d in scatter_data]
+    pi_list = [d["pi"] for d in scatter_data]
+    ui_list = [d["ui"] for d in scatter_data]
+    oi_list = [d["oi"] for d in scatter_data]
+    topic_list = [d["topic"] for d in scatter_data]
+    aic_list = [d["aic"] for d in scatter_data]
 
     corr = {
         "pi_ui": pearson(pi_list, ui_list),
         "pi_oi": pearson(pi_list, oi_list),
+        "pi_topic": pearson(pi_list, topic_list),
         "ui_oi": pearson(ui_list, oi_list),
+        "ui_topic": pearson(ui_list, topic_list),
+        "oi_topic": pearson(oi_list, topic_list),
         "pi_aic": pearson(pi_list, aic_list),
         "ui_aic": pearson(ui_list, aic_list),
         "oi_aic": pearson(oi_list, aic_list),
+        "topic_aic": pearson(topic_list, aic_list),
     }
 
-    return {"scatter_data": scatter_data, "correlation_matrix": corr}
+    return {
+        "scatter_data": scatter_data,
+        "correlation_matrix": corr,
+        **stats.build_advanced_statistics(stats_rows),
+    }
+
+
+@router.get("/statistics/validation")
+async def teacher_statistics_validation(user: dict = Depends(teacher_only), db: AsyncSession = Depends(get_db)):
+    cls = await svc.get_teacher_class(user["id"], db)
+    if not cls:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    rows = await svc.get_class_analyzed_metric_rows(cls.id, db)
+    return stats.build_advanced_statistics(rows)

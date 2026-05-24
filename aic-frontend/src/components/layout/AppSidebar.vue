@@ -28,6 +28,7 @@ const teacherNav = [
   { label: '위험군 관리', path: '/teacher/risk', icon: 'alertTriangle', badge: true },
   { label: '과제 분석', path: '/teacher/analytics/assignment', dynamicPath: true, match: '/teacher/analytics/assignment', icon: 'barChart' },
   { label: '심화 분석', path: '/teacher/advanced', icon: 'cpu' },
+  { label: '통계 검증', path: '/teacher/statistics', icon: 'shield' },
 ]
 const iconSvg = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
@@ -38,6 +39,7 @@ const iconSvg = {
   alertTriangle: '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
   barChart: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
   cpu: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
 }
 const navItems = computed(() => (role.value === 'teacher' ? teacherNav : studentNav))
 const homePath = computed(() => (role.value === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'))
