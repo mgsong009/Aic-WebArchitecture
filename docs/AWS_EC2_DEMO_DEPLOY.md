@@ -159,7 +159,41 @@ docker compose down -v
 
 Use `down -v` only when you intentionally want to erase the demo database and model cache.
 
-## 9. Troubleshooting
+## 9. GitHub Actions Auto Deploy
+
+The workflow at `.github/workflows/deploy-ec2.yml` deploys automatically when `main` receives a push.
+
+It uses this flow:
+
+1. Check out the repository in GitHub Actions.
+2. Build a deployment archive while excluding `.git`, `.env`, `node_modules`, and `dist`.
+3. Upload the archive to EC2 over SSH.
+4. Preserve the existing EC2 `.env`.
+5. Run `sudo docker compose up --build -d` on EC2.
+
+Configure these GitHub repository secrets:
+
+| Secret | Value |
+| --- | --- |
+| `EC2_HOST` | EC2 public IP or public DNS, for example `13.125.245.16` |
+| `EC2_USER` | SSH user, usually `ubuntu` |
+| `EC2_SSH_KEY` | Private key contents for the EC2 key pair |
+
+The EC2 deployment directory is fixed to:
+
+```text
+~/Aic-WebArchitecture
+```
+
+Before the first automated deploy, confirm this file exists on EC2:
+
+```bash
+~/Aic-WebArchitecture/.env
+```
+
+The workflow intentionally does not upload or replace `.env`.
+
+## 10. Troubleshooting
 
 If `http://EC2_PUBLIC_IP` does not open:
 
