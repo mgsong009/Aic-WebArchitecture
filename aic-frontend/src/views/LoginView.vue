@@ -25,9 +25,14 @@ const metrics = [
 const roleOptions = [
   { value: 'student', label: '학생', desc: 'Student', mark: 'S' },
   { value: 'teacher', label: '교사', desc: 'Teacher', mark: 'T' },
+  { value: 'admin', label: '관리자', desc: 'Admin', mark: 'A' },
 ]
 
-const roleHint = computed(() => (role.value === 'teacher' ? 'teacher_kim' : 'student_001'))
+const roleHint = computed(() => {
+  if (role.value === 'teacher') return 'teacher_kim'
+  if (role.value === 'admin') return 'admin'
+  return 'student_001'
+})
 
 async function handleLogin() {
   if (!userId.value || !password.value) {
@@ -38,7 +43,9 @@ async function handleLogin() {
   error.value = ''
   try {
     await auth.login(userId.value, password.value, role.value)
-    router.push(role.value === 'teacher' ? '/teacher/dashboard' : '/student/dashboard')
+    if (role.value === 'admin') router.push('/admin/dashboard')
+    else if (role.value === 'teacher') router.push('/teacher/dashboard')
+    else router.push('/student/dashboard')
   } catch (e) {
     error.value = '아이디, 비밀번호, 또는 역할이 올바르지 않습니다.'
   } finally {
@@ -337,7 +344,7 @@ function demoLogin(nextRole) {
 
 .role-selector {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 10px;
   padding: 4px;
   border-radius: 10px;

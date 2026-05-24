@@ -41,14 +41,25 @@ const iconSvg = {
   cpu: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>',
   shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
 }
-const navItems = computed(() => (role.value === 'teacher' ? teacherNav : studentNav))
-const homePath = computed(() => (role.value === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'))
+const adminNav = [
+  { label: '시스템 현황', path: '/admin/dashboard', icon: 'grid' },
+  { label: '분석 품질', path: '/admin/analysis-quality', icon: 'shield' },
+]
+const navItems = computed(() => {
+  if (role.value === 'admin') return adminNav
+  return role.value === 'teacher' ? teacherNav : studentNav
+})
+const homePath = computed(() => {
+  if (role.value === 'admin') return '/admin/dashboard'
+  return role.value === 'teacher' ? '/teacher/dashboard' : '/student/dashboard'
+})
 
 onMounted(() => {
   if (role.value === 'teacher' && !teacherStore.assignments.length) {
     teacherStore.fetchAssignments().catch(() => {})
   }
 })
+
 
 function itemPath(item) {
   if (item.dynamicPath && teacherStore.firstAssignmentId) {
@@ -80,7 +91,7 @@ async function handleLogout() {
       <span class="sidebar-logo-icon">AIC</span>
       <span class="sidebar-logo-text">AIC <span>Index</span></span>
     </div>
-    <div class="sidebar-role-badge">{{ role === 'teacher' ? 'Teacher' : 'Student' }}</div>
+    <div class="sidebar-role-badge">{{ role === 'admin' ? 'Admin' : role === 'teacher' ? 'Teacher' : 'Student' }}</div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Navigation</div>
       <RouterLink
@@ -110,7 +121,7 @@ async function handleLogout() {
       <div class="user-avatar">{{ (auth.user?.name || 'A').slice(0, 1) }}</div>
       <div class="user-info">
         <div class="user-name">{{ auth.user?.name || '사용자' }}</div>
-        <div class="user-role">{{ role === 'teacher' ? 'Teacher' : `Student · ${auth.user?.class_code || 'CS101'}` }}</div>
+        <div class="user-role">{{ role === 'admin' ? 'System Admin' : role === 'teacher' ? 'Teacher' : `Student · ${auth.user?.class_code || 'CS101'}` }}</div>
       </div>
       <button class="logout-btn" title="로그아웃" aria-label="로그아웃" @click.stop="handleLogout">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

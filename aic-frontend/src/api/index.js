@@ -220,6 +220,11 @@ export async function getTeacherStatisticsValidation() {
   return normalizeTeacherStatisticsValidation(data)
 }
 
+export async function getAdminDashboard() {
+  const { data } = await api.get('/admin/dashboard')
+  return data
+}
+
 api.interceptors.request.use((cfg) => {
   const auth = useAuthStore()
   if (auth.accessToken) {

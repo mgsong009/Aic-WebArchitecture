@@ -12,7 +12,11 @@ const props = defineProps({
 const auth = useAuthStore()
 const isSidebarOpen = ref(false)
 
-const roleLabel = computed(() => (auth.user?.role === 'teacher' ? 'Teacher' : 'Student'))
+const roleLabel = computed(() => {
+  const r = auth.user?.role
+  if (r === 'admin') return 'Admin'
+  return r === 'teacher' ? 'Teacher' : 'Student'
+})
 const currentTitle = computed(() => props.title || 'AIC Index')
 const searchPlaceholder = computed(() => (auth.user?.role === 'teacher' ? '학생 검색...' : '과제 검색...'))
 

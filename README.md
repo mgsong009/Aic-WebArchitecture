@@ -13,3 +13,6 @@
 ## 주요 문서
 - CURRENT_STATUS_VER8.md
 - ai-validated-dongarra.md
+
+## 관리자 계정 로그인
+- admin / admin1234

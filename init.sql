@@ -5,7 +5,7 @@ CREATE TABLE users (
     id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id_str   VARCHAR(64)  NOT NULL UNIQUE,
     password_hash VARCHAR(256) NOT NULL,
-    role          ENUM('student','teacher') NOT NULL,
+    role          ENUM('student','teacher','admin') NOT NULL,
     name          VARCHAR(128) NOT NULL,
     email         VARCHAR(256),
     created_at    DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -176,6 +176,11 @@ INSERT INTO users (user_id_str, password_hash, role, name, email) VALUES
 ('student_058', '$2b$12$NwyXPzy1aFg3Zl4Z7zDLRe95xCTC2o7W1Iy4tAXZeor2oJcr36TpW', 'student', 'Student 058', 's058@aic.edu'),
 ('student_059', '$2b$12$NwyXPzy1aFg3Zl4Z7zDLRe95xCTC2o7W1Iy4tAXZeor2oJcr36TpW', 'student', 'Student 059', 's059@aic.edu'),
 ('student_060', '$2b$12$NwyXPzy1aFg3Zl4Z7zDLRe95xCTC2o7W1Iy4tAXZeor2oJcr36TpW', 'student', 'Student 060', 's060@aic.edu');
+
+-- Admin account (password: admin1234)
+-- ALTER TABLE users MODIFY COLUMN role ENUM('student','teacher','admin') NOT NULL;
+INSERT INTO users (user_id_str, password_hash, role, name, email) VALUES
+('admin', '$2b$12$2dwo/gCXoMSvMyhhqD/NF.oCKyZq/jSuPAO3BYb/q0Jzi8audOEvi', 'admin', '시스템 관리자', 'admin@aic.local');
 
 INSERT INTO classes (class_code, class_name, teacher_id, semester) VALUES
 ('CS101', 'Introduction to Computing and AI', 1, '2025-Spring');

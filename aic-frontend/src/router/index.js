@@ -20,6 +20,9 @@ const routes = [
   { path: '/teacher/analytics/assignment/:id', component: () => import('@/views/teacher/TeacherAssignmentAnalyticsView.vue'), meta: { role: 'teacher' } },
   { path: '/teacher/advanced', component: () => import('@/views/teacher/TeacherAdvancedView.vue'), meta: { role: 'teacher' } },
   { path: '/teacher/statistics', component: () => import('@/views/teacher/TeacherStatisticalValidationView.vue'), meta: { role: 'teacher' } },
+  // Admin routes
+  { path: '/admin/dashboard', component: () => import('@/views/admin/AdminDashboardView.vue'), meta: { role: 'admin' } },
+  { path: '/admin/analysis-quality', component: () => import('@/views/admin/AnalysisQualityView.vue'), meta: { role: 'admin' } },
   // Fallback
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
