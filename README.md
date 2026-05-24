@@ -10,6 +10,9 @@
 1. 루트에 .env 생성 (.env.example 참고)
 2. `docker compose up --build`
 
+## AWS 데모 배포
+- EC2 단일 인스턴스 Docker Compose 배포 절차: [docs/AWS_EC2_DEMO_DEPLOY.md](docs/AWS_EC2_DEMO_DEPLOY.md)
+
 ## 주요 문서
 - CURRENT_STATUS_VER8.md
 - ai-validated-dongarra.md
