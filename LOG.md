@@ -22,6 +22,18 @@
 
 ## 기록
 
+## 2026-05-25 (로컬/운영 Compose 분리)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Deployment | 로컬 기본 실행과 AWS HTTPS 배포 실행 경로를 분리했습니다. `docker-compose.yml`은 공통 서비스만 담고, 로컬 자동 적용 `docker-compose.override.yml`에서 frontend `80:80`을 공개하며, AWS 전용 `docker-compose.prod.yml`에서 Caddy/ZeroSSL HTTPS와 `80/443` 공개를 담당합니다. GitHub Actions EC2 배포와 AWS 문서도 prod compose 파일을 명시하도록 갱신했습니다. | `docker compose config --services`에서 로컬 기본 구성에 `aic_caddy`가 없고, `docker compose -f docker-compose.yml -f docker-compose.prod.yml config --services`에서 prod 구성에 `caddy`가 포함됨을 확인했습니다. AWS 서버에 갱신된 compose 파일을 반영하고 prod compose로 재기동했습니다. EC2 내부에서 `https://aic-webproject.kro.kr` HTTP 200, `http://aic-webproject.kro.kr` HTTP 308 확인. | None. |
+
+## 2026-05-25 (도메인 및 HTTPS 적용)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Deployment | `aic-webproject.kro.kr` 도메인을 EC2 배포에 연결하고 Caddy reverse proxy를 추가해 TLS 종료와 HTTP to HTTPS 리다이렉트를 적용했습니다. `frontend`는 호스트 포트 직접 노출 대신 내부 Docker 네트워크에서 Caddy가 프록시하도록 변경했고, Caddy 인증서 발급은 `.env`의 `ACME_EMAIL`과 ZeroSSL ACME endpoint를 사용합니다. | `docker compose config` 성공. AWS에서 `docker compose up -d` 성공. Caddy 로그에서 ZeroSSL 인증서 발급 성공 확인. EC2 내부에서 `https://aic-webproject.kro.kr` HTTP 200, `http://aic-webproject.kro.kr` HTTP 308 확인. | 외부 네트워크에서 접속이 안 보이면 AWS 보안그룹 TCP 80/443 인바운드 허용 여부를 확인합니다. |
+
 ## 2026-05-25 (TODO P1 안정화)
 
 | 영역 | 요약 | 확인 | 후속 작업 |

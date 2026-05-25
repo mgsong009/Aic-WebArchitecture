@@ -51,8 +51,6 @@ services:
     build: ./aic-frontend
     container_name: aic_frontend
     restart: unless-stopped
-    ports:
-      - "80:80"
     depends_on:
       - backend
     networks:
