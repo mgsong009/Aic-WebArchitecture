@@ -1,0 +1,26 @@
+services:
+  frontend:
+    expose:
+      - "80"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: aic_caddy
+    restart: unless-stopped
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+    depends_on:
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - aic_internal
+
+volumes:
+  caddy_data:
+  caddy_config:

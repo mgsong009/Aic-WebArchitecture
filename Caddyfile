@@ -1,0 +1,10 @@
+{
+	email {$ACME_EMAIL}
+	acme_ca https://acme.zerossl.com/v2/DV90
+}
+
+aic-webproject.kro.kr {
+	encode gzip zstd
+
+	reverse_proxy frontend:80
+}

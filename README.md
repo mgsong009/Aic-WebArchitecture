@@ -8,7 +8,8 @@
 
 ## 실행 (Docker)
 1. 루트에 .env 생성 (.env.example 참고)
-2. `docker compose up --build`
+2. 로컬 개발/확인: `docker compose up --build`
+3. AWS HTTPS 배포: `docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d`
 
 ## AWS 데모 배포
 - EC2 단일 인스턴스 Docker Compose 배포 절차: [docs/AWS_EC2_DEMO_DEPLOY.md](docs/AWS_EC2_DEMO_DEPLOY.md)

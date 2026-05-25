@@ -84,6 +84,12 @@ export function normalizeTeacherAdvancedAnalytics(data = {}) {
   return {
     scatter_data: asArray(data.scatter_data),
     correlation_matrix: asObject(data.correlation_matrix),
+    clusters: asArray(data.clusters),
+    strategies: asArray(data.strategies),
+    effort_samples: asArray(data.effort_samples),
+    effort_correlation: data.effort_correlation ?? null,
+    topic_oi_samples: asArray(data.topic_oi_samples),
+    similarity_bands: asArray(data.similarity_bands),
     difficulty_adjusted_aic: {
       overall_mean_aic: difficultyAdjusted.overall_mean_aic ?? null,
       summary: asArray(difficultyAdjusted.summary),

@@ -24,7 +24,13 @@ const dashboard = computed(() => (hasLiveData.value ? liveDashboard.value : refe
 const cls = computed(() => dashboard.value.cls || referenceDashboard.cls)
 const classAvg = computed(() => ({ ...referenceDashboard.class_avg, ...(dashboard.value.class_avg || {}) }))
 const riskStudents = computed(() => dashboard.value.risk_students?.length ? dashboard.value.risk_students : referenceDashboard.risk_students)
-const topStudents = computed(() => dashboard.value.top_students?.length ? dashboard.value.top_students : referenceDashboard.top_students)
+const topStudents = computed(() => {
+  const source = dashboard.value.top_students?.length ? dashboard.value.top_students : referenceDashboard.top_students
+  return [...source]
+    .filter((student) => student.aic != null)
+    .sort((a, b) => Number(b.aic || 0) - Number(a.aic || 0))
+    .slice(0, 5)
+})
 const distribution = computed(() => dashboard.value.aic_distribution?.length ? dashboard.value.aic_distribution : referenceDashboard.aic_distribution)
 const trend = computed(() => dashboard.value.trend?.length ? dashboard.value.trend : referenceDashboard.trend)
 const analyzedCount = computed(() => dashboard.value.analyzed_count || cls.value.analyzed_count || 25)

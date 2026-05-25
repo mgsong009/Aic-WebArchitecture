@@ -7,7 +7,7 @@ This runbook deploys the full AIC Web stack on one low-cost EC2 instance with Do
 - `pipeline`: FastAPI analysis service on the internal Docker network
 - `db`: MySQL 8 in Docker with a named volume
 
-The first demo target is plain HTTP at `http://EC2_PUBLIC_IP`. Domain, HTTPS, and redirects are tracked as a follow-up in `TODO.md`.
+The demo target is HTTPS at `https://aic-webproject.kro.kr`. Caddy terminates TLS and redirects plain HTTP requests to HTTPS.
 
 ## 1. Create EC2
 
@@ -19,8 +19,9 @@ Use the AWS console to create an instance:
 - Security group inbound rules:
   - SSH `22` from your IP only
   - HTTP `80` from `0.0.0.0/0`
+  - HTTPS `443` from `0.0.0.0/0`
 
-Avoid opening MySQL, backend, or pipeline ports to the internet. Only the frontend publishes port `80`.
+Avoid opening MySQL, backend, or pipeline ports to the internet. Only Caddy publishes ports `80` and `443`.
 
 ## 2. Connect to EC2
 
@@ -81,6 +82,7 @@ Set real secret values:
 MYSQL_ROOT_PASSWORD=...
 MYSQL_PASSWORD=...
 JWT_SECRET=...
+ACME_EMAIL=...
 ```
 
 Rules:
@@ -88,6 +90,7 @@ Rules:
 - Use different MySQL root and app passwords.
 - Keep `JWT_SECRET` at least 32 characters.
 - Do not use words like `placeholder`, `default`, `example`, `your_`, or `change_` in `JWT_SECRET`.
+- Set `ACME_EMAIL` to an email address used for TLS certificate issuance notices.
 - Never commit `.env`.
 
 Generate a JWT secret on EC2:
@@ -99,19 +102,21 @@ openssl rand -hex 32
 ## 6. Start The Stack
 
 ```bash
-docker compose up --build -d
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 ```
 
 The pipeline image downloads a sentence-transformer model during build, so the first build can take several minutes.
+Caddy automatically obtains and renews the TLS certificate for `aic-webproject.kro.kr` through ZeroSSL. Confirm the domain's `A` record points to the EC2 public IP before starting the stack.
 
 Check status:
 
 ```bash
-docker compose ps
-docker compose logs -f frontend
-docker compose logs -f backend
-docker compose logs -f pipeline
-docker compose logs -f db
+docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f frontend
+docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f caddy
+docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f pipeline
+docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f db
 ```
 
 ## 7. Verify
@@ -119,15 +124,16 @@ docker compose logs -f db
 From your local browser:
 
 ```text
-http://EC2_PUBLIC_IP
+https://aic-webproject.kro.kr
 ```
 
 From EC2:
 
 ```bash
 curl http://localhost
-docker compose exec backend python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/health').read().decode())"
-docker compose exec pipeline python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:9000/health').read().decode())"
+curl -I https://aic-webproject.kro.kr
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec backend python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/health').read().decode())"
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec pipeline python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:9000/health').read().decode())"
 ```
 
 The expected health response is:
@@ -142,19 +148,34 @@ Restart after code changes:
 
 ```bash
 git pull
-docker compose up --build -d
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 ```
+
+Apply `init.sql` changes to an existing EC2 demo database:
+
+```bash
+git pull
+docker compose up --build -d db
+bash scripts/recreate_demo_db_from_init.sh
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+```
+
+MySQL only runs files mounted into `/docker-entrypoint-initdb.d/` when `/var/lib/mysql` is empty. Because this project keeps MySQL data in the named Docker volume `mysql_data`, changes to `init.sql` are not applied by `docker compose up --build -d` after the first initialization.
+
+The script above asks you to type `RESET` before changing the database. For non-interactive demo maintenance, run `bash scripts/recreate_demo_db_from_init.sh --yes`.
+
+The script drops and recreates only the `aic_db` database from the current `init.sql`, then restarts the backend. Use it for the disposable EC2 demo database when you want the server to match the repository seed data. Do not use it on production data without replacing it with a proper migration plan.
 
 Stop:
 
 ```bash
-docker compose down
+docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 ```
 
 Stop and delete local MySQL/model volumes:
 
 ```bash
-docker compose down -v
+docker compose -f docker-compose.yml -f docker-compose.prod.yml down -v
 ```
 
 Use `down -v` only when you intentionally want to erase the demo database and model cache.
@@ -169,7 +190,7 @@ It uses this flow:
 2. Build a deployment archive while excluding `.git`, `.env`, `node_modules`, and `dist`.
 3. Upload the archive to EC2 over SSH.
 4. Preserve the existing EC2 `.env`.
-5. Run `sudo docker compose up --build -d` on EC2.
+5. Run `sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d` on EC2.
 
 Configure these GitHub repository secrets:
 
@@ -184,6 +205,7 @@ For a quick demo, the simplest option is:
 
 - SSH `22` from `0.0.0.0/0`
 - HTTP `80` from `0.0.0.0/0`
+- HTTPS `443` from `0.0.0.0/0`
 
 This keeps password login disabled and still requires the private key in `EC2_SSH_KEY`.
 For a longer-lived deployment, replace broad SSH access with a narrower option such as a self-hosted runner, AWS SSM, or a workflow step that temporarily opens the current runner IP.
@@ -207,22 +229,28 @@ The workflow intentionally does not upload or replace `.env`.
 If `http://EC2_PUBLIC_IP` does not open:
 
 - Confirm the EC2 security group allows inbound TCP `80`.
-- Confirm `docker compose ps` shows `frontend` running.
-- Check `docker compose logs -f frontend`.
+- Confirm `docker compose -f docker-compose.yml -f docker-compose.prod.yml ps` shows `caddy` and `frontend` running.
+- Check `docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f caddy`.
+
+If `https://aic-webproject.kro.kr` does not open:
+
+- Confirm the domain `A` record points to the EC2 public IP.
+- Confirm the EC2 security group allows inbound TCP `443`.
+- Check `docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f caddy`.
 
 If login or API requests fail:
 
 - Confirm frontend nginx still proxies `/api/` to `http://backend:8000`.
-- Check `docker compose logs -f backend`.
+- Check `docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f backend`.
 - Check `JWT_SECRET` passes the backend validator.
 
 If analysis is slow on first run:
 
-- Check `docker compose logs -f pipeline`.
+- Check `docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f pipeline`.
 - Use at least `t3.medium`; smaller instances may struggle with the model.
 
 If MySQL does not become healthy:
 
-- Check `docker compose logs -f db`.
+- Check `docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f db`.
 - Confirm `.env` exists and has `MYSQL_ROOT_PASSWORD` and `MYSQL_PASSWORD`.
-- If this is a disposable demo and the DB initialized with bad credentials, recreate volumes with `docker compose down -v` and start again.
+- If this is a disposable demo and the DB initialized with bad credentials, recreate volumes with `docker compose -f docker-compose.yml -f docker-compose.prod.yml down -v` and start again.

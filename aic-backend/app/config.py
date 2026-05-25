@@ -12,7 +12,7 @@ _PLACEHOLDER_HINTS = (
 
 
 class Settings(BaseSettings):
-    DB_URL: str = "mysql+aiomysql://aic_user:password@db:3306/aic_db"
+    DB_URL: str = "mysql+aiomysql://aic_user:password@db:3306/aic_db?charset=utf8mb4"
     JWT_SECRET: str = "change_me_in_production_use_32_plus_random_chars"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

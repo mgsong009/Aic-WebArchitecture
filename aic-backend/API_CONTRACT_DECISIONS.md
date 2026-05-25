@@ -9,10 +9,10 @@ This document records the current decision for prototype analytics elements that
 | Teacher assignment selection | Partial | Add backend API | `/teacher/analytics/assignment/{assignment_id}` exists, but the frontend has no teacher-scoped assignment list, which forces a hardcoded route target. Add a teacher-owned assignment list endpoint before final navigation polish. |
 | Assignment score distribution | Covered | Keep current API | `/teacher/analytics/assignment/{assignment_id}` returns `distribution`, `class_avg`, top/bottom students, and difficulty. |
 | Assignment box plot / IQR | Missing | Reduce for now | IQR needs per-assignment quartile semantics and UI-specific chart data. Do not add it until the product decides whether this is required beyond the existing distribution. |
-| Advanced scatter and correlations | Covered | Keep current API | `/teacher/analytics/advanced` returns `scatter_data` and `correlation_matrix`, enough for the current supported advanced analytics view. |
-| Cluster analysis | Missing | Reduce for now | Real clusters require a stable algorithm, labels, and backend-owned computation. Keep prototype-only cluster UI marked temporary until the scoring semantics are decided. |
-| Effort-score | Missing | Reduce for now | Effort needs revision count, draft history, or similar process data that is not currently modeled as a backend metric. |
-| Draft similarity | Missing | Reduce for now | Similarity requires a defined comparison method and privacy/product semantics. Do not derive it in the frontend. |
+| Advanced analytics overview | Covered | Keep current API | `/teacher/analytics/advanced` returns `scatter_data`, `correlation_matrix`, `clusters`, `strategies`, `effort_samples`, `effort_correlation`, `topic_oi_samples`, and `similarity_bands` from teacher-owned submission metrics. |
+| Cluster analysis | Covered | Backend-owned rule grouping | Backend groups analyzed submissions into AIC bands and returns deterministic 2D points derived from PI/UI/OI/Topic/AIC metrics. This avoids frontend-only prototype points while keeping labels stable. |
+| Effort-score | Covered with metric proxy | Backend returns `effort_samples` using available UI process metrics: `ui_distance`, then inverse `ui_cos_similarity`, then `ui_newinfo_ratio`, then `ui_score` fallback. The UI labels this as 수정 강도 rather than literal revision count. |
+| Draft similarity | Covered | Backend-owned metric aggregation | Backend returns draft/final similarity bands from `ui_cos_similarity`; frontend only renders the returned bands. |
 
 ## Follow-up Tasks
 

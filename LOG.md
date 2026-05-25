@@ -22,6 +22,27 @@
 
 ## 기록
 
+## 2026-05-25 (로컬/운영 Compose 분리)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Deployment | 로컬 기본 실행과 AWS HTTPS 배포 실행 경로를 분리했습니다. `docker-compose.yml`은 공통 서비스만 담고, 로컬 자동 적용 `docker-compose.override.yml`에서 frontend `80:80`을 공개하며, AWS 전용 `docker-compose.prod.yml`에서 Caddy/ZeroSSL HTTPS와 `80/443` 공개를 담당합니다. GitHub Actions EC2 배포와 AWS 문서도 prod compose 파일을 명시하도록 갱신했습니다. | `docker compose config --services`에서 로컬 기본 구성에 `aic_caddy`가 없고, `docker compose -f docker-compose.yml -f docker-compose.prod.yml config --services`에서 prod 구성에 `caddy`가 포함됨을 확인했습니다. AWS 서버에 갱신된 compose 파일을 반영하고 prod compose로 재기동했습니다. EC2 내부에서 `https://aic-webproject.kro.kr` HTTP 200, `http://aic-webproject.kro.kr` HTTP 308 확인. | None. |
+
+## 2026-05-25 (도메인 및 HTTPS 적용)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Deployment | `aic-webproject.kro.kr` 도메인을 EC2 배포에 연결하고 Caddy reverse proxy를 추가해 TLS 종료와 HTTP to HTTPS 리다이렉트를 적용했습니다. `frontend`는 호스트 포트 직접 노출 대신 내부 Docker 네트워크에서 Caddy가 프록시하도록 변경했고, Caddy 인증서 발급은 `.env`의 `ACME_EMAIL`과 ZeroSSL ACME endpoint를 사용합니다. | `docker compose config` 성공. AWS에서 `docker compose up -d` 성공. Caddy 로그에서 ZeroSSL 인증서 발급 성공 확인. EC2 내부에서 `https://aic-webproject.kro.kr` HTTP 200, `http://aic-webproject.kro.kr` HTTP 308 확인. | 외부 네트워크에서 접속이 안 보이면 AWS 보안그룹 TCP 80/443 인바운드 허용 여부를 확인합니다. |
+
+## 2026-05-25 (TODO P1 안정화)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Backend/Frontend | 교사 심화 분석 fallback 제거 작업을 완료했습니다. `/teacher/analytics/advanced`가 metric 기반 `clusters`, `strategies`, `effort_samples`, `effort_correlation`, `topic_oi_samples`, `similarity_bands`를 반환하도록 확장했고, `TeacherAdvancedView.vue`는 `teacherReferenceData.js`의 고급 분석 reference fallback 없이 API 응답만 렌더링합니다. API 계약 문서도 새 응답 필드와 effort proxy 기준에 맞게 갱신했습니다. | `python -m compileall app` 성공. `npm.cmd run build` 성공. | 실제 운영 DB에서 `ui_distance`/`ui_cos_similarity` 분포가 충분한지 화면 데이터 품질 확인이 필요합니다. |
+| Auth/Admin | 관리자 유저네임 한글 표시 경로를 점검하고 MySQL 연결 문자열에 `charset=utf8mb4`를 명시했습니다. `init.sql`의 admin seed는 정상 한글 값과 utf8mb4 DB 설정을 유지합니다. | `python -m compileall app` 성공. `npm.cmd run build` 성공. | 이미 생성된 DB 볼륨에 깨진 저장값이 남아 있으면 운영 DB 값 보정이 별도로 필요합니다. |
+| Frontend/Charts | 공통 Chart.js 생성 경로에서 `x/y` 데이터 값을 수집해 고정 축 `min/max` 밖 또는 경계에 있는 실제 데이터 포인트가 여백을 두고 보이도록 축 범위를 자동 확장했습니다. | `npm.cmd run build` 성공. | None. |
+| Backend/Frontend | 교사 대시보드 상위 5명 API를 `excellent/good` 필터가 아니라 분석된 전체 학생 AIC 내림차순 기준으로 최대 5명 반환하도록 수정하고, 프론트에서도 정렬/슬라이스를 방어적으로 보장했습니다. | `python -m compileall app` 성공. `npm.cmd run build` 성공. | None. |
+
 ## 2026-05-25 (통계 검증 신뢰구간 그래프 보정)
 
 | 영역 | 요약 | 확인 | 후속 작업 |

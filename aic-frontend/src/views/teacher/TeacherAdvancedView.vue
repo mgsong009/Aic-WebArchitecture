@@ -4,12 +4,17 @@ import { getTeacherAdvancedAnalytics } from '@/api'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 import ScatterChart from '@/components/charts/ScatterChart.vue'
-import { referenceAdvancedInsights } from './teacherReferenceData'
 
 const loading = ref(true)
 const error = ref('')
 const scatterData = ref([])
 const correlationMatrix = ref({})
+const clusters = ref([])
+const strategies = ref([])
+const effortSamples = ref([])
+const effortCorrelation = ref(null)
+const topicOiSamples = ref([])
+const similarityBands = ref([])
 const activeTab = ref('군집 분석')
 const tabs = ['군집 분석', '상관관계', '전략 유형', 'Effort vs Score']
 
@@ -21,11 +26,23 @@ async function loadAdvancedAnalytics() {
   try {
     const data = await getTeacherAdvancedAnalytics()
     scatterData.value = data.scatter_data
-    correlationMatrix.value = { ...referenceAdvancedInsights.correlation, ...data.correlation_matrix }
+    correlationMatrix.value = data.correlation_matrix
+    clusters.value = data.clusters
+    strategies.value = data.strategies
+    effortSamples.value = data.effort_samples
+    effortCorrelation.value = data.effort_correlation
+    topicOiSamples.value = data.topic_oi_samples
+    similarityBands.value = data.similarity_bands
   } catch (err) {
     scatterData.value = []
-    correlationMatrix.value = referenceAdvancedInsights.correlation
-    error.value = err.response?.data?.detail || 'API 데이터 대신 reference 심화 분석 fallback을 표시합니다.'
+    correlationMatrix.value = {}
+    clusters.value = []
+    strategies.value = []
+    effortSamples.value = []
+    effortCorrelation.value = null
+    topicOiSamples.value = []
+    similarityBands.value = []
+    error.value = err.response?.data?.detail || '심화 분석 데이터를 불러오지 못했습니다.'
   } finally {
     loading.value = false
   }
@@ -47,7 +64,7 @@ function chartOptions({ min = 0, max = 100, legend = true, xTitle = '', yTitle =
 const clusterConfig = computed(() => ({
   type: 'scatter',
   data: {
-    datasets: referenceAdvancedInsights.clusters.map((cluster) => ({
+    datasets: clusters.value.map((cluster) => ({
       label: cluster.label,
       data: cluster.points,
       backgroundColor: cluster.color,
@@ -61,13 +78,13 @@ const effortConfig = computed(() => ({
   type: 'scatter',
   data: {
     datasets: [{
-      label: '수정 횟수 vs AIC',
-      data: referenceAdvancedInsights.effortSamples,
+      label: '수정 강도 vs AIC',
+      data: effortSamples.value,
       backgroundColor: '#3B82F6',
       pointRadius: 7,
     }],
   },
-  options: chartOptions({ min: 0, max: 100, legend: false, xTitle: '수정 횟수', yTitle: 'AIC Score' }),
+  options: chartOptions({ min: 0, max: 100, legend: false, xTitle: '수정 강도', yTitle: 'AIC Score' }),
 }))
 
 const topicOiConfig = computed(() => ({
@@ -75,7 +92,7 @@ const topicOiConfig = computed(() => ({
   data: {
     datasets: [{
       label: 'TopicScore vs OI',
-      data: referenceAdvancedInsights.topicOiSamples,
+      data: topicOiSamples.value,
       backgroundColor: '#10B981',
       pointRadius: 7,
     }],
@@ -86,11 +103,11 @@ const topicOiConfig = computed(() => ({
 const similarityConfig = computed(() => ({
   type: 'bar',
   data: {
-    labels: referenceAdvancedInsights.similarityBands.map((item) => item.label),
+    labels: similarityBands.value.map((item) => item.label),
     datasets: [{
       label: '초안 유사도',
-      data: referenceAdvancedInsights.similarityBands.map((item) => item.value),
-      backgroundColor: referenceAdvancedInsights.similarityBands.map((item) => item.value >= 80 ? '#EF4444' : item.value >= 60 ? '#F97316' : '#10B981'),
+      data: similarityBands.value.map((item) => item.value),
+      backgroundColor: similarityBands.value.map((item) => item.value >= 80 ? '#EF4444' : item.value >= 60 ? '#F97316' : '#10B981'),
       borderRadius: 6,
     }],
   },
@@ -121,6 +138,11 @@ function formatCorrelation(value) {
   const next = Number(value)
   return Number.isFinite(next) ? next.toFixed(2) : '-'
 }
+
+const effortCorrelationLabel = computed(() => {
+  const value = Number(effortCorrelation.value)
+  return Number.isFinite(value) ? value.toFixed(2) : '-'
+})
 </script>
 
 <template>
@@ -148,7 +170,7 @@ function formatCorrelation(value) {
           <div class="card-body">
             <div class="chart-box tall"><ScatterChart :config="clusterConfig" /></div>
             <div class="cluster-legend">
-              <div v-for="cluster in referenceAdvancedInsights.clusters" :key="cluster.label" class="cl-item">
+              <div v-for="cluster in clusters" :key="cluster.label" class="cl-item">
                 <span class="cl-dot" :style="{ background: cluster.color }"></span>{{ cluster.label }} ({{ cluster.count }}명)
               </div>
             </div>
@@ -162,7 +184,7 @@ function formatCorrelation(value) {
             <div class="strategy-wrap">
               <div class="y-axis">← PI 높음</div>
               <div class="strategy-grid">
-                <div v-for="strategy in referenceAdvancedInsights.strategies" :key="strategy.key" class="strategy-cell" :class="strategy.tone">
+                <div v-for="strategy in strategies" :key="strategy.key" class="strategy-cell" :class="strategy.tone">
                   <div><strong>{{ strategy.title }}</strong><span>{{ strategy.desc }}</span></div>
                   <div><b>{{ strategy.count }}</b><small>학생</small></div>
                 </div>
@@ -189,10 +211,10 @@ function formatCorrelation(value) {
         </section>
 
         <section class="card">
-          <div class="card-header"><div><div class="card-title">Effort vs AIC Score</div><div class="card-subtitle">X: 수정 횟수, Y: AIC - 노력-성과 상관관계</div></div></div>
+          <div class="card-header"><div><div class="card-title">Effort vs AIC Score</div><div class="card-subtitle">X: 수정 강도, Y: AIC - 노력-성과 상관관계</div></div></div>
           <div class="card-body">
             <div class="chart-box tall"><ScatterChart :config="effortConfig" /></div>
-            <div class="correlation-note"><strong>r = 0.74</strong> - 수정 횟수와 AIC 점수 간 강한 양의 상관관계 (p &lt; 0.001)</div>
+            <div class="correlation-note"><strong>r = {{ effortCorrelationLabel }}</strong> - 실제 제출 metric 기반 수정 강도와 AIC 점수의 상관관계</div>
           </div>
         </section>
       </div>
