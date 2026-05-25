@@ -49,7 +49,7 @@ async def teacher_dashboard(user: dict = Depends(teacher_only), db: AsyncSession
                 "risk_types": svc._risk_types(pi, ui, oi),
                 "status": "risk",
             })
-        if status in ("excellent", "good"):
+        if aic is not None:
             top_students.append({
                 "id": student.id, "name": student.name,
                 "aic": aic, "pi": pi, "ui": ui, "oi": oi, "status": status,
