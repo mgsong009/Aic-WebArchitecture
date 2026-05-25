@@ -5,6 +5,12 @@ from typing import Any, Dict, List, Optional
 
 def default_advanced_statistics() -> Dict[str, Any]:
     return {
+        "clusters": [],
+        "strategies": _empty_strategies(),
+        "effort_samples": [],
+        "effort_correlation": None,
+        "topic_oi_samples": [],
+        "similarity_bands": _empty_similarity_bands(),
         "difficulty_adjusted_aic": {
             "overall_mean_aic": None,
             "summary": [],
@@ -88,6 +94,15 @@ def build_advanced_statistics(rows) -> Dict[str, Any]:
     rule_counts = _anomaly_rule_counts(anomaly_items)
 
     return {
+        "clusters": _build_clusters(records),
+        "strategies": _build_strategies(records),
+        "effort_samples": _build_effort_samples(records),
+        "effort_correlation": _round(_pearson(
+            [_effort_value(record) for record in records],
+            [record["aic_score"] for record in records],
+        ), 2),
+        "topic_oi_samples": _build_topic_oi_samples(records),
+        "similarity_bands": _build_similarity_bands(records),
         "difficulty_adjusted_aic": {
             "overall_mean_aic": _round(overall_mean),
             "summary": summary,
@@ -118,6 +133,8 @@ def _record_from_row(row) -> Dict[str, Any]:
         "topic_score": metric.topic_score,
         "aic_score": metric.aic_score,
         "ui_cos_similarity": metric.ui_cos_similarity,
+        "ui_distance": metric.ui_distance,
+        "ui_newinfo_ratio": metric.ui_newinfo_ratio,
     }
 
 
@@ -421,3 +438,167 @@ def _anomaly_rule_counts(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         for rule_key, label, evidence_summary in rule_order
         if counts.get(rule_key, 0) > 0
     ]
+
+
+def _build_clusters(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    cluster_defs = [
+        ("고역량", "#10B981", lambda record: record["aic_score"] >= 80),
+        ("중상위", "#3B82F6", lambda record: 65 <= record["aic_score"] < 80),
+        ("성장형", "#F97316", lambda record: 50 <= record["aic_score"] < 65),
+        ("위험군", "#EF4444", lambda record: record["aic_score"] < 50),
+    ]
+
+    clusters = []
+    for label, color, predicate in cluster_defs:
+        points = [_cluster_point(record) for record in records if predicate(record)]
+        clusters.append({
+            "label": label,
+            "count": len(points),
+            "color": color,
+            "points": points,
+        })
+    return clusters
+
+
+def _cluster_point(record: Dict[str, Any]) -> Dict[str, Any]:
+    pi = record["pi_score"] or 0
+    ui = record["ui_score"] or 0
+    oi = record["oi_score"] or 0
+    topic = record["topic_score"] or 0
+    aic = record["aic_score"] or 0
+
+    x = ((pi + topic) / 2 - (ui + oi) / 2) / 50
+    y = (aic - 50) / 50
+    return {
+        "x": _round(_clamp(x, -1, 1), 2),
+        "y": _round(_clamp(y, -1, 1), 2),
+        "student_id": record["student_id"],
+        "name": record["student_name"],
+        "aic": _round(aic),
+    }
+
+
+def _empty_strategies() -> List[Dict[str, Any]]:
+    return [
+        {"key": "expert", "title": "Expert", "desc": "질문도 좋고 수정도 많음", "count": 0, "tone": "blue"},
+        {"key": "thinker", "title": "Thinker", "desc": "질문은 좋지만 수정 적음", "count": 0, "tone": "yellow"},
+        {"key": "editor", "title": "Editor", "desc": "질문은 약하나 수정 많음", "count": 0, "tone": "orange"},
+        {"key": "passive", "title": "Passive", "desc": "질문도 약하고 수정도 적음", "count": 0, "tone": "red"},
+    ]
+
+
+def _build_strategies(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    strategies = {item["key"]: item for item in _empty_strategies()}
+    for record in records:
+        pi = record["pi_score"]
+        ui = record["ui_score"]
+        if pi is None or ui is None:
+            continue
+        if pi >= 65 and ui >= 65:
+            key = "expert"
+        elif pi >= 65:
+            key = "thinker"
+        elif ui >= 65:
+            key = "editor"
+        else:
+            key = "passive"
+        strategies[key]["count"] += 1
+    return list(strategies.values())
+
+
+def _effort_value(record: Dict[str, Any]) -> Optional[float]:
+    if record["ui_distance"] is not None:
+        return _clamp(record["ui_distance"] * 100)
+    if record["ui_cos_similarity"] is not None:
+        return _clamp((1 - record["ui_cos_similarity"]) * 100)
+    if record["ui_newinfo_ratio"] is not None:
+        return _clamp(record["ui_newinfo_ratio"] * 100)
+    return record["ui_score"]
+
+
+def _build_effort_samples(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    samples = []
+    for record in records:
+        effort = _effort_value(record)
+        aic = record["aic_score"]
+        if effort is None or aic is None:
+            continue
+        samples.append({
+            "x": _round(effort),
+            "y": _round(aic),
+            "student_id": record["student_id"],
+            "name": record["student_name"],
+        })
+    return samples
+
+
+def _build_topic_oi_samples(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    samples = []
+    for record in records:
+        topic = record["topic_score"]
+        oi = record["oi_score"]
+        if topic is None or oi is None:
+            continue
+        samples.append({
+            "x": _round(topic),
+            "y": _round(oi),
+            "student_id": record["student_id"],
+            "name": record["student_name"],
+        })
+    return samples
+
+
+def _empty_similarity_bands() -> List[Dict[str, Any]]:
+    return [
+        {"label": "0-40%", "value": 0, "count": 0},
+        {"label": "40-60%", "value": 0, "count": 0},
+        {"label": "60-80%", "value": 0, "count": 0},
+        {"label": "80-100%", "value": 0, "count": 0},
+    ]
+
+
+def _build_similarity_bands(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    buckets = [
+        {"label": "0-40%", "scores": []},
+        {"label": "40-60%", "scores": []},
+        {"label": "60-80%", "scores": []},
+        {"label": "80-100%", "scores": []},
+    ]
+    for record in records:
+        similarity = record["ui_cos_similarity"]
+        if similarity is None:
+            continue
+        score = _clamp(similarity * 100)
+        if score < 40:
+            index = 0
+        elif score < 60:
+            index = 1
+        elif score < 80:
+            index = 2
+        else:
+            index = 3
+        buckets[index]["scores"].append(score)
+
+    return [
+        {
+            "label": bucket["label"],
+            "value": _round(_mean(bucket["scores"])) if bucket["scores"] else 0,
+            "count": len(bucket["scores"]),
+        }
+        for bucket in buckets
+    ]
+
+
+def _pearson(xs: List[Optional[float]], ys: List[Optional[float]]) -> Optional[float]:
+    pairs = [(x, y) for x, y in zip(xs, ys) if x is not None and y is not None]
+    n = len(pairs)
+    if n < 2:
+        return None
+    paired_xs, paired_ys = zip(*pairs)
+    mx, my = sum(paired_xs) / n, sum(paired_ys) / n
+    num = sum((x - mx) * (y - my) for x, y in pairs)
+    dx = math.sqrt(sum((x - mx) ** 2 for x in paired_xs))
+    dy = math.sqrt(sum((y - my) ** 2 for y in paired_ys))
+    if dx * dy == 0:
+        return None
+    return num / (dx * dy)

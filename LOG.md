@@ -26,6 +26,7 @@
 
 | 영역 | 요약 | 확인 | 후속 작업 |
 | --- | --- | --- | --- |
+| Backend/Frontend | 교사 심화 분석 fallback 제거 작업을 완료했습니다. `/teacher/analytics/advanced`가 metric 기반 `clusters`, `strategies`, `effort_samples`, `effort_correlation`, `topic_oi_samples`, `similarity_bands`를 반환하도록 확장했고, `TeacherAdvancedView.vue`는 `teacherReferenceData.js`의 고급 분석 reference fallback 없이 API 응답만 렌더링합니다. API 계약 문서도 새 응답 필드와 effort proxy 기준에 맞게 갱신했습니다. | `python -m compileall app` 성공. `npm.cmd run build` 성공. | 실제 운영 DB에서 `ui_distance`/`ui_cos_similarity` 분포가 충분한지 화면 데이터 품질 확인이 필요합니다. |
 | Auth/Admin | 관리자 유저네임 한글 표시 경로를 점검하고 MySQL 연결 문자열에 `charset=utf8mb4`를 명시했습니다. `init.sql`의 admin seed는 정상 한글 값과 utf8mb4 DB 설정을 유지합니다. | `python -m compileall app` 성공. `npm.cmd run build` 성공. | 이미 생성된 DB 볼륨에 깨진 저장값이 남아 있으면 운영 DB 값 보정이 별도로 필요합니다. |
 | Frontend/Charts | 공통 Chart.js 생성 경로에서 `x/y` 데이터 값을 수집해 고정 축 `min/max` 밖 또는 경계에 있는 실제 데이터 포인트가 여백을 두고 보이도록 축 범위를 자동 확장했습니다. | `npm.cmd run build` 성공. | None. |
 | Backend/Frontend | 교사 대시보드 상위 5명 API를 `excellent/good` 필터가 아니라 분석된 전체 학생 AIC 내림차순 기준으로 최대 5명 반환하도록 수정하고, 프론트에서도 정렬/슬라이스를 방어적으로 보장했습니다. | `python -m compileall app` 성공. `npm.cmd run build` 성공. | None. |
