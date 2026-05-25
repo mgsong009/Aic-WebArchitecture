@@ -456,7 +456,7 @@ Ver.8 보강 포인트:
 ### 14.1 1단계: 루트 이동
 
 ```powershell
-cd "d:\04_Work\02_오픈소스프로젝트\aic-web_ver4"
+cd "d:\04_Work\02_오픈소스프로젝트\AIC-WEBARCHITECTURE"
 ```
 
 ### 14.2 2단계: 도구 설치 확인
