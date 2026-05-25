@@ -145,6 +145,21 @@ git pull
 docker compose up --build -d
 ```
 
+Apply `init.sql` changes to an existing EC2 demo database:
+
+```bash
+git pull
+docker compose up --build -d db
+bash scripts/recreate_demo_db_from_init.sh
+docker compose up --build -d
+```
+
+MySQL only runs files mounted into `/docker-entrypoint-initdb.d/` when `/var/lib/mysql` is empty. Because this project keeps MySQL data in the named Docker volume `mysql_data`, changes to `init.sql` are not applied by `docker compose up --build -d` after the first initialization.
+
+The script above asks you to type `RESET` before changing the database. For non-interactive demo maintenance, run `bash scripts/recreate_demo_db_from_init.sh --yes`.
+
+The script drops and recreates only the `aic_db` database from the current `init.sql`, then restarts the backend. Use it for the disposable EC2 demo database when you want the server to match the repository seed data. Do not use it on production data without replacing it with a proper migration plan.
+
 Stop:
 
 ```bash
