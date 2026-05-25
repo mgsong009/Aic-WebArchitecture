@@ -22,6 +22,18 @@
 
 ## 기록
 
+## 2026-05-25 (통계 검증 신뢰구간 그래프 보정)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Frontend/Teacher | 통계 검증 신뢰성 탭의 AIC 신뢰구간 그래프를 추가 보정했습니다. 95% 범위 음영이 더 넓게 보이도록 차트 표시 도메인의 좌우 여백을 줄이고, 시안처럼 하단 x축 선을 추가했으며, 평균선이 곡선 꼭대기 위로 튀어나오지 않도록 평균선 시작점을 곡선 peak에 맞췄습니다. | `npm run build` 성공. `docker compose build frontend` 성공. `docker compose up -d frontend` 성공. 브라우저에서 `/teacher/statistics?tab=confidence` 확인: `.ci-range-fill` 1개, `.x-axis-line` 1개, `.ci-boundary-line` 2개, 평균선 `y1=42`, 곡선 peak `y=42`, CI 음영 폭 비율 약 0.423 확인. | None. |
+
+## 2026-05-25 (통계 검증 신뢰구간 그래프)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Frontend/Teacher | 통계 검증 페이지의 신뢰성 검증 탭에서 `선택 대상의 AIC 신뢰구간` 그래프를 그림판 시안에 맞춰 조정했습니다. 95% CI 내부 구간을 옅은 파란색으로 채우고, 하한/상한 경계는 점선으로, 평균은 중앙 실선과 점으로 표시했습니다. 하단에는 하한·평균·상한 값과 라벨을 배치했습니다. | `npm run build` 성공. `docker compose build frontend` 성공. `docker compose up -d frontend` 성공. 브라우저에서 `/teacher/statistics?tab=confidence` 접속 후 `.ci-range-fill` 1개, `.ci-boundary-line` 2개, `.mean-line` 1개, `.ci-bracket-line` 3개, 하단 `하한/평균/상한` 라벨 표시를 확인했습니다. | None. |
+
 ## 2026-05-25 (관리자 시스템 현황)
 
 | 영역 | 요약 | 확인 | 후속 작업 |

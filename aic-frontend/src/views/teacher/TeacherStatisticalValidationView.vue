@@ -159,29 +159,51 @@ function buildCiCurve(row) {
     return null
   }
 
-  const minValue = Math.max(0, Math.floor((Number.isFinite(lower) ? lower : mean - 10) - 8))
-  const maxValue = Math.min(100, Math.ceil((Number.isFinite(upper) ? upper : mean + 10) + 8))
+  const ciWidth = Number.isFinite(lower) && Number.isFinite(upper) ? upper - lower : 10
+  const sidePadding = Math.max(ciWidth * 0.65, 3)
+  const minValue = Math.max(0, Math.floor((Number.isFinite(lower) ? lower : mean - 10) - sidePadding))
+  const maxValue = Math.min(100, Math.ceil((Number.isFinite(upper) ? upper : mean + 10) + sidePadding))
   const range = Math.max(maxValue - minValue, 1)
   const toX = (value) => 34 + ((value - minValue) / range) * 532
   const meanX = toX(mean)
   const lowerX = Number.isFinite(lower) ? toX(lower) : null
   const upperX = Number.isFinite(upper) ? toX(upper) : null
   const spread = Math.max(Number(row?.margin) || Number(row?.std) || range / 6, 4)
-  const points = []
+  const baselineY = 126
+  const peakY = 42
+  const axisY = 146
+  const samples = []
 
   for (let i = 0; i <= 80; i += 1) {
     const value = minValue + (range * i) / 80
-    const y = 112 - Math.exp(-((value - mean) ** 2) / (2 * spread ** 2)) * 64
-    points.push(`${toX(value).toFixed(1)},${y.toFixed(1)}`)
+    const x = toX(value)
+    const y = baselineY - Math.exp(-((value - mean) ** 2) / (2 * spread ** 2)) * (baselineY - peakY)
+    samples.push({ value, x, y })
   }
+
+  const curvePoints = samples.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`)
+  const ciSamples = lowerX != null && upperX != null
+    ? samples.filter((point) => point.value >= lower && point.value <= upper)
+    : []
+  const ciAreaPoints = ciSamples.length
+    ? [
+      `${lowerX.toFixed(1)},${baselineY}`,
+      ...ciSamples.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`),
+      `${upperX.toFixed(1)},${baselineY}`,
+    ].join(' ')
+    : ''
 
   return {
     minValue,
     maxValue,
+    baselineY,
+    peakY,
+    axisY,
     meanX,
     lowerX,
     upperX,
-    points: points.join(' '),
+    points: curvePoints.join(' '),
+    ciAreaPoints,
   }
 }
 
@@ -307,27 +329,34 @@ const detectionRules = [
               </div>
             </div>
             <div v-if="ciCurve" class="ci-svg-wrap">
-              <svg viewBox="0 0 600 150" role="img" aria-label="AIC 신뢰구간 곡선">
-                <line x1="34" y1="116" x2="566" y2="116" class="axis-line" />
+              <svg viewBox="0 0 600 190" role="img" aria-label="AIC 신뢰구간 곡선">
+                <polygon v-if="ciCurve.ciAreaPoints" :points="ciCurve.ciAreaPoints" class="ci-range-fill" />
                 <polyline :points="ciCurve.points" class="curve-line" />
-                <g v-if="ciCurve.lowerX != null && ciCurve.upperX != null" class="ci-bracket">
-                  <line :x1="ciCurve.lowerX" y1="124" :x2="ciCurve.upperX" y2="124" />
-                  <line :x1="ciCurve.lowerX" y1="118" :x2="ciCurve.lowerX" y2="130" />
-                  <line :x1="ciCurve.upperX" y1="118" :x2="ciCurve.upperX" y2="130" />
-                  <text :x="(ciCurve.lowerX + ciCurve.upperX) / 2" y="140" class="axis-text center">95% CI</text>
+                <line x1="34" :y1="ciCurve.axisY" x2="566" :y2="ciCurve.axisY" class="x-axis-line" />
+                <g v-if="ciCurve.lowerX != null && ciCurve.upperX != null">
+                  <line :x1="ciCurve.lowerX" y1="36" :x2="ciCurve.lowerX" :y2="ciCurve.baselineY" class="ci-boundary-line" />
+                  <line :x1="ciCurve.upperX" y1="36" :x2="ciCurve.upperX" :y2="ciCurve.baselineY" class="ci-boundary-line" />
+                  <line :x1="ciCurve.lowerX" :y1="ciCurve.axisY" :x2="ciCurve.upperX" :y2="ciCurve.axisY" class="ci-bracket-line" />
+                  <line :x1="ciCurve.lowerX" y1="137" :x2="ciCurve.lowerX" y2="153" class="ci-bracket-line" />
+                  <line :x1="ciCurve.upperX" y1="137" :x2="ciCurve.upperX" y2="153" class="ci-bracket-line" />
+                  <text :x="(ciCurve.lowerX + ciCurve.upperX) / 2" y="141" class="axis-text center">95% 범위</text>
                 </g>
-                <line v-if="ciCurve.lowerX != null" :x1="ciCurve.lowerX" y1="62" :x2="ciCurve.lowerX" y2="116" class="marker-line muted" />
-                <line v-if="ciCurve.upperX != null" :x1="ciCurve.upperX" y1="62" :x2="ciCurve.upperX" y2="116" class="marker-line muted" />
-                <line :x1="ciCurve.meanX" y1="44" :x2="ciCurve.meanX" y2="116" class="marker-line mean" />
-                <circle :cx="ciCurve.meanX" cy="116" r="3.5" class="mean-dot" />
-                <text x="34" y="138" class="axis-text">{{ ciCurve.minValue }}</text>
-                <text x="566" y="138" class="axis-text end">{{ ciCurve.maxValue }}</text>
-                <text :x="ciCurve.meanX" y="36" class="axis-text center">mean {{ formatNumber(selectedConfidence?.mean) }}</text>
-                <text v-if="ciCurve.lowerX != null" :x="ciCurve.lowerX" y="21" class="value-text center">{{ formatNumber(selectedConfidence?.lower) }}</text>
-                <text :x="ciCurve.meanX" y="21" class="value-text center">{{ formatNumber(selectedConfidence?.mean) }}</text>
-                <text v-if="ciCurve.upperX != null" :x="ciCurve.upperX" y="21" class="value-text center">{{ formatNumber(selectedConfidence?.upper) }}</text>
-                <text v-if="ciCurve.lowerX != null" :x="ciCurve.lowerX" y="34" class="axis-text center">lower</text>
-                <text v-if="ciCurve.upperX != null" :x="ciCurve.upperX" y="34" class="axis-text center">upper</text>
+                <line :x1="ciCurve.meanX" :y1="ciCurve.peakY" :x2="ciCurve.meanX" :y2="ciCurve.baselineY" class="mean-line" />
+                <circle :cx="ciCurve.meanX" :cy="ciCurve.baselineY" r="4.5" class="mean-dot" />
+                <text x="34" y="172" class="axis-text">{{ ciCurve.minValue }}</text>
+                <text x="566" y="172" class="axis-text end">{{ ciCurve.maxValue }}</text>
+                <g v-if="ciCurve.lowerX != null" class="ci-bottom-label">
+                  <text :x="ciCurve.lowerX" y="172" class="value-text center">{{ formatNumber(selectedConfidence?.lower) }}</text>
+                  <text :x="ciCurve.lowerX" y="185" class="axis-text center">하한</text>
+                </g>
+                <g class="ci-bottom-label">
+                  <text :x="ciCurve.meanX" y="172" class="value-text center">{{ formatNumber(selectedConfidence?.mean) }}</text>
+                  <text :x="ciCurve.meanX" y="185" class="axis-text center">평균</text>
+                </g>
+                <g v-if="ciCurve.upperX != null" class="ci-bottom-label">
+                  <text :x="ciCurve.upperX" y="172" class="value-text center">{{ formatNumber(selectedConfidence?.upper) }}</text>
+                  <text :x="ciCurve.upperX" y="185" class="axis-text center">상한</text>
+                </g>
               </svg>
             </div>
             <div v-else class="empty-note">분석 가능한 데이터가 없습니다.</div>
@@ -468,18 +497,18 @@ const detectionRules = [
 .ci-graph-title strong { color: var(--text-primary); font-size: var(--font-size-sm); }
 .ci-graph-title span { margin-top: 4px; color: var(--text-muted); font-size: var(--font-size-xs); line-height: 1.5; }
 .ci-svg-wrap { margin-top: var(--space-2); border-radius: var(--radius-md); background: white; overflow: hidden; }
-.ci-svg-wrap svg { display: block; width: 100%; height: 220px; max-height: 240px; }
-.axis-line { stroke: var(--border-medium); stroke-width: 2; }
-.curve-line { fill: none; stroke: var(--color-aic); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-.ci-bracket line { stroke: var(--color-aic); stroke-width: 3; stroke-linecap: round; }
-.marker-line { stroke-width: 1.5; stroke-dasharray: 4 4; }
-.marker-line.muted { stroke: #93C5FD; }
-.marker-line.mean { stroke: var(--color-aic); stroke-dasharray: none; opacity: 0.72; }
+.ci-svg-wrap svg { display: block; width: 100%; height: 240px; max-height: 260px; }
+.ci-range-fill { fill: rgba(56, 189, 248, 0.22); stroke: none; }
+.curve-line { fill: none; stroke: var(--color-aic); stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+.x-axis-line { stroke: var(--color-gray-300); stroke-width: 1.5; stroke-linecap: round; }
+.ci-boundary-line { stroke: #38BDF8; stroke-width: 1.7; stroke-dasharray: 5 6; stroke-linecap: round; }
+.ci-bracket-line { stroke: var(--color-aic); stroke-width: 3; stroke-linecap: round; }
+.mean-line { stroke: var(--color-aic); stroke-width: 2; stroke-linecap: round; opacity: 0.72; }
 .mean-dot { fill: var(--color-aic); }
 .axis-text { fill: var(--text-muted); font-size: 11px; font-weight: 800; }
 .axis-text.center { text-anchor: middle; }
 .axis-text.end { text-anchor: end; }
-.value-text { fill: var(--text-primary); font-size: 12px; font-weight: 900; }
+.value-text { fill: var(--text-primary); font-size: 13px; font-weight: 900; }
 .value-text.center { text-anchor: middle; }
 .rule-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
 .rule-card { padding: var(--space-4); border: 1px solid var(--border-light); border-radius: var(--radius-md); background: #F8FAFC; }
