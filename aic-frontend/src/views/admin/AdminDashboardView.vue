@@ -1,9 +1,26 @@
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { useAdminStore } from '@/stores/admin'
 
 const admin = useAdminStore()
+
+const totalLearningRecords = computed(() => admin.stats?.submissions?.total ?? null)
+const totalStudents = computed(() => admin.stats?.users?.students ?? null)
+const averageLogsPerStudent = computed(() => {
+  if (totalLearningRecords.value === null || totalStudents.value === null) {
+    return null
+  }
+
+  const recordCount = Number(totalLearningRecords.value)
+  const studentCount = Number(totalStudents.value)
+
+  if (!Number.isFinite(recordCount) || !Number.isFinite(studentCount) || studentCount === 0) {
+    return null
+  }
+
+  return recordCount / studentCount
+})
 
 onMounted(() => {
   admin.fetchStats()
@@ -11,6 +28,12 @@ onMounted(() => {
 
 function fmt(val) {
   return val !== null && val !== undefined ? val : '—'
+}
+
+function fmtFixed(val, digits = 2) {
+  return val !== null && val !== undefined && Number.isFinite(Number(val))
+    ? Number(val).toFixed(digits)
+    : '—'
 }
 </script>
 
@@ -28,15 +51,15 @@ function fmt(val) {
             <div class="stat-label">전체 사용자</div>
             <div class="stat-value">{{ fmt(admin.stats.users?.total) }}</div>
           </div>
-          <div class="stat-card stat-card--blue">
+          <div class="stat-card">
             <div class="stat-label">학생</div>
             <div class="stat-value">{{ fmt(admin.stats.users?.students) }}</div>
           </div>
-          <div class="stat-card stat-card--orange">
+          <div class="stat-card">
             <div class="stat-label">교사</div>
             <div class="stat-value">{{ fmt(admin.stats.users?.teachers) }}</div>
           </div>
-          <div class="stat-card stat-card--green">
+          <div class="stat-card">
             <div class="stat-label">관리자</div>
             <div class="stat-value">{{ fmt(admin.stats.users?.admins) }}</div>
           </div>
@@ -53,16 +76,16 @@ function fmt(val) {
             <div class="stat-sub">평균 {{ fmt(admin.stats.classes?.avg_students_per_class) }}명/클래스</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">과제 수</div>
-            <div class="stat-value">{{ fmt(admin.stats.submissions?.total) }}</div>
-            <div class="stat-sub">제출 {{ fmt(admin.stats.submissions?.total) }}건</div>
+            <div class="stat-label">학습 과정 기록</div>
+            <div class="stat-value">{{ fmt(totalLearningRecords) }}<span class="stat-unit">건</span></div>
+            <div class="stat-sub">프롬프트·초안·최종본 기준</div>
           </div>
-          <div class="stat-card stat-card--blue">
-            <div class="stat-label">제출률</div>
-            <div class="stat-value">{{ fmt(admin.stats.submissions?.submission_rate) }}<span class="stat-unit">%</span></div>
-            <div class="stat-sub">제출 / 수강</div>
+          <div class="stat-card">
+            <div class="stat-label">학생당 평균 로그</div>
+            <div class="stat-value">{{ fmtFixed(averageLogsPerStudent) }}<span class="stat-unit">건</span></div>
+            <div class="stat-sub">{{ fmt(totalLearningRecords) }}건 / {{ fmt(totalStudents) }}명</div>
           </div>
-          <div class="stat-card stat-card--green">
+          <div class="stat-card stat-card--success">
             <div class="stat-label">분석 완료율</div>
             <div class="stat-value">{{ fmt(admin.stats.submissions?.analysis_rate) }}<span class="stat-unit">%</span></div>
             <div class="stat-sub">분석 {{ fmt(admin.stats.submissions?.analyzed) }}건</div>
@@ -74,19 +97,19 @@ function fmt(val) {
       <section class="admin-section">
         <h2 class="section-title">파이프라인 잡 현황</h2>
         <div class="stat-grid">
-          <div class="stat-card stat-card--yellow">
+          <div class="stat-card stat-card--warning">
             <div class="stat-label">대기 중 (Pending)</div>
             <div class="stat-value">{{ fmt(admin.stats.jobs?.pending) }}</div>
           </div>
-          <div class="stat-card stat-card--blue">
+          <div class="stat-card stat-card--info">
             <div class="stat-label">실행 중 (Running)</div>
             <div class="stat-value">{{ fmt(admin.stats.jobs?.running) }}</div>
           </div>
-          <div class="stat-card stat-card--green">
+          <div class="stat-card stat-card--success">
             <div class="stat-label">완료 (Done)</div>
             <div class="stat-value">{{ fmt(admin.stats.jobs?.done) }}</div>
           </div>
-          <div class="stat-card stat-card--red">
+          <div class="stat-card stat-card--danger">
             <div class="stat-label">실패 (Failed)</div>
             <div class="stat-value">{{ fmt(admin.stats.jobs?.failed) }}</div>
             <div class="stat-sub">완료율 {{ fmt(admin.stats.jobs?.completion_rate) }}%</div>
@@ -103,15 +126,15 @@ function fmt(val) {
             <div class="stat-value">{{ fmt(admin.stats.scores?.avg_aic) }}</div>
             <div class="stat-sub">전체 평균</div>
           </div>
-          <div class="stat-card stat-card--blue">
+          <div class="stat-card stat-card--pi">
             <div class="stat-label">PI (Prompt Insight)</div>
             <div class="stat-value">{{ fmt(admin.stats.scores?.avg_pi) }}</div>
           </div>
-          <div class="stat-card stat-card--orange">
+          <div class="stat-card stat-card--ui">
             <div class="stat-label">UI (User Intervention)</div>
             <div class="stat-value">{{ fmt(admin.stats.scores?.avg_ui) }}</div>
           </div>
-          <div class="stat-card stat-card--green">
+          <div class="stat-card stat-card--oi">
             <div class="stat-label">OI (Originality Index)</div>
             <div class="stat-value">{{ fmt(admin.stats.scores?.avg_oi) }}</div>
           </div>
@@ -158,8 +181,9 @@ function fmt(val) {
 .stat-card {
   padding: var(--space-5);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
@@ -169,7 +193,7 @@ function fmt(val) {
   font-size: var(--font-size-xs);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0;
   color: var(--text-muted);
 }
 
@@ -192,23 +216,29 @@ function fmt(val) {
   margin-top: var(--space-1);
 }
 
-.stat-card--blue .stat-value { color: var(--color-pi); }
-.stat-card--blue { border-left: 3px solid var(--color-pi); }
-
-.stat-card--orange .stat-value { color: var(--color-ui); }
-.stat-card--orange { border-left: 3px solid var(--color-ui); }
-
-.stat-card--green .stat-value { color: var(--color-oi); }
-.stat-card--green { border-left: 3px solid var(--color-oi); }
-
-.stat-card--yellow .stat-value { color: #d97706; }
-.stat-card--yellow { border-left: 3px solid #f59e0b; }
-
-.stat-card--red .stat-value { color: #b91c1c; }
-.stat-card--red { border-left: 3px solid #ef4444; }
-
 .stat-card--aic .stat-value { color: var(--color-aic); }
 .stat-card--aic { border-left: 3px solid var(--color-aic); }
+
+.stat-card--pi { border-top: 3px solid var(--color-pi); }
+.stat-card--pi .stat-value { color: var(--color-pi); }
+
+.stat-card--ui { border-top: 3px solid var(--color-ui); }
+.stat-card--ui .stat-value { color: var(--color-ui); }
+
+.stat-card--oi { border-top: 3px solid var(--color-oi); }
+.stat-card--oi .stat-value { color: var(--color-oi); }
+
+.stat-card--warning { border-left: 3px solid var(--color-warning); }
+.stat-card--warning .stat-value { color: var(--color-warning); }
+
+.stat-card--info { border-left: 3px solid var(--color-info); }
+.stat-card--info .stat-value { color: var(--color-info); }
+
+.stat-card--success { border-left: 3px solid var(--color-success); }
+.stat-card--success .stat-value { color: var(--color-success); }
+
+.stat-card--danger { border-left: 3px solid var(--color-danger); }
+.stat-card--danger .stat-value { color: var(--color-danger); }
 
 .feedback-row {
   display: flex;
@@ -216,8 +246,9 @@ function fmt(val) {
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
   margin-top: var(--space-4);
 }
 
