@@ -22,6 +22,12 @@
 
 ## 기록
 
+## 2026-05-26 (분석 품질 seed 보정)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Backend/DB/Frontend/Docs | 새 DB에서 `/admin/analysis-quality`가 초기부터 실제 집계 데이터로 렌더링되도록 `init.sql`에 데모 `analysis_jobs`와 `analysis_run_metadata` seed를 추가했습니다. 기존 MySQL 볼륨에는 재실행 가능한 `scripts/seed_analysis_quality_metadata.sql` 보정 스크립트를 추가하고 `README.md`에 적용 절차를 문서화했습니다. 샘플은 기존 submission/metric에 연결된 runtime, memory, throughput, PI/UI/OI/AIC delta 집계만 저장하며 원문이나 개인정보를 새로 저장하지 않습니다. | `python -m py_compile aic-backend\app\services\admin_service.py aic-backend\app\routers\admin.py` 성공. 실행 중인 기존 DB 볼륨에 보정 스크립트 적용 후 `analysis_run_metadata` 1건 확인. 관리자 API `GET /api/v1/admin/analysis-runs/latest`가 runId, runtime/baseline runtime, throughput, scoreRows 4개, performanceRows 3개, readiness `ready`를 반환하는 것 확인. | None. |
+
 ## 2026-05-26 (파이프라인 최적화)
 
 | 영역 | 요약 | 확인 | 후속 작업 |

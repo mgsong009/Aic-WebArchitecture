@@ -248,6 +248,58 @@ INSERT INTO submissions (assignment_id, student_id, chatgpt_before, user_prompt,
 INSERT INTO metrics (submission_id, pi_score, ui_score, oi_score, aic_score, topic_score, weight_pi, weight_ui, weight_oi, pi_depth_tokens, pi_depth_norm, pi_critical_ratio, pi_avg_sent_len, pi_ttr, pi_complexity, ui_cos_similarity, ui_distance, ui_newinfo_ratio, oi_topic_score_raw, embedding_backend, computed_at) VALUES
 (6, 35, 40, 42, 39, 65, 0.333, 0.333, 0.333, 5, 0.25, 0.03, 0.40, 0.55, 0.35, 0.78, 0.22, 0.30, 0.65, 'sbert', '2025-04-03 20:05:00');
 
+-- Demo analysis quality metadata for the admin monitor.
+-- Stores aggregate runtime and score deltas only; no prompt, essay, or user text is duplicated.
+INSERT INTO analysis_jobs (job_uuid, submission_id, status, error_message, created_at, started_at, completed_at) VALUES
+('11111111-1111-4111-8111-111111111111', 5, 'done', NULL, '2025-04-03 16:05:00', '2025-04-03 16:05:01', '2025-04-03 16:05:09');
+
+INSERT INTO analysis_run_metadata (
+    job_id,
+    metric_version,
+    baseline_version,
+    optimized_version,
+    processed_count,
+    total_runtime_ms,
+    baseline_runtime_ms,
+    runtime_delta_pct,
+    memory_peak_kb,
+    baseline_memory_peak_kb,
+    memory_delta_pct,
+    stage_runtimes_ms,
+    score_deltas,
+    quality_passed,
+    bootstrap_passed,
+    measured_at
+) VALUES (
+    (SELECT id FROM analysis_jobs WHERE job_uuid = '11111111-1111-4111-8111-111111111111'),
+    'aic-metrics-2026.05',
+    'pipeline-baseline-token-loop',
+    'pipeline-optimized-batch-v1',
+    32,
+    8120.0,
+    14180.0,
+    -42.736,
+    196608.0,
+    245760.0,
+    -20.0,
+    JSON_OBJECT(
+        'input_validation', 420.0,
+        'token_features', 960.0,
+        'embedding', 4120.0,
+        'metric_scoring', 1840.0,
+        'bootstrap_validation', 780.0
+    ),
+    JSON_OBJECT(
+        'pi', 0.0,
+        'ui', 0.0,
+        'oi', 0.0,
+        'aic', 0.0
+    ),
+    TRUE,
+    TRUE,
+    '2025-04-03 16:05:10'
+);
+
 
 
 -- generated_seed_block: version=advanced_seed_v1, random_seed=42, generated_at=2026-05-23T09:41:00.293971Z
