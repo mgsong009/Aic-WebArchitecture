@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - dev
+  schedule:
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 concurrency:
@@ -14,22 +16,19 @@ jobs:
   deploy:
     name: Deploy to EC2
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_REF: dev
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ env.DEPLOY_REF }}
 
-      - name: Create deployment archive
+      - name: Resolve deployment target
+        id: target
         run: |
-          tar \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='.env' \
-            --exclude='**/.env' \
-            --exclude='**/node_modules' \
-            --exclude='**/dist' \
-            --exclude='aic-frontend/qa-captures' \
-            -czf "$RUNNER_TEMP/aic-release.tar.gz" .
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Prepare SSH key
         env:
@@ -51,7 +50,37 @@ jobs:
             exit 1
           fi
 
+      - name: Check deployed SHA
+        id: deployed
+        env:
+          DEPLOY_SHA: ${{ steps.target.outputs.sha }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          deployed_sha="$(ssh -i ~/.ssh/ec2_key "$EC2_USER@$EC2_HOST" 'cat "$HOME/Aic-WebArchitecture/.deployed_sha" 2>/dev/null || true')"
+          if [ "$deployed_sha" = "$DEPLOY_SHA" ]; then
+            echo "No deployment needed. EC2 already has $DEPLOY_SHA."
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Deploying $DEPLOY_SHA. Current EC2 marker: ${deployed_sha:-none}."
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create deployment archive
+        if: steps.deployed.outputs.should_deploy == 'true'
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.env' \
+            --exclude='**/.env' \
+            --exclude='**/node_modules' \
+            --exclude='**/dist' \
+            --exclude='aic-frontend/qa-captures' \
+            -czf "$RUNNER_TEMP/aic-release.tar.gz" .
+
       - name: Upload deployment archive
+        if: steps.deployed.outputs.should_deploy == 'true'
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
@@ -60,11 +89,13 @@ jobs:
             "$EC2_USER@$EC2_HOST:~/aic-release.tar.gz"
 
       - name: Deploy with Docker Compose
+        if: steps.deployed.outputs.should_deploy == 'true'
         env:
+          DEPLOY_SHA: ${{ steps.target.outputs.sha }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
         run: |
-          ssh -i ~/.ssh/ec2_key "$EC2_USER@$EC2_HOST" <<'REMOTE'
+          ssh -i ~/.ssh/ec2_key "$EC2_USER@$EC2_HOST" "DEPLOY_SHA='$DEPLOY_SHA' bash -s" <<'REMOTE'
           set -euo pipefail
 
           DEPLOY_DIR="$HOME/Aic-WebArchitecture"
@@ -90,4 +121,5 @@ jobs:
           sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
           sudo docker image prune -f
           sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+          printf '%s\n' "$DEPLOY_SHA" > "$DEPLOY_DIR/.deployed_sha"
           REMOTE

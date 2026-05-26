@@ -182,15 +182,18 @@ Use `down -v` only when you intentionally want to erase the demo database and mo
 
 ## 9. GitHub Actions Auto Deploy
 
-The workflow at `.github/workflows/deploy-ec2.yml` deploys automatically when `dev` receives a push.
+The workflow at `.github/workflows/deploy-ec2.yml` deploys automatically when `dev` receives a push. It also runs on a 10-minute schedule as a safety net for Codex or other automation pushes that update `dev` without creating a normal GitHub Actions push run. GitHub reads scheduled workflows from the repository's default branch, so keep this workflow definition present on `main` as well as `dev`.
 
 It uses this flow:
 
-1. Check out the repository in GitHub Actions.
-2. Build a deployment archive while excluding `.git`, `.env`, `node_modules`, and `dist`.
-3. Upload the archive to EC2 over SSH.
-4. Preserve the existing EC2 `.env`.
-5. Run `sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d` on EC2.
+1. Check out the current `dev` branch in GitHub Actions.
+2. Compare the checked-out commit SHA with `~/Aic-WebArchitecture/.deployed_sha` on EC2.
+3. Skip deployment when EC2 already has that SHA.
+4. Build a deployment archive while excluding `.git`, `.env`, `node_modules`, and `dist`.
+5. Upload the archive to EC2 over SSH.
+6. Preserve the existing EC2 `.env`.
+7. Run `sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d` on EC2.
+8. Write the deployed commit SHA to `~/Aic-WebArchitecture/.deployed_sha`.
 
 Configure these GitHub repository secrets:
 
