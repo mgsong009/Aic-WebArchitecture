@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Dict, List, Optional
+from typing import Optional, List
 
 
 class SubmissionPayload(BaseModel):
@@ -17,28 +17,6 @@ class AnalyzeConfig(BaseModel):
     topic_score_alpha: float = 1.0
     topic_score_beta: float = 1.0
     backend_prefer: str = "sbert"
-    baseline_version: Optional[str] = None
-    baseline_runtime_ms: Optional[float] = None
-    baseline_memory_peak_kb: Optional[float] = None
-    baseline_scores: Optional[Dict[str, float]] = None
-    bootstrap_passed: Optional[bool] = None
-
-
-class AnalysisMetadata(BaseModel):
-    metric_version: str
-    optimized_version: str
-    baseline_version: Optional[str] = None
-    processed_count: int
-    total_runtime_ms: float
-    memory_peak_kb: float
-    stage_runtimes_ms: Dict[str, float]
-    baseline_runtime_ms: Optional[float] = None
-    baseline_memory_peak_kb: Optional[float] = None
-    runtime_delta_pct: Optional[float] = None
-    memory_delta_pct: Optional[float] = None
-    score_deltas: Optional[Dict[str, float]] = None
-    quality_passed: Optional[bool] = None
-    bootstrap_passed: Optional[bool] = None
 
 
 class AnalyzeRequest(BaseModel):
@@ -68,4 +46,3 @@ class AnalyzeResponse(BaseModel):
     ui_newinfo_ratio: float
     oi_topic_score_raw: float
     embedding_backend: str
-    analysis_metadata: Optional[AnalysisMetadata] = None
