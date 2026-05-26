@@ -40,6 +40,9 @@
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
+| Pipeline | P1 | Backlog | `aic_pipeline.py`를 도메인별 모듈로 단계적으로 분리한다. | `app/config.py`, `app/utils.py`, `app/embedding.py`, `app/metrics.py`, `app/pipeline.py`로 책임이 나뉘고, `app/pipeline_runner.py`의 public response contract와 `run_in_executor` 패턴이 유지된다. | `aic-pipeline/AGENTS.md`의 “core metric formulas” 규칙과 함께 갱신 필요. |
+| Pipeline | P2 | Ready | 파이프라인 최적화 회귀 테스트와 API 호환성 체크를 추가한다. | 대표 `/analyze` 요청에서 `AnalyzeResponse` 필드가 모두 존재하고 numeric metric이 유효하며, 최적화 전후 핵심 점수 차이가 허용 오차 안에 있음을 검증한다. | backend `pipeline_client`와 metric persistence 영향 확인. |
+| Frontend | P2 | Ready | 최적화 비교 UI에 회귀 경고와 측정 신뢰도 표시를 추가한다. | AIC/PI/UI/OI delta가 허용 오차를 넘거나 샘플 수가 부족하면 관리자에게 경고 배지와 원인 후보를 보여주며, 정상 범위면 배포 반영 가능 상태로 표시한다. | `admin.md`의 품질 보증 목적을 유지한다. |
 
 ## 결정된 방향
 
@@ -50,7 +53,15 @@
 - 관리자 유저네임 글자 깨짐은 사용자 식별 정보 표시 품질 문제로 보고, 표시 계층만이 아니라 API 응답과 저장 경로까지 확인합니다.
 - 그래프 축 범위 문제는 차트별 임시 보정보다 공통 Chart.js 옵션 또는 재사용 가능한 축 범위 계산으로 우선 해결합니다.
 - 교사 대시보드의 상위 5명 컴포넌트는 프론트 렌더링만이 아니라 백엔드 집계/API 응답과 데이터 매핑까지 함께 확인합니다.
+- 파이프라인 최적화는 성능 기준선 측정, 반복 토큰화 제거, 임베딩 배치 처리, bootstrap 병렬화, 모듈화 순서로 진행합니다.
+- 파이프라인 리팩터링 중에도 backend는 `/api/v1` 경유로만 pipeline을 호출하고, pipeline 응답 필드명과 저장 metric contract는 유지합니다.
+- SBERT 모델명, CPU-only Docker 이미지, FastAPI handler의 executor 패턴, SBERT 실패 시 TF-IDF fallback은 최적화 중에도 보존합니다.
+- `aic_pipeline.py`의 책임을 `app/` 모듈로 분리할 때는 `aic-pipeline/AGENTS.md` 운영 규칙도 함께 갱신합니다.
+- AIC Analysis Quality Monitor에는 학생별 성과 해석이 아니라 파이프라인 실행 품질과 최적화 전후 회귀 여부만 표시합니다.
+- 최적화 비교 데이터는 개인정보나 원문 텍스트를 저장하지 않고, 실행 시간/메모리/처리량/점수 delta/검증 통과 여부 같은 집계 지표로 관리합니다.
 
 ## 열린 질문
 
 - 데모 배포 이후 실제 연결할 도메인, TLS 인증서 발급 방식, HTTP to HTTPS 리다이렉트 적용 범위는 배포 단계에서 확정이 필요합니다.
+- 파이프라인 성능 목표는 벤치마크 기준선을 만든 뒤 데이터 크기별 목표 실행 시간과 메모리 한도로 확정이 필요합니다.
+- 최적화 전후 품질 회귀 허용 오차(예: PI/UI/OI/AIC delta 임계값)와 기준 데이터셋 크기는 벤치마크 기준선 수립 후 확정이 필요합니다.

@@ -1,8 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import require_role
 from app.database import get_db
-from app.services.admin_service import get_admin_dashboard_stats
+from app.services.admin_service import (
+    get_admin_dashboard_stats,
+    get_analysis_run_quality,
+    get_latest_analysis_run_quality,
+    reprocess_analysis_run,
+)
 
 router = APIRouter()
 admin_only = require_role("admin")
@@ -14,3 +19,38 @@ async def admin_dashboard(
     db: AsyncSession = Depends(get_db),
 ):
     return await get_admin_dashboard_stats(db)
+
+
+@router.get("/analysis-runs/latest")
+async def latest_analysis_run_quality(
+    user: dict = Depends(admin_only),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await get_latest_analysis_run_quality(db)
+    if not result:
+        raise HTTPException(status_code=404, detail="No analysis run metadata found")
+    return result
+
+
+@router.get("/analysis-runs/{run_id}/quality")
+async def analysis_run_quality(
+    run_id: str,
+    user: dict = Depends(admin_only),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await get_analysis_run_quality(run_id, db)
+    if not result:
+        raise HTTPException(status_code=404, detail="Analysis run metadata not found")
+    return result
+
+
+@router.post("/analysis-runs/{run_id}/reprocess")
+async def reprocess_analysis_run_endpoint(
+    run_id: str,
+    user: dict = Depends(admin_only),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await reprocess_analysis_run(run_id, db)
+    if not result:
+        raise HTTPException(status_code=404, detail="Analysis run not found")
+    return result

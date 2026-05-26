@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import (
-    Integer, String, Text, Enum, DateTime, Float, ForeignKey,
+    Boolean, Integer, String, Text, Enum, DateTime, Float, ForeignKey, JSON,
     UniqueConstraint, Index, func
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -135,6 +135,35 @@ class AnalysisJob(Base):
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     submission: Mapped["Submission"] = relationship(back_populates="jobs")
+    run_metadata: Mapped[Optional["AnalysisRunMetadata"]] = relationship(
+        back_populates="job",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+
+class AnalysisRunMetadata(Base):
+    __tablename__ = "analysis_run_metadata"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    job_id: Mapped[int] = mapped_column(Integer, ForeignKey("analysis_jobs.id", ondelete="CASCADE"), unique=True, nullable=False)
+    metric_version: Mapped[Optional[str]] = mapped_column(String(64))
+    baseline_version: Mapped[Optional[str]] = mapped_column(String(64))
+    optimized_version: Mapped[Optional[str]] = mapped_column(String(64))
+    processed_count: Mapped[Optional[int]] = mapped_column(Integer)
+    total_runtime_ms: Mapped[Optional[float]] = mapped_column(Float)
+    baseline_runtime_ms: Mapped[Optional[float]] = mapped_column(Float)
+    runtime_delta_pct: Mapped[Optional[float]] = mapped_column(Float)
+    memory_peak_kb: Mapped[Optional[float]] = mapped_column(Float)
+    baseline_memory_peak_kb: Mapped[Optional[float]] = mapped_column(Float)
+    memory_delta_pct: Mapped[Optional[float]] = mapped_column(Float)
+    stage_runtimes_ms: Mapped[Optional[dict]] = mapped_column(JSON)
+    score_deltas: Mapped[Optional[dict]] = mapped_column(JSON)
+    quality_passed: Mapped[Optional[bool]] = mapped_column(Boolean)
+    bootstrap_passed: Mapped[Optional[bool]] = mapped_column(Boolean)
+    measured_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    job: Mapped["AnalysisJob"] = relationship(back_populates="run_metadata")
 
 
 class TeacherFeedback(Base):
