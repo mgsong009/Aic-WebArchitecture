@@ -1,7 +1,7 @@
 FROM python:3.11-slim
 WORKDIR /app
 
-COPY aic-pipeline/requirements.txt .
+COPY requirements.txt .
 # CPU-only torch to avoid 6GB GPU image
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -10,10 +10,9 @@ RUN python -c "\
 from sentence_transformers import SentenceTransformer; \
 SentenceTransformer('paraphrase-multilingual-mpnet-base-v2', cache_folder='/app/models')"
 
-# Copy current and pre-optimization pipeline sources
-COPY aic-pipeline/aic_pipeline.py .
-COPY aic-pipeline/app/ ./app/
-COPY before_project/ ./before_project/
+# Copy pipeline source
+COPY aic_pipeline.py .
+COPY app/ ./app/
 
 ENV TRANSFORMERS_CACHE=/app/models
 

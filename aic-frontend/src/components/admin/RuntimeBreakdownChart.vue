@@ -6,10 +6,12 @@ const props = defineProps({
   steps: { type: Array, required: true },
 })
 
-const hasSteps = computed(() => props.steps.length > 0)
 const total = computed(() => props.steps.reduce((s, st) => s + st.seconds, 0))
+const maxPct = computed(() => {
+  const max = Math.max(...props.steps.map(s => s.seconds))
+  return ((max / total.value) * 100).toFixed(1)
+})
 const dominantStep = computed(() => {
-  if (!hasSteps.value) return null
   return props.steps.reduce((a, b) => (a.seconds > b.seconds ? a : b))
 })
 
@@ -57,12 +59,11 @@ const chartConfig = computed(() => ({
 <template>
   <div class="chart-card">
     <div class="card-title">Runtime Breakdown</div>
-    <div v-if="hasSteps" class="chart-wrap">
+    <div class="chart-wrap">
       <BarChart :config="chartConfig" />
     </div>
-    <div v-else class="empty-note">단계별 runtime metadata가 아직 없습니다.</div>
-    <div v-if="dominantStep" class="insight">
-      <span class="insight-icon">i</span>
+    <div class="insight">
+      <span class="insight-icon">💡</span>
       <span>
         <strong>{{ dominantStep.name }}</strong> 단계가 전체 처리시간의
         <strong>{{ ((dominantStep.seconds / total) * 100).toFixed(1) }}%</strong>를 차지합니다.
@@ -92,16 +93,6 @@ const chartConfig = computed(() => ({
 .chart-wrap {
   height: 220px;
   position: relative;
-}
-
-.empty-note {
-  min-height: 220px;
-  display: grid;
-  place-items: center;
-  border: 1px dashed var(--border-default);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
-  font-size: var(--font-size-sm);
 }
 
 .insight {

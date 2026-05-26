@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getAnalysisQuality, getLatestAnalysisRun, reprocessAnalysisRun } from '@/api/adminAnalysisApi'
+import { getLatestAnalysisRun, reprocessAnalysisRun } from '@/api/adminAnalysisApi'
 
 export const useAdminAnalysisStore = defineStore('adminAnalysis', {
   state: () => ({
@@ -16,18 +16,6 @@ export const useAdminAnalysisStore = defineStore('adminAnalysis', {
         this.run = await getLatestAnalysisRun()
       } catch {
         this.error = '분석 실행 데이터를 불러오지 못했습니다.'
-      } finally {
-        this.loading = false
-      }
-    },
-    async fetchRun(runId) {
-      if (!runId) return
-      this.loading = true
-      this.error = null
-      try {
-        this.run = await getAnalysisQuality(runId)
-      } catch {
-        this.error = '선택한 분석 실행 데이터를 불러오지 못했습니다.'
       } finally {
         this.loading = false
       }

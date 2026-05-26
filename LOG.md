@@ -22,40 +22,6 @@
 
 ## 기록
 
-## 2026-05-27 (분석 품질 baseline 실측 전환)
-
-| 영역 | 요약 | 확인 | 후속 작업 |
-| --- | --- | --- | --- |
-| Backend/Pipeline/Deployment | 미완이었던 baseline 실측 전환을 실제 실행 경로로 연결했습니다. pipeline 이미지에 `before_project/aic_pipeline.py`를 포함하고 `/analyze-baseline` 엔드포인트를 추가했으며, backend 분석 job은 같은 submission의 baseline metadata가 없을 때 pre-optimization runner를 먼저 호출해 실측 runtime, memory, PI/UI/OI/AIC score를 baseline job으로 저장한 뒤 현재 pipeline 분석 결과에 baseline config를 전달합니다. 수동 기록 스크립트도 `/analyze-baseline`을 호출하도록 수정했습니다. | `python -m py_compile aic-pipeline\app\baseline_runner.py aic-pipeline\app\main.py aic-backend\app\services\pipeline_client.py aic-backend\app\services\job_service.py scripts\record_analysis_quality_baseline.py` 성공. `docker-compose up --build -d pipeline backend` 성공. baseline이 없던 submission 1 분석에서 baseline job `e44797ac-cdcb-59e0-81ac-bac791acf684`가 `pre-optimization-pipeline` 실측 metadata를 저장하고, 최적화 job `c56d6d6e-0bdd-4663-97b8-ddc1eb7dc900`이 `baseline_version=pre-optimization-pipeline`, `baseline_runtime_ms=4736.16`, JSON object `baseline_scores`, `score_deltas`, `quality_passed=1`을 저장함을 DB에서 확인했습니다. | None. |
-| Backend/Admin | `/admin/analysis-quality`의 최신 품질 run을 단일 submission smoke가 아니라 대표 submission 묶음 기준으로 생성하도록 보정했습니다. 최신 조회는 `processed_count > 1`인 모니터 run을 우선 사용하고, 없으면 10개 submission을 샘플링해 pre-optimization과 optimized pipeline을 같은 표본으로 실측한 집계 metadata를 저장합니다. | `python -m py_compile aic-backend\app\services\admin_service.py` 성공. `docker-compose up --build -d backend` 성공. 최신 품질 조회가 run `91d204f7-d389-41f2-95ba-80552c2febcf`, `processedRows=10`, `baselineVersion=pre-optimization-pipeline`, `optimizedVersion=pipeline-wrapper-v1`, `baselineRuntimeMs=61543.1`, `runtimeMs=60583.5`, PI/UI/OI/AIC score delta 0.0을 반환함을 확인했습니다. | None. |
-| Backend/Pipeline/Frontend | AIC Analysis Quality Monitor 성능 측정을 단일 submission 반복 합산에서 실제 batch 처리 행 수 기준으로 전환했습니다. pipeline에 `/analyze-batch`와 `/analyze-baseline-batch` 계약을 추가하고, current/pre-optimization runner가 submission 묶음을 하나의 DataFrame으로 처리해 `processed_count`, stage runtime, memory peak, throughput, PI/UI/OI/AIC 평균과 delta를 같은 표본 기준으로 저장합니다. Admin 최신 run은 batch run을 선택하며 UI에 `Batch 측정 · 표본 N건`을 표시합니다. | `python -m py_compile aic-backend\app\services\admin_service.py aic-backend\app\services\pipeline_client.py aic-pipeline\app\schemas.py aic-pipeline\app\pipeline_runner.py aic-pipeline\app\baseline_runner.py aic-pipeline\app\main.py` 성공. `npm.cmd run build` 성공. `docker-compose up --build -d pipeline backend frontend` 성공. 새 batch run `4446add5-4356-4073-bb11-c058735ab0cb`이 `processedRows=10`, `measurementMode=batch`, `runtimeDeltaPct=-43.83`, `throughputDeltaPct=77.971`을 반환함을 확인했습니다. | None. |
-| Backend/Frontend/Admin | AIC Analysis Quality Monitor의 batch 측정 기준을 대표 10건이 아니라 현재 사이트 DB의 전체 submission 수로 바로잡았습니다. 최신 run은 현재 `submissions` 전체 개수와 `processed_count`가 일치하는 run만 선택하고, 없으면 전체 submission을 `all_submissions` population으로 batch 측정합니다. UI 문구도 `전체 submission batch 측정`으로 구분합니다. | `python -m py_compile aic-backend\app\services\admin_service.py aic-backend\app\services\pipeline_client.py` 성공. `npm.cmd run build` 성공. `docker-compose up --build -d backend frontend` 성공. 전체 256건 run `48c6dde8-c06d-4568-939c-7ec01137e786`이 `processedRows=256`, `measurementMode=batch`, `population=all_submissions`, `runtimeDeltaPct=8.064`, `throughputDeltaPct=-7.464`, `memoryDeltaPct=-4.811`, score delta 0.0을 반환함을 확인했습니다. | 전체 데이터 기준으로는 optimized runtime이 baseline보다 느리므로 `compute_ui_oi` 병목을 재분석해야 합니다. |
-| Backend/Pipeline/Admin/Deployment | 이전 시도에서는 synthetic seed 제거와 baseline 저장 필드/전달 경로만 준비했고, baseline 부재 시 최적화 전 runner 실측값을 자동 저장하는 실행 경로는 아직 닫히지 않았습니다. 이 미완료 지점은 위 항목에서 보완했습니다. | `python -m py_compile aic-backend\app\models\db_models.py aic-backend\app\services\pipeline_client.py aic-backend\app\services\job_service.py aic-backend\app\services\admin_service.py aic-pipeline\app\schemas.py aic-pipeline\app\pipeline_runner.py scripts\record_analysis_quality_baseline.py` 성공. `npm.cmd run build` 성공. | 위 보완 항목 완료 후 남은 후속 작업 없음. |
-
-## 2026-05-26 (분석 품질 최적화 비교 UI)
-
-| 영역 | 요약 | 확인 | 후속 작업 |
-| --- | --- | --- | --- |
-| Frontend/Admin | AIC Analysis Quality Monitor의 Optimization Comparison 카드에 배포 판단 배지, 측정 신뢰도 패널, 회귀/표본 부족/측정 누락 원인 후보 영역을 추가했습니다. `PI/UI/OI/AIC` delta 허용 오차 초과 시 배포 보류로 표시하고, 정상 범위이며 표본 수와 Bootstrap 검증이 충분하면 배포 반영 가능 상태로 표시합니다. | `npm.cmd run build` 성공. `docker compose up --build -d frontend` 성공. Browser에서 admin 로그인 후 `/admin/analysis-quality` 진입, `Optimization Comparison`, 배포 판단, 측정 신뢰도, 원인 후보, `Tolerance` 열 렌더링과 콘솔 error 0개를 확인했습니다. | None. |
-
-## 2026-05-26 (분석 품질 seed 보정)
-
-| 영역 | 요약 | 확인 | 후속 작업 |
-| --- | --- | --- | --- |
-| Backend/DB/Frontend/Docs | 새 DB에서 `/admin/analysis-quality`가 초기부터 실제 집계 데이터로 렌더링되도록 `init.sql`에 데모 `analysis_jobs`와 `analysis_run_metadata` seed를 추가했습니다. 기존 MySQL 볼륨에는 재실행 가능한 `scripts/seed_analysis_quality_metadata.sql` 보정 스크립트를 추가하고 `README.md`에 적용 절차를 문서화했습니다. 샘플은 기존 submission/metric에 연결된 runtime, memory, throughput, PI/UI/OI/AIC delta 집계만 저장하며 원문이나 개인정보를 새로 저장하지 않습니다. | `python -m py_compile aic-backend\app\services\admin_service.py aic-backend\app\routers\admin.py` 성공. 실행 중인 기존 DB 볼륨에 보정 스크립트 적용 후 `analysis_run_metadata` 1건 확인. 관리자 API `GET /api/v1/admin/analysis-runs/latest`가 runId, runtime/baseline runtime, throughput, scoreRows 4개, performanceRows 3개, readiness `ready`를 반환하는 것 확인. | None. |
-
-## 2026-05-26 (파이프라인 최적화)
-
-| 영역 | 요약 | 확인 | 후속 작업 |
-| --- | --- | --- | --- |
-| Pipeline | 최적화 전/후 비교 기준을 잡을 수 있도록 `aic-pipeline/benchmark/dummy_data_gen.py`와 `aic-pipeline/benchmark/run_benchmark.py`를 추가했습니다. 더미 데이터 크기별 실행 시간, 주요 함수별 timing, `cProfile` 결과, 메모리 피크를 기록할 수 있습니다. | `python aic-pipeline\benchmark\run_benchmark.py --sizes 10 25 --backend tfidf --out aic-pipeline\benchmark\benchmark_results.json` 성공. 산출물은 확인 후 정리했습니다. | 실제 기준선은 운영에 가까운 데이터 크기와 허용 오차를 확정한 뒤 별도 benchmark 산출물로 기록합니다. |
-| Pipeline | `compute_PI`와 `compute_UI_OI`의 반복 토큰화 병목을 줄였습니다. `user`, `chatgpt_before`, `essay` 토큰을 한 번 계산해 `pi_depth_tokens`, `pi_critical_ratio`, `pi_avg_sent_len_raw`, `pi_ttr_raw`, `ui_newinfo_ratio` 계산에 재사용합니다. | `python -m py_compile aic-pipeline\aic_pipeline.py aic-pipeline\benchmark\dummy_data_gen.py aic-pipeline\benchmark\run_benchmark.py` 성공. TF-IDF `run_analysis()` smoke에서 기존 `AnalyzeResponse` 필드와 numeric metric 반환 확인. | 대표 데이터셋 기준 최적화 전후 핵심 점수 delta를 정식 회귀 테스트로 고정합니다. |
-| Pipeline | `EmbeddingBackend.transform()`이 SBERT 입력을 설정 가능한 chunk 단위로 나눠 인코딩하고 결과를 병합하도록 개선했습니다. 기존 `sbert_batch_size`, SBERT 실패 시 TF-IDF fallback, CPU-only/단일 backend 패턴은 유지했습니다. | TF-IDF fallback smoke에서 backend 초기화와 분석 응답 반환 확인. SBERT chunk 경로는 코드 경로와 compile 검증까지 확인했습니다. | SBERT 모델이 있는 컨테이너 환경에서 대용량 입력 기준 메모리 피크를 추가 측정합니다. |
-| Pipeline | course 단위 TopicScore 계산을 `groupby` 인덱스와 행렬 연산 중심으로 정리하고, TF-IDF sparse cosine diagonal도 행별 Python 루프 대신 sparse multiply/sum으로 계산하도록 바꿨습니다. 기존 metric field name과 수치 범위 clipping은 유지했습니다. | TF-IDF benchmark smoke에서 `compute_UI_OI` 성공, `/analyze` wrapper smoke에서 `ui_cos_similarity`, `ui_distance`, `ui_newinfo_ratio`, `topic_score` 반환 확인. | 여러 course와 충분한 표본 수를 가진 대표 데이터로 수치 drift 허용 범위를 확정합니다. |
-| Pipeline | `validate()`의 Pearson/Spearman bootstrap CI에 `n_jobs` 옵션을 추가하고, Spearman rank 계산을 pandas 반복 호출에서 NumPy 기반 계산으로 변경했습니다. 작은 데이터에서는 직렬 fallback을 유지하고 seed 기반 bootstrap 인덱스 생성으로 재현 가능성을 보존했습니다. | TF-IDF benchmark smoke에서 `validate()` runtime이 약 `7.19s`에서 `3.20s` 수준으로 감소함을 확인했습니다. `--bootstrap-jobs 2` 경로도 실행 성공. | CPU core 수와 데이터 크기별로 `bootstrap_jobs` 기본값을 운영 설정에서 확정합니다. |
-| Pipeline/Backend | 파이프라인 `/analyze` 응답에 `analysis_metadata`를 추가하고, 총 runtime, 메모리 피크, 단계별 runtime, 처리 건수, baseline 대비 runtime/memory delta, PI/UI/OI/AIC score delta, 품질/Bootstrap 통과 여부를 수집하도록 했습니다. 백엔드는 원문 제출이나 개인정보를 저장하지 않고 `analysis_run_metadata` 테이블에 job별 집계 메타데이터만 upsert합니다. | `python -m compileall aic-pipeline\app aic-backend\app` 성공. `_build_analysis_metadata()` helper로 baseline runtime, memory, score delta 계산 smoke 확인. | 기존 DB 볼륨 환경에서는 `analysis_run_metadata` DDL을 수동 적용하거나 DB 재초기화가 필요합니다. |
-| Backend | 관리자 품질 모니터용 `GET /api/v1/admin/analysis-runs/latest`, `GET /api/v1/admin/analysis-runs/{run_id}/quality` 엔드포인트를 추가했습니다. 응답은 최적화 버전, baseline 버전, 성능 개선율, 품질 회귀 여부, 측정 시각, pipeline step runtime, readiness 정보를 일관된 스키마로 반환합니다. | `python -m compileall aic-backend\app` 성공. 라우터와 서비스 쿼리 문법 검증 완료. | `/admin/analysis-quality` 프론트 mock API를 실제 axios 호출로 교체하고, 비교 섹션/경고 UI를 연결합니다. |
-
 ## 2026-05-25 (로컬/운영 Compose 분리)
 
 | 영역 | 요약 | 확인 | 후속 작업 |
@@ -95,12 +61,6 @@
 | --- | --- | --- | --- |
 | Frontend/Admin | 관리자 `시스템 현황` 페이지의 학습 현황 지표를 정리했습니다. `제출률`과 `과제 수` 표시를 제거하고, `학습 과정 기록` 및 `학생당 평균 로그`를 표시하도록 변경했습니다. `학생당 평균 로그`는 전체 학습 과정 기록 수를 전체 학생 수로 나누어 소수점 둘째 자리까지 `건` 단위로 보여줍니다. | `rg`로 관리자 대시보드에서 `제출률`, `submission_rate`, `과제 수` 표시가 제거되고 `학습 과정 기록`, `학생당 평균 로그`가 남은 것을 확인했습니다. `npm run build` 성공. | None. |
 | Frontend/Admin | 관리자 대시보드 카드 색상 톤을 운영형 화면에 맞게 낮췄습니다. 사용자/학습 기본 카드는 무채색 중심으로 통일하고, 상태 카드와 AIC/PI/UI/OI 점수 카드만 얇은 border와 숫자 색상으로 의미를 표현하도록 정리했습니다. | `AdminDashboardView.vue`에서 기존 광범위 컬러 클래스(`stat-card--blue/orange/green/yellow/red`) 참조가 제거된 것을 확인했습니다. `npm run build` 성공. | None. |
-
-## 2026-05-26 (AIC 분석 품질 모니터 최적화 비교)
-
-| 영역 | 요약 | 확인 | 후속 작업 |
-| --- | --- | --- | --- |
-| Backend/Frontend | AIC Analysis Quality Monitor에 최적화 전후 비교 계약과 UI를 추가했습니다. backend `GET /api/v1/admin/analysis-runs/latest`, `GET /api/v1/admin/analysis-runs/{run_id}/quality` 응답에 runtime, memory, throughput before/after 행, PI/UI/OI/AIC score delta 행, 허용 오차와 통과 여부를 포함했고, `POST /api/v1/admin/analysis-runs/{run_id}/reprocess`로 같은 submission의 새 분석 job을 생성할 수 있게 했습니다. frontend는 mock API를 제거하고 기존 Axios client를 사용하며, `/admin/analysis-quality`에서 run ID 조회, 최신 실행 조회, Optimization Comparison 카드/차트/표를 렌더링합니다. | `python -m py_compile aic-backend/app/services/admin_service.py aic-backend/app/routers/admin.py` 성공. `npm.cmd run build` 성공. `docker-compose up --build -d backend frontend` 성공. Browser에서 admin 로그인과 `/admin/analysis-quality` 라우팅/콘솔 error 0개를 확인했습니다. 현재 seed DB에는 `analysis_run_metadata` 행이 없어 최신 실행 조회는 "분석 실행 데이터를 불러오지 못했습니다." 상태로 표시됩니다. | 메타데이터가 있는 분석 run을 생성한 뒤 before/after 차트와 score delta 표의 실제 데이터 렌더링을 통합 스모크에 추가합니다. |
 
 ## 2026-05-25 (김증 페이지)
 
