@@ -22,6 +22,18 @@
 
 ## 기록
 
+## 2026-05-26 (파이프라인 최적화)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Pipeline | 최적화 전/후 비교 기준을 잡을 수 있도록 `aic-pipeline/benchmark/dummy_data_gen.py`와 `aic-pipeline/benchmark/run_benchmark.py`를 추가했습니다. 더미 데이터 크기별 실행 시간, 주요 함수별 timing, `cProfile` 결과, 메모리 피크를 기록할 수 있습니다. | `python aic-pipeline\benchmark\run_benchmark.py --sizes 10 25 --backend tfidf --out aic-pipeline\benchmark\benchmark_results.json` 성공. 산출물은 확인 후 정리했습니다. | 실제 기준선은 운영에 가까운 데이터 크기와 허용 오차를 확정한 뒤 별도 benchmark 산출물로 기록합니다. |
+| Pipeline | `compute_PI`와 `compute_UI_OI`의 반복 토큰화 병목을 줄였습니다. `user`, `chatgpt_before`, `essay` 토큰을 한 번 계산해 `pi_depth_tokens`, `pi_critical_ratio`, `pi_avg_sent_len_raw`, `pi_ttr_raw`, `ui_newinfo_ratio` 계산에 재사용합니다. | `python -m py_compile aic-pipeline\aic_pipeline.py aic-pipeline\benchmark\dummy_data_gen.py aic-pipeline\benchmark\run_benchmark.py` 성공. TF-IDF `run_analysis()` smoke에서 기존 `AnalyzeResponse` 필드와 numeric metric 반환 확인. | 대표 데이터셋 기준 최적화 전후 핵심 점수 delta를 정식 회귀 테스트로 고정합니다. |
+| Pipeline | `EmbeddingBackend.transform()`이 SBERT 입력을 설정 가능한 chunk 단위로 나눠 인코딩하고 결과를 병합하도록 개선했습니다. 기존 `sbert_batch_size`, SBERT 실패 시 TF-IDF fallback, CPU-only/단일 backend 패턴은 유지했습니다. | TF-IDF fallback smoke에서 backend 초기화와 분석 응답 반환 확인. SBERT chunk 경로는 코드 경로와 compile 검증까지 확인했습니다. | SBERT 모델이 있는 컨테이너 환경에서 대용량 입력 기준 메모리 피크를 추가 측정합니다. |
+| Pipeline | course 단위 TopicScore 계산을 `groupby` 인덱스와 행렬 연산 중심으로 정리하고, TF-IDF sparse cosine diagonal도 행별 Python 루프 대신 sparse multiply/sum으로 계산하도록 바꿨습니다. 기존 metric field name과 수치 범위 clipping은 유지했습니다. | TF-IDF benchmark smoke에서 `compute_UI_OI` 성공, `/analyze` wrapper smoke에서 `ui_cos_similarity`, `ui_distance`, `ui_newinfo_ratio`, `topic_score` 반환 확인. | 여러 course와 충분한 표본 수를 가진 대표 데이터로 수치 drift 허용 범위를 확정합니다. |
+| Pipeline | `validate()`의 Pearson/Spearman bootstrap CI에 `n_jobs` 옵션을 추가하고, Spearman rank 계산을 pandas 반복 호출에서 NumPy 기반 계산으로 변경했습니다. 작은 데이터에서는 직렬 fallback을 유지하고 seed 기반 bootstrap 인덱스 생성으로 재현 가능성을 보존했습니다. | TF-IDF benchmark smoke에서 `validate()` runtime이 약 `7.19s`에서 `3.20s` 수준으로 감소함을 확인했습니다. `--bootstrap-jobs 2` 경로도 실행 성공. | CPU core 수와 데이터 크기별로 `bootstrap_jobs` 기본값을 운영 설정에서 확정합니다. |
+| Pipeline/Backend | 파이프라인 `/analyze` 응답에 `analysis_metadata`를 추가하고, 총 runtime, 메모리 피크, 단계별 runtime, 처리 건수, baseline 대비 runtime/memory delta, PI/UI/OI/AIC score delta, 품질/Bootstrap 통과 여부를 수집하도록 했습니다. 백엔드는 원문 제출이나 개인정보를 저장하지 않고 `analysis_run_metadata` 테이블에 job별 집계 메타데이터만 upsert합니다. | `python -m compileall aic-pipeline\app aic-backend\app` 성공. `_build_analysis_metadata()` helper로 baseline runtime, memory, score delta 계산 smoke 확인. | 기존 DB 볼륨 환경에서는 `analysis_run_metadata` DDL을 수동 적용하거나 DB 재초기화가 필요합니다. |
+| Backend | 관리자 품질 모니터용 `GET /api/v1/admin/analysis-runs/latest`, `GET /api/v1/admin/analysis-runs/{run_id}/quality` 엔드포인트를 추가했습니다. 응답은 최적화 버전, baseline 버전, 성능 개선율, 품질 회귀 여부, 측정 시각, pipeline step runtime, readiness 정보를 일관된 스키마로 반환합니다. | `python -m compileall aic-backend\app` 성공. 라우터와 서비스 쿼리 문법 검증 완료. | `/admin/analysis-quality` 프론트 mock API를 실제 axios 호출로 교체하고, 비교 섹션/경고 UI를 연결합니다. |
+
 ## 2026-05-25 (로컬/운영 Compose 분리)
 
 | 영역 | 요약 | 확인 | 후속 작업 |

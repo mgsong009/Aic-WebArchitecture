@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime, timezone
 from sqlalchemy import select, update
 from app.database import AsyncSessionLocal
-from app.models.db_models import AnalysisJob, Metric, Submission, Assignment, User
+from app.models.db_models import AnalysisJob, AnalysisRunMetadata, Metric, Submission, Assignment, User
 from app.services.pipeline_client import call_pipeline
 
 
@@ -109,6 +109,8 @@ async def _run_pipeline(job_uuid_str: str, submission_id: int, submission_data: 
                 metric = Metric(submission_id=submission_id, **scaled)
                 session.add(metric)
 
+            await _upsert_analysis_metadata(session, job_uuid_str, result.get("analysis_metadata"))
+
             await session.execute(
                 update(AnalysisJob)
                 .where(AnalysisJob.job_uuid == job_uuid_str)
@@ -148,6 +150,46 @@ def _scale_metrics(result: dict) -> dict:
         "embedding_backend": result.get("embedding_backend"),
         "computed_at": datetime.now(timezone.utc),
     }
+
+
+async def _upsert_analysis_metadata(session, job_uuid_str: str, metadata: dict | None):
+    if not metadata:
+        return
+
+    job_result = await session.execute(
+        select(AnalysisJob).where(AnalysisJob.job_uuid == job_uuid_str)
+    )
+    job = job_result.scalar_one_or_none()
+    if not job:
+        return
+
+    values = {
+        "metric_version": metadata.get("metric_version"),
+        "baseline_version": metadata.get("baseline_version"),
+        "optimized_version": metadata.get("optimized_version"),
+        "processed_count": metadata.get("processed_count"),
+        "total_runtime_ms": metadata.get("total_runtime_ms"),
+        "baseline_runtime_ms": metadata.get("baseline_runtime_ms"),
+        "runtime_delta_pct": metadata.get("runtime_delta_pct"),
+        "memory_peak_kb": metadata.get("memory_peak_kb"),
+        "baseline_memory_peak_kb": metadata.get("baseline_memory_peak_kb"),
+        "memory_delta_pct": metadata.get("memory_delta_pct"),
+        "stage_runtimes_ms": metadata.get("stage_runtimes_ms"),
+        "score_deltas": metadata.get("score_deltas"),
+        "quality_passed": metadata.get("quality_passed"),
+        "bootstrap_passed": metadata.get("bootstrap_passed"),
+        "measured_at": datetime.now(timezone.utc),
+    }
+
+    existing = await session.execute(
+        select(AnalysisRunMetadata).where(AnalysisRunMetadata.job_id == job.id)
+    )
+    run_metadata = existing.scalar_one_or_none()
+    if run_metadata:
+        for key, value in values.items():
+            setattr(run_metadata, key, value)
+    else:
+        session.add(AnalysisRunMetadata(job_id=job.id, **values))
 
 
 def _safe_round(value) -> int:

@@ -98,6 +98,28 @@ CREATE TABLE analysis_jobs (
     INDEX idx_status (status)
 ) ENGINE=InnoDB;
 
+CREATE TABLE analysis_run_metadata (
+    id                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    job_id                   INT UNSIGNED NOT NULL UNIQUE,
+    metric_version           VARCHAR(64),
+    baseline_version         VARCHAR(64),
+    optimized_version        VARCHAR(64),
+    processed_count          INT,
+    total_runtime_ms         FLOAT,
+    baseline_runtime_ms      FLOAT,
+    runtime_delta_pct        FLOAT,
+    memory_peak_kb           FLOAT,
+    baseline_memory_peak_kb  FLOAT,
+    memory_delta_pct         FLOAT,
+    stage_runtimes_ms        JSON,
+    score_deltas             JSON,
+    quality_passed           BOOLEAN,
+    bootstrap_passed         BOOLEAN,
+    measured_at              DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (job_id) REFERENCES analysis_jobs(id) ON DELETE CASCADE,
+    INDEX idx_measured_at (measured_at)
+) ENGINE=InnoDB;
+
 CREATE TABLE teacher_feedback (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     assignment_id   INT UNSIGNED NOT NULL,
