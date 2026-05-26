@@ -74,6 +74,12 @@
 | Frontend/Admin | 관리자 `시스템 현황` 페이지의 학습 현황 지표를 정리했습니다. `제출률`과 `과제 수` 표시를 제거하고, `학습 과정 기록` 및 `학생당 평균 로그`를 표시하도록 변경했습니다. `학생당 평균 로그`는 전체 학습 과정 기록 수를 전체 학생 수로 나누어 소수점 둘째 자리까지 `건` 단위로 보여줍니다. | `rg`로 관리자 대시보드에서 `제출률`, `submission_rate`, `과제 수` 표시가 제거되고 `학습 과정 기록`, `학생당 평균 로그`가 남은 것을 확인했습니다. `npm run build` 성공. | None. |
 | Frontend/Admin | 관리자 대시보드 카드 색상 톤을 운영형 화면에 맞게 낮췄습니다. 사용자/학습 기본 카드는 무채색 중심으로 통일하고, 상태 카드와 AIC/PI/UI/OI 점수 카드만 얇은 border와 숫자 색상으로 의미를 표현하도록 정리했습니다. | `AdminDashboardView.vue`에서 기존 광범위 컬러 클래스(`stat-card--blue/orange/green/yellow/red`) 참조가 제거된 것을 확인했습니다. `npm run build` 성공. | None. |
 
+## 2026-05-26 (AIC 분석 품질 모니터 최적화 비교)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Backend/Frontend | AIC Analysis Quality Monitor에 최적화 전후 비교 계약과 UI를 추가했습니다. backend `GET /api/v1/admin/analysis-runs/latest`, `GET /api/v1/admin/analysis-runs/{run_id}/quality` 응답에 runtime, memory, throughput before/after 행, PI/UI/OI/AIC score delta 행, 허용 오차와 통과 여부를 포함했고, `POST /api/v1/admin/analysis-runs/{run_id}/reprocess`로 같은 submission의 새 분석 job을 생성할 수 있게 했습니다. frontend는 mock API를 제거하고 기존 Axios client를 사용하며, `/admin/analysis-quality`에서 run ID 조회, 최신 실행 조회, Optimization Comparison 카드/차트/표를 렌더링합니다. | `python -m py_compile aic-backend/app/services/admin_service.py aic-backend/app/routers/admin.py` 성공. `npm.cmd run build` 성공. `docker-compose up --build -d backend frontend` 성공. Browser에서 admin 로그인과 `/admin/analysis-quality` 라우팅/콘솔 error 0개를 확인했습니다. 현재 seed DB에는 `analysis_run_metadata` 행이 없어 최신 실행 조회는 "분석 실행 데이터를 불러오지 못했습니다." 상태로 표시됩니다. | 메타데이터가 있는 분석 run을 생성한 뒤 before/after 차트와 score delta 표의 실제 데이터 렌더링을 통합 스모크에 추가합니다. |
+
 ## 2026-05-25 (김증 페이지)
 
 | 영역 | 요약 | 확인 | 후속 작업 |

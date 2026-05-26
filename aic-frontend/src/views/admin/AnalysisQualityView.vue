@@ -1,19 +1,39 @@
 <script setup>
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useAdminAnalysisStore } from '@/stores/adminAnalysisStore'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import AdminKpiCard from '@/components/admin/AdminKpiCard.vue'
 import DataHealthCard from '@/components/admin/DataHealthCard.vue'
 import BackendInfoCard from '@/components/admin/BackendInfoCard.vue'
+import OptimizationComparisonCard from '@/components/admin/OptimizationComparisonCard.vue'
 import PipelineStepper from '@/components/admin/PipelineStepper.vue'
 import RuntimeBreakdownChart from '@/components/admin/RuntimeBreakdownChart.vue'
 import ServiceReadinessCard from '@/components/admin/ServiceReadinessCard.vue'
 
 const store = useAdminAnalysisStore()
+const selectedRunId = ref('')
 
 onMounted(() => store.fetchLatestRun())
 
 const run = computed(() => store.run)
+
+const hasComparison = computed(() => {
+  const comparison = run.value?.comparison
+  return comparison?.performanceRows?.length || comparison?.scoreRows?.length
+})
+
+function fetchSelectedRun() {
+  store.fetchRun(selectedRunId.value.trim())
+}
+
+function fetchLatestRun() {
+  selectedRunId.value = ''
+  store.fetchLatestRun()
+}
+
+function formatSeconds(value) {
+  return value === null || value === undefined ? '-' : `${value}s`
+}
 
 const kpis = computed(() => {
   if (!run.value) return []
@@ -33,15 +53,15 @@ const kpis = computed(() => {
     },
     {
       label: '총 처리시간',
-      value: `${r.totalRuntimeSec}s`,
+      value: formatSeconds(r.totalRuntimeSec),
       subText: '파이프라인 전체 소요',
-      status: r.totalRuntimeSec < 300 ? 'success' : 'warning',
+      status: r.totalRuntimeSec !== null && r.totalRuntimeSec < 300 ? 'success' : 'warning',
     },
     {
       label: '실행 상태',
-      value: r.status === 'completed' ? '완료' : r.status === 'failed' ? '실패' : '실행 중',
+      value: r.status === 'success' ? '완료' : r.status === 'failed' ? '실패' : '확인 필요',
       subText: `Run ID: ${r.runId}`,
-      status: r.status === 'completed' ? 'success' : r.status === 'failed' ? 'danger' : 'neutral',
+      status: r.status === 'success' ? 'success' : r.status === 'failed' ? 'danger' : 'warning',
     },
   ]
 })
@@ -49,6 +69,22 @@ const kpis = computed(() => {
 
 <template>
   <AppLayout title="AIC 분석 품질 모니터" subtitle="최근 AIC 분석 실행 결과 및 데이터 품질 검증">
+    <div class="run-selector">
+      <input
+        v-model="selectedRunId"
+        class="run-input"
+        type="text"
+        placeholder="Analysis run ID"
+        @keyup.enter="fetchSelectedRun"
+      />
+      <button class="selector-btn" :disabled="store.loading || !selectedRunId.trim()" @click="fetchSelectedRun">
+        조회
+      </button>
+      <button class="selector-btn selector-btn--secondary" :disabled="store.loading" @click="fetchLatestRun">
+        최신 실행
+      </button>
+    </div>
+
     <div v-if="store.loading" class="loading-state">분석 데이터를 불러오는 중...</div>
     <div v-else-if="store.error" class="error-state">{{ store.error }}</div>
 
@@ -70,6 +106,11 @@ const kpis = computed(() => {
         <DataHealthCard :data-health="run.dataHealth" />
         <BackendInfoCard :backend="run.backend" />
       </div>
+
+      <OptimizationComparisonCard
+        v-if="hasComparison"
+        :comparison="run.comparison"
+      />
 
       <!-- Pipeline Stepper -->
       <PipelineStepper :steps="run.pipelineSteps" />
@@ -111,6 +152,44 @@ const kpis = computed(() => {
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-4);
   margin-bottom: var(--space-6);
+}
+
+.run-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+.run-input {
+  width: min(360px, 100%);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.selector-btn {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary, var(--color-aic));
+  color: white;
+  border: 1px solid var(--color-primary, var(--color-aic));
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.selector-btn--secondary {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+}
+
+.selector-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .grid-2 {
@@ -159,5 +238,8 @@ const kpis = computed(() => {
 
 @media (max-width: 480px) {
   .kpi-grid { grid-template-columns: 1fr; }
+  .run-selector { align-items: stretch; flex-direction: column; }
+  .run-input,
+  .selector-btn { width: 100%; }
 }
 </style>

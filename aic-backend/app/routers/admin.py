@@ -6,6 +6,7 @@ from app.services.admin_service import (
     get_admin_dashboard_stats,
     get_analysis_run_quality,
     get_latest_analysis_run_quality,
+    reprocess_analysis_run,
 )
 
 router = APIRouter()
@@ -40,4 +41,16 @@ async def analysis_run_quality(
     result = await get_analysis_run_quality(run_id, db)
     if not result:
         raise HTTPException(status_code=404, detail="Analysis run metadata not found")
+    return result
+
+
+@router.post("/analysis-runs/{run_id}/reprocess")
+async def reprocess_analysis_run_endpoint(
+    run_id: str,
+    user: dict = Depends(admin_only),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await reprocess_analysis_run(run_id, db)
+    if not result:
+        raise HTTPException(status_code=404, detail="Analysis run not found")
     return result

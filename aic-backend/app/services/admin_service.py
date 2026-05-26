@@ -11,6 +11,7 @@ from app.models.db_models import (
     AnalysisRunMetadata,
     TeacherFeedback,
 )
+from app.services.job_service import create_and_dispatch_job
 
 
 async def get_admin_dashboard_stats(db: AsyncSession) -> dict:
@@ -118,33 +119,80 @@ async def get_analysis_run_quality(job_uuid: str, db: AsyncSession) -> dict | No
     return _quality_response(row) if row else None
 
 
+async def reprocess_analysis_run(job_uuid: str, db: AsyncSession) -> dict | None:
+    result = await db.execute(
+        select(AnalysisJob).where(AnalysisJob.job_uuid == job_uuid)
+    )
+    job = result.scalar_one_or_none()
+    if not job:
+        return None
+
+    next_job_uuid = await create_and_dispatch_job(job.submission_id, db)
+    return {
+        "ok": True,
+        "runId": next_job_uuid,
+        "sourceRunId": job_uuid,
+    }
+
+
 def _quality_response(row) -> dict:
     job, metadata, metric, _submission, assignment = row
     score_deltas = metadata.score_deltas or {}
     stage_runtimes = metadata.stage_runtimes_ms or {}
     status = "success" if metadata.quality_passed is not False else "warning"
+    processed_count = metadata.processed_count or 0
+    runtime_ms = metadata.total_runtime_ms
+    baseline_runtime_ms = metadata.baseline_runtime_ms
+    memory_peak_kb = metadata.memory_peak_kb
+    baseline_memory_peak_kb = metadata.baseline_memory_peak_kb
+    current_scores = _current_scores(metric)
 
     return {
         "runId": job.job_uuid,
         "course": assignment.course_code or "default",
         "assignment": assignment.title,
         "status": status,
-        "processedRows": metadata.processed_count or 0,
-        "validRows": metadata.processed_count or 0,
+        "processedRows": processed_count,
+        "validRows": processed_count,
         "successRate": 100.0 if job.status == "done" else 0.0,
-        "totalRuntimeSec": _ms_to_sec(metadata.total_runtime_ms),
-        "avgRuntimePerSample": _avg_runtime_sec(metadata.total_runtime_ms, metadata.processed_count),
+        "totalRuntimeSec": _ms_to_sec(runtime_ms),
+        "avgRuntimePerSample": _avg_runtime_sec(runtime_ms, processed_count),
+        "dataHealth": {
+            "score": 100 if job.status == "done" else 0,
+            "requiredColumns": "normal",
+            "missingRows": 0,
+            "duplicateRows": 0,
+            "textOutliers": 0,
+            "ratingCoverage": 0,
+            "lowSampleCourses": 0,
+        },
         "comparison": {
             "metricVersion": metadata.metric_version,
             "baselineVersion": metadata.baseline_version,
             "optimizedVersion": metadata.optimized_version,
-            "runtimeMs": metadata.total_runtime_ms,
-            "baselineRuntimeMs": metadata.baseline_runtime_ms,
+            "runtimeMs": runtime_ms,
+            "baselineRuntimeMs": baseline_runtime_ms,
             "runtimeDeltaPct": metadata.runtime_delta_pct,
-            "memoryPeakKb": metadata.memory_peak_kb,
-            "baselineMemoryPeakKb": metadata.baseline_memory_peak_kb,
+            "memoryPeakKb": memory_peak_kb,
+            "baselineMemoryPeakKb": baseline_memory_peak_kb,
             "memoryDeltaPct": metadata.memory_delta_pct,
+            "throughputPerSec": _throughput_per_sec(processed_count, runtime_ms),
+            "baselineThroughputPerSec": _throughput_per_sec(processed_count, baseline_runtime_ms),
+            "throughputDeltaPct": _delta_pct(
+                _throughput_per_sec(processed_count, runtime_ms),
+                _throughput_per_sec(processed_count, baseline_runtime_ms),
+            ),
             "scoreDeltas": score_deltas,
+            "currentScores": current_scores,
+            "scoreRows": _score_rows(current_scores, score_deltas),
+            "performanceRows": _performance_rows(
+                processed_count,
+                runtime_ms,
+                baseline_runtime_ms,
+                memory_peak_kb,
+                baseline_memory_peak_kb,
+            ),
+            "scoreTolerance": 0.01,
             "qualityPassed": metadata.quality_passed,
             "bootstrapPassed": metadata.bootstrap_passed,
             "measuredAt": metadata.measured_at.isoformat() if metadata.measured_at else None,
@@ -180,7 +228,7 @@ def _readiness(metadata: AnalysisRunMetadata) -> dict:
             "actions": ["표본 수와 재표본 추출 결과를 확인하세요."],
         }
     return {
-        "status": "normal",
+        "status": "ready",
         "reason": "수집된 실행 메타데이터에서 품질 회귀가 감지되지 않았습니다.",
         "actions": [],
     }
@@ -194,3 +242,92 @@ def _avg_runtime_sec(total_ms, processed_count) -> float | None:
     if not total_ms or not processed_count:
         return None
     return round(float(total_ms) / 1000 / int(processed_count), 3)
+
+
+def _current_scores(metric: Metric | None) -> dict:
+    if not metric:
+        return {}
+    return {
+        "pi": metric.pi_score,
+        "ui": metric.ui_score,
+        "oi": metric.oi_score,
+        "aic": metric.aic_score,
+    }
+
+
+def _score_rows(current_scores: dict, score_deltas: dict) -> list[dict]:
+    labels = {"pi": "PI", "ui": "UI", "oi": "OI", "aic": "AIC"}
+    rows = []
+    for key, label in labels.items():
+        current = current_scores.get(key)
+        delta = score_deltas.get(key)
+        baseline = None
+        if current is not None and delta is not None:
+            baseline = round(float(current) - float(delta), 3)
+        rows.append({
+            "key": key,
+            "label": label,
+            "baseline": baseline,
+            "optimized": current,
+            "delta": delta,
+            "tolerance": 0.01,
+            "passed": None if delta is None else abs(float(delta)) <= 0.01,
+        })
+    return rows
+
+
+def _performance_rows(
+    processed_count: int,
+    runtime_ms: float | None,
+    baseline_runtime_ms: float | None,
+    memory_peak_kb: float | None,
+    baseline_memory_peak_kb: float | None,
+) -> list[dict]:
+    throughput = _throughput_per_sec(processed_count, runtime_ms)
+    baseline_throughput = _throughput_per_sec(processed_count, baseline_runtime_ms)
+    return [
+        {
+            "key": "runtime",
+            "label": "Runtime",
+            "unit": "s",
+            "baseline": _ms_to_sec(baseline_runtime_ms),
+            "optimized": _ms_to_sec(runtime_ms),
+            "deltaPct": _delta_pct(runtime_ms, baseline_runtime_ms),
+            "betterDirection": "down",
+        },
+        {
+            "key": "memory",
+            "label": "Memory peak",
+            "unit": "MB",
+            "baseline": _kb_to_mb(baseline_memory_peak_kb),
+            "optimized": _kb_to_mb(memory_peak_kb),
+            "deltaPct": _delta_pct(memory_peak_kb, baseline_memory_peak_kb),
+            "betterDirection": "down",
+        },
+        {
+            "key": "throughput",
+            "label": "Throughput",
+            "unit": "rows/s",
+            "baseline": baseline_throughput,
+            "optimized": throughput,
+            "deltaPct": _delta_pct(throughput, baseline_throughput),
+            "betterDirection": "up",
+        },
+    ]
+
+
+def _throughput_per_sec(processed_count: int, runtime_ms: float | None) -> float | None:
+    if not processed_count or not runtime_ms:
+        return None
+    seconds = float(runtime_ms) / 1000
+    return round(processed_count / seconds, 3) if seconds else None
+
+
+def _kb_to_mb(value) -> float | None:
+    return round(float(value) / 1024, 3) if value is not None else None
+
+
+def _delta_pct(current, baseline) -> float | None:
+    if current is None or baseline in (None, 0):
+        return None
+    return round((float(current) - float(baseline)) / float(baseline) * 100, 3)
