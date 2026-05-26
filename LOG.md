@@ -22,6 +22,12 @@
 
 ## 기록
 
+## 2026-05-26 (분석 품질 최적화 비교 UI)
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Frontend/Admin | AIC Analysis Quality Monitor의 Optimization Comparison 카드에 배포 판단 배지, 측정 신뢰도 패널, 회귀/표본 부족/측정 누락 원인 후보 영역을 추가했습니다. `PI/UI/OI/AIC` delta 허용 오차 초과 시 배포 보류로 표시하고, 정상 범위이며 표본 수와 Bootstrap 검증이 충분하면 배포 반영 가능 상태로 표시합니다. | `npm.cmd run build` 성공. `docker compose up --build -d frontend` 성공. Browser에서 admin 로그인 후 `/admin/analysis-quality` 진입, `Optimization Comparison`, 배포 판단, 측정 신뢰도, 원인 후보, `Tolerance` 열 렌더링과 콘솔 error 0개를 확인했습니다. | None. |
+
 ## 2026-05-26 (분석 품질 seed 보정)
 
 | 영역 | 요약 | 확인 | 후속 작업 |

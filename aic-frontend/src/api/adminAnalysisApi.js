@@ -73,6 +73,8 @@ export function normalizeAnalysisRun(data = {}) {
       metricVersion: comparison.metricVersion || null,
       baselineVersion: comparison.baselineVersion || null,
       optimizedVersion: comparison.optimizedVersion || null,
+      sampleCount: comparison.sampleCount ?? data.validRows ?? data.processedRows ?? null,
+      minSampleCount: comparison.minSampleCount ?? 10,
       runtimeMs: comparison.runtimeMs ?? null,
       baselineRuntimeMs: comparison.baselineRuntimeMs ?? null,
       runtimeDeltaPct: comparison.runtimeDeltaPct ?? null,

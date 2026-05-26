@@ -43,7 +43,6 @@
 | Pipeline | P1 | Backlog | `aic_pipeline.py`를 도메인별 모듈로 단계적으로 분리한다. | `app/config.py`, `app/utils.py`, `app/embedding.py`, `app/metrics.py`, `app/pipeline.py`로 책임이 나뉘고, `app/pipeline_runner.py`의 public response contract와 `run_in_executor` 패턴이 유지된다. | `aic-pipeline/AGENTS.md`의 “core metric formulas” 규칙과 함께 갱신 필요. |
 | Pipeline | P2 | Ready | 파이프라인 최적화 회귀 테스트와 API 호환성 체크를 추가한다. | 대표 `/analyze` 요청에서 `AnalyzeResponse` 필드가 모두 존재하고 numeric metric이 유효하며, 최적화 전후 핵심 점수 차이가 허용 오차 안에 있음을 검증한다. | backend `pipeline_client`와 metric persistence 영향 확인. |
 | Backend/Pipeline/Admin | P1 | Ready | AIC Analysis Quality Monitor 초기 데이터를 synthetic seed가 아니라 실제 분석 job 실행으로 생성한다. | 자동 배포에서 `scripts/seed_analysis_quality_metadata.sql` 적용을 제거하고, 데모/기존 DB 환경에서 대표 submission을 재분석해 pipeline 응답의 실제 `analysis_metadata`가 `analysis_run_metadata`에 저장된다. `/admin/analysis-quality` 최신 실행 조회가 실측 runtime, memory, throughput, PI/UI/OI/AIC delta를 렌더링하며, 개인정보/원문 텍스트를 추가 저장하지 않는다. | 기존 synthetic demo metadata는 실제 job 메타데이터와 구분하거나 정리한다. 배포 후 1회 실행 방식은 idempotent하고 실패 시 배포 전체를 불필요하게 깨지 않도록 설계한다. |
-| Frontend | P2 | Ready | 최적화 비교 UI에 회귀 경고와 측정 신뢰도 표시를 추가한다. | AIC/PI/UI/OI delta가 허용 오차를 넘거나 샘플 수가 부족하면 관리자에게 경고 배지와 원인 후보를 보여주며, 정상 범위면 배포 반영 가능 상태로 표시한다. | `admin.md`의 품질 보증 목적을 유지한다. |
 
 ## 결정된 방향
 
