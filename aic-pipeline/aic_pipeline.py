@@ -5,7 +5,6 @@ import os, re, json, argparse, datetime, warnings, time
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from collections import defaultdict
 
 import yaml
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -13,6 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold
+from concurrent.futures import ThreadPoolExecutor
 
 warnings.filterwarnings("ignore")
 
@@ -42,6 +42,10 @@ def tokenize_words(text: str):
     - 다국어 환경에서는 제한적이나 영어 중심 데이터에 적합
     """
     return re.findall(r"\b\w+\b", text)
+
+def tokenize_words_lower(text: str):
+    """Lower-cased word tokens for metric paths that compare lexical overlap."""
+    return [t.lower() for t in tokenize_words(text)]
 
 def count_sentences(text: str) -> int:
     """
@@ -125,6 +129,7 @@ def validate_config(cfg):
     cfg["weights"].setdefault("clip_negative", True)
     cfg["weights"].setdefault("n_folds", 5)
     cfg["misc"].setdefault("export_text_columns", True)
+    cfg["misc"].setdefault("bootstrap_jobs", 1)
     
     return cfg
 
@@ -140,7 +145,8 @@ class EmbeddingBackend:
     """
     def __init__(self, prefer="sbert", sbert_model="paraphrase-multilingual-mpnet-base-v2",
                  tfidf_ngram=(1, 2), tfidf_stopwords="english", 
-                 sbert_batch_size=32, sbert_device=None, sbert_max_seq_length=None):
+                 sbert_batch_size=32, sbert_device=None, sbert_max_seq_length=None,
+                 sbert_chunk_size=None):
         self.prefer = prefer
         self.sbert_model_name = sbert_model
         self.tfidf_ngram = tfidf_ngram
@@ -148,6 +154,7 @@ class EmbeddingBackend:
         self.sbert_batch_size = sbert_batch_size
         self.sbert_device = sbert_device
         self.sbert_max_seq_length = sbert_max_seq_length
+        self.sbert_chunk_size = sbert_chunk_size
         self.kind = None
         
         self.model = None
@@ -184,7 +191,8 @@ class EmbeddingBackend:
                     "model": self.sbert_model_name,
                     "device": str(self.model.device),
                     "max_seq_length": self.model.max_seq_length,
-                    "batch_size": self.sbert_batch_size
+                    "batch_size": self.sbert_batch_size,
+                    "chunk_size": self._sbert_chunk_size()
                 }
                 print(f"[Backend] SBERT loaded: {self.sbert_model_name} (device={self.model.device})")
                 return
@@ -214,19 +222,29 @@ class EmbeddingBackend:
         except Exception as e:
             raise RuntimeError(f"TF-IDF fit 실패: {e}")
 
+    def _sbert_chunk_size(self):
+        base = max(1, int(self.sbert_batch_size))
+        if self.sbert_chunk_size is None:
+            return max(base, base * 16)
+        return max(base, int(self.sbert_chunk_size))
+
     def transform(self, texts):
         """텍스트를 임베딩 벡터로 변환"""
         texts = [t if isinstance(t, str) and t.strip() else "placeholder" for t in texts]
         
         if self.kind == "sbert":
-            emb = self.model.encode(
-                texts, 
-                convert_to_numpy=True, 
-                normalize_embeddings=True,
-                batch_size=self.sbert_batch_size, 
-                show_progress_bar=False
-            )
-            return emb
+            chunks = []
+            chunk_size = self._sbert_chunk_size()
+            for start in range(0, len(texts), chunk_size):
+                chunk = texts[start:start + chunk_size]
+                chunks.append(self.model.encode(
+                    chunk,
+                    convert_to_numpy=True,
+                    normalize_embeddings=True,
+                    batch_size=self.sbert_batch_size,
+                    show_progress_bar=False
+                ))
+            return np.vstack(chunks) if chunks else np.empty((0, 0), dtype=float)
         else:
             return self.vectorizer.transform(texts)
 
@@ -239,10 +257,9 @@ class EmbeddingBackend:
             # Dense: 정규화 완료되어 있으므로 내적
             sims = np.einsum('ij,ij->i', A, B)
         else:
-            # Sparse: 행별 계산
-            for i in range(n):
-                if A[i].nnz > 0 and B[i].nnz > 0:
-                    sims[i] = cosine_similarity(A[i], B[i])[0, 0]
+            # Sparse TF-IDF vectors are L2-normalized by default, so row-wise dot
+            # products give the cosine diagonal without an O(n) Python loop.
+            sims = np.asarray(A.multiply(B).sum(axis=1)).ravel()
         
         return np.clip(sims, -1.0, 1.0)
 
@@ -256,7 +273,7 @@ class EmbeddingBackend:
             norm = np.linalg.norm(c, axis=1, keepdims=True) + 1e-12
             return c / norm
         else:
-            return M.mean(axis=0)
+            return np.asarray(M.mean(axis=0))
 
 
 # --------------------------
@@ -275,35 +292,33 @@ def compute_PI(df: pd.DataFrame, keywords_iterable, weights=[0.4, 0.3, 0.3]) -> 
     - Complexity: 평균 문장 길이 + TTR (표현 복잡도)
     """
     keywords = {str(k).lower() for k in keywords_iterable}
+    user_text = df["user"].fillna("").astype(str)
+    user_tokens = [tokenize_words(text) for text in user_text]
+    user_tokens_lower = [[tok.lower() for tok in tokens] for tokens in user_tokens]
     
     # 1) Depth: 토큰 수
-    df["pi_depth_tokens"] = df["user"].apply(lambda s: len(tokenize_words(s)))
+    depth_tokens = np.array([len(tokens) for tokens in user_tokens], dtype=float)
+    df["pi_depth_tokens"] = depth_tokens.astype(int)
     
     # 2) Criticality: 비판적 키워드 비율
-    def critical_ratio(text):
-        toks = [t.lower() for t in tokenize_words(text)]
-        total = len(toks)
-        if total == 0:
-            return 0.0
-        hits = sum(1 for t in toks if t in keywords)
-        return hits / total
-    
-    df["pi_critical_ratio"] = df["user"].apply(critical_ratio)
+    critical_hits = np.array(
+        [sum(1 for tok in tokens if tok in keywords) for tokens in user_tokens_lower],
+        dtype=float
+    )
+    df["pi_critical_ratio"] = np.divide(
+        critical_hits,
+        depth_tokens,
+        out=np.zeros_like(critical_hits, dtype=float),
+        where=depth_tokens > 0
+    )
     
     # 3) Complexity: 평균 문장 길이 + TTR
-    def avg_sent_len(text):
-        tokens = tokenize_words(text)
-        n_tokens = len(tokens)
-        n_sents = count_sentences(text)
-        return n_tokens / max(1, n_sents)
-    
-    def ttr(text):
-        tokens = [t.lower() for t in tokenize_words(text)]
-        n = len(tokens)
-        return (len(set(tokens)) / n) if n > 0 else 0.0
-    
-    df["pi_avg_sent_len_raw"] = df["user"].apply(avg_sent_len)
-    df["pi_ttr_raw"] = df["user"].apply(ttr)
+    sentence_counts = np.array([count_sentences(text) for text in user_text], dtype=float)
+    df["pi_avg_sent_len_raw"] = depth_tokens / np.maximum(1.0, sentence_counts)
+    df["pi_ttr_raw"] = np.array(
+        [(len(set(tokens)) / len(tokens)) if tokens else 0.0 for tokens in user_tokens_lower],
+        dtype=float
+    )
     
     # 정규화
     df["pi_avg_sent_len"] = minmax_norm(df["pi_avg_sent_len_raw"])
@@ -362,26 +377,28 @@ def compute_UI_OI(df: pd.DataFrame, backend: EmbeddingBackend, cfg) -> pd.DataFr
     df["ui_distance"] = np.clip(1.0 - df["ui_cos_similarity"], 0.0, 2.0)
     
     # === 2) 새정보 비율 (NewInfo Ratio) ===
-    def new_info_ratio(bef, es):
-        bt = set([t.lower() for t in tokenize_words(bef)])
-        et = [t.lower() for t in tokenize_words(es)]
-        if len(et) == 0:
-            return 0.0
-        new = sum(1 for t in et if t not in bt)
-        return new / len(et)
-    
-    df["ui_newinfo_ratio"] = [
-        new_info_ratio(df.loc[i, "chatgpt_before"], df.loc[i, "essay"]) 
-        for i in range(len(df))
-    ]
+    before_token_sets = [set(tokenize_words_lower(text)) for text in before]
+    essay_tokens = [tokenize_words_lower(text) for text in essay]
+    essay_token_counts = np.array([len(tokens) for tokens in essay_tokens], dtype=float)
+    new_token_counts = np.array(
+        [
+            sum(1 for tok in tokens if tok not in before_token_sets[i])
+            for i, tokens in enumerate(essay_tokens)
+        ],
+        dtype=float
+    )
+    df["ui_newinfo_ratio"] = np.divide(
+        new_token_counts,
+        essay_token_counts,
+        out=np.zeros_like(new_token_counts, dtype=float),
+        where=essay_token_counts > 0
+    )
     
     # === 3) TopicScore 계산 (코스별 중심 vs essay) ===
-    courses = df["course"].fillna("").astype(str).values
+    courses = df["course"].fillna("").astype(str)
     
     # 코스별 인덱스 수집
-    course2idx = defaultdict(list)
-    for i, c in enumerate(courses):
-        course2idx[c].append(i)
+    course2idx = courses.groupby(courses, sort=False).indices
     
     # 코스별 중심 계산 (최소 표본 수 확인)
     course_centroid = {}
@@ -397,21 +414,18 @@ def compute_UI_OI(df: pd.DataFrame, backend: EmbeddingBackend, cfg) -> pd.DataFr
     
     # Essay와 코스 중심 간 유사도
     topic_scores = np.zeros(len(df), dtype=float)
-    for i in range(len(df)):
-        c = courses[i]
+    for c, idx in course2idx.items():
         cen = course_centroid.get(c, global_centroid)
-        
+
         if cen is None:
-            sim = 0.5  # 중립값
+            topic_scores[idx] = 0.5  # 중립값
         else:
             if backend.kind == "sbert":
-                sim = float(np.sum(E_essay[i] * cen))
+                topic_scores[idx] = np.asarray(E_essay[idx] @ cen.T).ravel()
             else:
-                sim = cosine_similarity(E_essay[i], cen)[0, 0]
-        
-        topic_scores[i] = np.clip(sim, 0.0, 1.0)
+                topic_scores[idx] = cosine_similarity(E_essay[idx], cen).ravel()
     
-    df["topic_score"] = topic_scores
+    df["topic_score"] = np.clip(topic_scores, 0.0, 1.0)
     
     # === 4) UI 계산 (문서 기준) ===
     # UI = (Distance × NewInfo) × TopicScore^α
@@ -517,17 +531,37 @@ def _pearson(a, b):
         return np.nan
     return float(np.corrcoef(a, b)[0, 1])
 
+def _rank_average_values(values):
+    values = np.asarray(values, dtype=float)
+    n = len(values)
+    if n == 0:
+        return values
+
+    order = np.argsort(values, kind="mergesort")
+    sorted_values = values[order]
+    ranks = np.empty(n, dtype=float)
+    start = 0
+    while start < n:
+        end = start + 1
+        while end < n and sorted_values[end] == sorted_values[start]:
+            end += 1
+        # pandas rank(method="average") is 1-based.
+        avg_rank = (start + 1 + end) / 2.0
+        ranks[order[start:end]] = avg_rank
+        start = end
+    return ranks
+
 def _spearman(a, b):
     """Spearman 순위 상관계수"""
-    a = pd.Series(a)
-    b = pd.Series(b)
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
     if len(a) < 3:
         return np.nan
-    ra = a.rank(method="average").values
-    rb = b.rank(method="average").values
+    ra = _rank_average_values(a)
+    rb = _rank_average_values(b)
     return _pearson(ra, rb)
 
-def _corr_ci(a, b, method="pearson", n_boot=1000, seed=42):
+def _corr_ci(a, b, method="pearson", n_boot=1000, seed=42, n_jobs=1):
     """
     상관계수 + 부트스트랩 95% 신뢰구간
     
@@ -545,15 +579,23 @@ def _corr_ci(a, b, method="pearson", n_boot=1000, seed=42):
     # 원본 상관
     r = _pearson(a, b) if method == "pearson" else _spearman(a, b)
     
-    # 부트스트랩
-    rng = np.random.default_rng(seed)
-    boots = []
-    for _ in range(n_boot):
-        idx = rng.integers(0, len(a), len(a))
+    def calc_boot(idx):
         aa, bb = a[idx], b[idx]
-        rr = _pearson(aa, bb) if method == "pearson" else _spearman(aa, bb)
-        if np.isfinite(rr):
-            boots.append(rr)
+        return _pearson(aa, bb) if method == "pearson" else _spearman(aa, bb)
+
+    # 부트스트랩: 기본 직렬 경로는 기존 난수 순서를 유지하고, n_jobs > 1이면
+    # 미리 생성한 인덱스를 worker에 나눠 재현 가능한 병렬 계산을 수행한다.
+    rng = np.random.default_rng(seed)
+    if n_jobs <= 1 or n_boot < 100:
+        boots = []
+        for _ in range(n_boot):
+            rr = calc_boot(rng.integers(0, len(a), len(a)))
+            if np.isfinite(rr):
+                boots.append(rr)
+    else:
+        indices = [rng.integers(0, len(a), len(a)) for _ in range(n_boot)]
+        with ThreadPoolExecutor(max_workers=int(n_jobs)) as executor:
+            boots = [rr for rr in executor.map(calc_boot, indices) if np.isfinite(rr)]
     
     if len(boots) == 0:
         return r, (np.nan, np.nan)
@@ -561,7 +603,7 @@ def _corr_ci(a, b, method="pearson", n_boot=1000, seed=42):
     lo, hi = np.percentile(boots, [2.5, 97.5])
     return r, (float(lo), float(hi))
 
-def validate(df: pd.DataFrame) -> dict:
+def validate(df: pd.DataFrame, n_jobs=1) -> dict:
     """
     PI, UI, OI, AIC와 rating 간 상관 분석
     
@@ -571,8 +613,8 @@ def validate(df: pd.DataFrame) -> dict:
     """
     out = {}
     for col in ["PI", "UI", "OI", "AIC"]:
-        p, pci = _corr_ci(df[col], df["rating_num"], method="pearson")
-        s, sci = _corr_ci(df[col], df["rating_num"], method="spearman")
+        p, pci = _corr_ci(df[col], df["rating_num"], method="pearson", n_jobs=n_jobs)
+        s, sci = _corr_ci(df[col], df["rating_num"], method="spearman", n_jobs=n_jobs)
         out[col] = {
             "pearson": round(p, 4) if np.isfinite(p) else None,
             "pearson_ci": [round(pci[0], 4), round(pci[1], 4)] if np.isfinite(pci[0]) else [None, None],
@@ -673,7 +715,8 @@ def main(args):
             tfidf_stopwords=cfg["ui_oi"].get("tfidf_stopwords", "english"),
             sbert_batch_size=cfg["backend"].get("sbert_batch_size", 32),
             sbert_device=cfg["backend"].get("sbert_device", None),
-            sbert_max_seq_length=cfg["backend"].get("sbert_max_seq_length", None)
+            sbert_max_seq_length=cfg["backend"].get("sbert_max_seq_length", None),
+            sbert_chunk_size=cfg["backend"].get("sbert_chunk_size", None)
         )
         
         df = compute_UI_OI(df, backend, cfg)
@@ -701,7 +744,7 @@ def main(args):
         t0 = time.time()
         print(f"\n[Step 6] 타당성 검증 (상관 분석) 중...")
         
-        val = validate(df)
+        val = validate(df, n_jobs=int(cfg["misc"].get("bootstrap_jobs", 1)))
         
         timing["validation"] = time.time() - t0
         print(f"[Step 6] ✓ 검증 완료 ({timing['validation']:.2f}초)")
