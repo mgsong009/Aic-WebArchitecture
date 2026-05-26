@@ -21,11 +21,21 @@
 ## 관리자 계정 로그인
 - admin / admin1234
 
-## 기존 DB 볼륨의 분석 품질 메타데이터 보정
+## 분석 품질 baseline 기록
 
-`mysql_data` 볼륨이 이미 생성된 환경에서는 `init.sql`이 다시 실행되지 않습니다. `/admin/analysis-quality`에서 최신 실행이 404로 조회되면 아래 명령을 1회 실행해 데모용 집계 메타데이터를 보정합니다. 원문, 프롬프트, 개인정보는 추가 저장하지 않고 기존 submission 5번의 metric에 연결되는 실행 집계만 추가합니다.
+`/admin/analysis-quality`의 전/후 비교는 synthetic seed가 아니라 최적화 전 pipeline runner에서 측정한 baseline 메타데이터를 사용합니다. 분석 job이 실행될 때 같은 submission의 baseline이 없으면 backend가 pipeline의 `/analyze-baseline`을 먼저 호출해 `before_project/aic_pipeline.py` 실측 runtime, memory, PI/UI/OI/AIC score를 `analysis_run_metadata`에 저장하고, 이어서 현재 최적화 pipeline 분석 결과와 비교합니다. 원문, 프롬프트, 개인정보는 baseline metadata에 추가 저장하지 않습니다.
+
+기존 DB 볼륨에는 먼저 `analysis_run_metadata.baseline_scores` 컬럼을 추가해야 합니다.
+
+```sql
+ALTER TABLE analysis_run_metadata ADD COLUMN baseline_scores JSON AFTER memory_delta_pct;
+```
 
 ```powershell
-Get-Content scripts/seed_analysis_quality_metadata.sql |
-  docker-compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -uaic_user aic_db'
+python scripts/record_analysis_quality_baseline.py `
+  --submission-id 5 `
+  --pipeline-url http://localhost:9000 `
+  --baseline-version pre-optimization-pipeline
 ```
+
+`scripts/seed_analysis_quality_metadata.sql`은 수동 UI 데모 전용이며 자동 배포에서는 실행하지 않습니다.

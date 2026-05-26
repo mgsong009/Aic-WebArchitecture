@@ -34,6 +34,7 @@ class AnalysisMetadata(BaseModel):
     stage_runtimes_ms: Dict[str, float]
     baseline_runtime_ms: Optional[float] = None
     baseline_memory_peak_kb: Optional[float] = None
+    baseline_scores: Optional[Dict[str, float]] = None
     runtime_delta_pct: Optional[float] = None
     memory_delta_pct: Optional[float] = None
     score_deltas: Optional[Dict[str, float]] = None
@@ -44,6 +45,12 @@ class AnalysisMetadata(BaseModel):
 class AnalyzeRequest(BaseModel):
     job_id: str
     submission: SubmissionPayload
+    config: AnalyzeConfig = AnalyzeConfig()
+
+
+class BatchAnalyzeRequest(BaseModel):
+    job_id: str
+    submissions: List[SubmissionPayload]
     config: AnalyzeConfig = AnalyzeConfig()
 
 
@@ -68,4 +75,12 @@ class AnalyzeResponse(BaseModel):
     ui_newinfo_ratio: float
     oi_topic_score_raw: float
     embedding_backend: str
+    analysis_metadata: Optional[AnalysisMetadata] = None
+
+
+class BatchAnalyzeResponse(BaseModel):
+    job_id: str
+    processed_count: int
+    scores: Dict[str, float]
+    results: List[AnalyzeResponse]
     analysis_metadata: Optional[AnalysisMetadata] = None

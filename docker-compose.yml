@@ -21,7 +21,9 @@ services:
       retries: 10
 
   pipeline:
-    build: ./aic-pipeline
+    build:
+      context: .
+      dockerfile: aic-pipeline/Dockerfile
     container_name: aic_pipeline
     restart: unless-stopped
     environment:

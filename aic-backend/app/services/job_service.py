@@ -1,10 +1,10 @@
 import uuid
 import asyncio
 from datetime import datetime, timezone
-from sqlalchemy import select, update
+from sqlalchemy import desc, select, update
 from app.database import AsyncSessionLocal
 from app.models.db_models import AnalysisJob, AnalysisRunMetadata, Metric, Submission, Assignment, User
-from app.services.pipeline_client import call_pipeline
+from app.services.pipeline_client import call_pipeline, call_preoptimization_pipeline
 
 
 async def create_and_dispatch_job(submission_id: int, db) -> str:
@@ -94,7 +94,8 @@ async def _run_pipeline(job_uuid_str: str, submission_id: int, submission_data: 
         await session.commit()
 
         try:
-            result = await call_pipeline(job_uuid_str, submission_data)
+            baseline_config = await _ensure_baseline_config(session, submission_id, submission_data)
+            result = await call_pipeline(job_uuid_str, submission_data, baseline_config)
             scaled = _scale_metrics(result)
 
             # Upsert metrics
@@ -174,6 +175,7 @@ async def _upsert_analysis_metadata(session, job_uuid_str: str, metadata: dict |
         "memory_peak_kb": metadata.get("memory_peak_kb"),
         "baseline_memory_peak_kb": metadata.get("baseline_memory_peak_kb"),
         "memory_delta_pct": metadata.get("memory_delta_pct"),
+        "baseline_scores": metadata.get("baseline_scores"),
         "stage_runtimes_ms": metadata.get("stage_runtimes_ms"),
         "score_deltas": metadata.get("score_deltas"),
         "quality_passed": metadata.get("quality_passed"),
@@ -192,7 +194,117 @@ async def _upsert_analysis_metadata(session, job_uuid_str: str, metadata: dict |
         session.add(AnalysisRunMetadata(job_id=job.id, **values))
 
 
+async def _ensure_baseline_config(session, submission_id: int, submission_data: dict) -> dict | None:
+    baseline_config = await _latest_baseline_config(session, submission_id)
+    if baseline_config:
+        return baseline_config
+
+    baseline_job_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"aic-analysis-baseline:{submission_id}:pre-optimization-pipeline"))
+    result = await call_preoptimization_pipeline(baseline_job_uuid, submission_data)
+    await _record_preoptimization_baseline(session, baseline_job_uuid, submission_id, result)
+    return await _latest_baseline_config(session, submission_id)
+
+
+async def _record_preoptimization_baseline(
+    session,
+    baseline_job_uuid: str,
+    submission_id: int,
+    result: dict,
+):
+    now = datetime.now(timezone.utc)
+    metadata = result.get("analysis_metadata") or {}
+    baseline_scores = metadata.get("baseline_scores") or {
+        "pi": _float_score(result.get("pi")),
+        "ui": _float_score(result.get("ui")),
+        "oi": _float_score(result.get("oi")),
+        "aic": _float_score(result.get("aic")),
+    }
+
+    job_result = await session.execute(
+        select(AnalysisJob).where(AnalysisJob.job_uuid == baseline_job_uuid)
+    )
+    job = job_result.scalar_one_or_none()
+    if not job:
+        job = AnalysisJob(job_uuid=baseline_job_uuid, submission_id=submission_id, status="pending")
+        session.add(job)
+        await session.flush()
+
+    job.status = "done"
+    job.error_message = None
+    job.started_at = now
+    job.completed_at = now
+
+    values = {
+        "metric_version": metadata.get("metric_version"),
+        "baseline_version": None,
+        "optimized_version": metadata.get("optimized_version") or "pre-optimization-pipeline",
+        "processed_count": metadata.get("processed_count") or 1,
+        "total_runtime_ms": metadata.get("total_runtime_ms"),
+        "baseline_runtime_ms": None,
+        "runtime_delta_pct": None,
+        "memory_peak_kb": metadata.get("memory_peak_kb"),
+        "baseline_memory_peak_kb": None,
+        "memory_delta_pct": None,
+        "baseline_scores": baseline_scores,
+        "stage_runtimes_ms": metadata.get("stage_runtimes_ms"),
+        "score_deltas": None,
+        "quality_passed": None,
+        "bootstrap_passed": metadata.get("bootstrap_passed"),
+        "measured_at": now,
+    }
+
+    existing = await session.execute(
+        select(AnalysisRunMetadata).where(AnalysisRunMetadata.job_id == job.id)
+    )
+    run_metadata = existing.scalar_one_or_none()
+    if run_metadata:
+        for key, value in values.items():
+            setattr(run_metadata, key, value)
+    else:
+        session.add(AnalysisRunMetadata(job_id=job.id, **values))
+
+    await session.commit()
+
+
+async def _latest_baseline_config(session, submission_id: int) -> dict | None:
+    result = await session.execute(
+        select(AnalysisRunMetadata)
+        .join(AnalysisJob, AnalysisRunMetadata.job_id == AnalysisJob.id)
+        .where(AnalysisJob.submission_id == submission_id)
+        .where(AnalysisRunMetadata.baseline_scores.isnot(None))
+        .order_by(desc(AnalysisRunMetadata.measured_at), desc(AnalysisRunMetadata.id))
+        .limit(10)
+    )
+    metadata_rows = result.scalars().all()
+    if not metadata_rows:
+        return None
+
+    for metadata in metadata_rows:
+        baseline_version = metadata.baseline_version or metadata.optimized_version
+        baseline_runtime_ms = metadata.baseline_runtime_ms or metadata.total_runtime_ms
+        baseline_memory_peak_kb = metadata.baseline_memory_peak_kb or metadata.memory_peak_kb
+
+        if not baseline_version or not baseline_runtime_ms or not isinstance(metadata.baseline_scores, dict):
+            continue
+
+        return {
+            "baseline_version": baseline_version,
+            "baseline_runtime_ms": baseline_runtime_ms,
+            "baseline_memory_peak_kb": baseline_memory_peak_kb,
+            "baseline_scores": metadata.baseline_scores,
+            "bootstrap_passed": metadata.bootstrap_passed,
+        }
+
+    return None
+
+
 def _safe_round(value) -> int:
     if value is None:
         return None
     return round(float(value) * 100)
+
+
+def _float_score(value) -> float:
+    if value is None:
+        raise ValueError("Pipeline response is missing a required baseline score")
+    return round(float(value), 6)

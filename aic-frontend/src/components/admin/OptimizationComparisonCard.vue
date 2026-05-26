@@ -16,14 +16,29 @@ const causeText = {
 
 const performanceRows = computed(() => props.comparison.performanceRows || [])
 const scoreRows = computed(() => props.comparison.scoreRows || [])
+const baselineAvailable = computed(() => Boolean(props.comparison.baselineAvailable))
 const sampleCount = computed(() => Number(props.comparison.sampleCount || 0))
 const minSampleCount = computed(() => Number(props.comparison.minSampleCount || 10))
+const measurementLabel = computed(() => {
+  if (props.comparison.measurementMode === 'batch' && props.comparison.population === 'all_submissions') {
+    return '전체 submission batch 측정'
+  }
+  return props.comparison.measurementMode === 'batch' ? 'Batch 측정' : 'Single-run 측정'
+})
 const regressionRows = computed(() => scoreRows.value.filter((row) => row.passed === false))
 const unmeasuredRows = computed(() => scoreRows.value.filter((row) => row.passed === null || row.passed === undefined))
 const isSampleInsufficient = computed(() => sampleCount.value > 0 && sampleCount.value < minSampleCount.value)
 const hasScoreCoverage = computed(() => SCORE_KEYS.every((key) => scoreRows.value.some((row) => row.key === key && row.delta !== null && row.delta !== undefined)))
 
 const confidence = computed(() => {
+  if (!baselineAvailable.value) {
+    return {
+      label: '기준선 측정 필요',
+      badge: 'badge-warning',
+      status: 'medium',
+      detail: '실측 baseline 없음',
+    }
+  }
   if (!hasScoreCoverage.value || sampleCount.value <= 0 || isSampleInsufficient.value) {
     return {
       label: '측정 신뢰도 낮음',
@@ -49,6 +64,14 @@ const confidence = computed(() => {
 })
 
 const deploymentState = computed(() => {
+  if (!baselineAvailable.value) {
+    return {
+      label: '비교 불가',
+      badge: 'badge-warning',
+      title: '기준선 없음',
+      detail: '최적화 전 pipeline runner로 측정한 baseline이 저장되어야 전/후 비교와 배포 판단을 표시할 수 있습니다.',
+    }
+  }
   if (regressionRows.value.length) {
     return {
       label: '배포 보류',
@@ -74,6 +97,9 @@ const deploymentState = computed(() => {
 })
 
 const causeCandidates = computed(() => {
+  if (!baselineAvailable.value) {
+    return [{ key: 'baseline', label: 'Baseline', text: '기준 commit의 별도 runner로 같은 대표 submission을 분석해 runtime, memory, PI/UI/OI/AIC score를 먼저 저장하세요.' }]
+  }
   if (regressionRows.value.length) {
     return regressionRows.value.map((row) => ({
       key: row.key,
@@ -195,6 +221,7 @@ function scoreClass(row) {
         </div>
       </div>
       <div class="assurance-meta">
+        <span>{{ measurementLabel }} · 표본 {{ sampleCount }}건</span>
         <span>허용 오차 ±{{ comparison.scoreTolerance }}</span>
         <span>{{ confidence.detail }}</span>
       </div>

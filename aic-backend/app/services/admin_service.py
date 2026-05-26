@@ -1,3 +1,6 @@
+import uuid
+from datetime import datetime, timezone
+
 from sqlalchemy import desc, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.db_models import (
@@ -12,6 +15,7 @@ from app.models.db_models import (
     TeacherFeedback,
 )
 from app.services.job_service import create_and_dispatch_job
+from app.services.pipeline_client import call_pipeline_batch, call_preoptimization_pipeline_batch
 
 
 async def get_admin_dashboard_stats(db: AsyncSession) -> dict:
@@ -95,15 +99,22 @@ async def get_admin_dashboard_stats(db: AsyncSession) -> dict:
 
 
 async def get_latest_analysis_run_quality(db: AsyncSession) -> dict | None:
+    expected_count = await _analysis_population_count(db)
     row = (await db.execute(
         select(AnalysisJob, AnalysisRunMetadata, Metric, Submission, Assignment)
         .join(AnalysisRunMetadata, AnalysisRunMetadata.job_id == AnalysisJob.id)
         .join(Submission, Submission.id == AnalysisJob.submission_id)
         .join(Assignment, Assignment.id == Submission.assignment_id)
         .outerjoin(Metric, Metric.submission_id == Submission.id)
+        .where(AnalysisRunMetadata.processed_count == expected_count)
         .order_by(desc(AnalysisRunMetadata.measured_at), desc(AnalysisJob.completed_at))
         .limit(1)
     )).first()
+    if not row:
+        run_id = await create_analysis_quality_monitor_run(db)
+        if not run_id:
+            return None
+        return await get_analysis_run_quality(run_id, db)
     return _quality_response(row) if row else None
 
 
@@ -135,8 +146,86 @@ async def reprocess_analysis_run(job_uuid: str, db: AsyncSession) -> dict | None
     }
 
 
+async def create_analysis_quality_monitor_run(db: AsyncSession) -> str | None:
+    rows = (await db.execute(
+        select(Submission, Assignment, User)
+        .join(Assignment, Submission.assignment_id == Assignment.id)
+        .join(User, Submission.student_id == User.id)
+        .order_by(Submission.id)
+    )).all()
+    if not rows:
+        return None
+
+    job_uuid = str(uuid.uuid4())
+    first_submission, _first_assignment, _first_user = rows[0]
+    job = AnalysisJob(
+        job_uuid=job_uuid,
+        submission_id=first_submission.id,
+        status="running",
+        started_at=datetime.now(timezone.utc),
+    )
+    db.add(job)
+    await db.commit()
+    await db.refresh(job)
+
+    try:
+        payloads = [
+            _submission_payload(submission, assignment, user)
+            for submission, assignment, user in rows
+        ]
+        baseline_result = await call_preoptimization_pipeline_batch(f"{job_uuid}-baseline", payloads)
+        baseline_summary = _summarize_batch_result(baseline_result)
+        baseline_config = {
+            "baseline_version": baseline_summary["version"],
+            "baseline_runtime_ms": baseline_summary["runtime_ms"],
+            "baseline_memory_peak_kb": baseline_summary["memory_peak_kb"],
+            "baseline_scores": baseline_summary["scores"],
+        }
+        optimized_result = await call_pipeline_batch(f"{job_uuid}-optimized", payloads, baseline_config)
+        optimized_summary = _summarize_batch_result(optimized_result)
+        score_deltas = {
+            key: round(optimized_summary["scores"][key] - baseline_summary["scores"][key], 6)
+            for key in ("pi", "ui", "oi", "aic")
+        }
+        now = datetime.now(timezone.utc)
+        job.status = "done"
+        job.error_message = None
+        job.completed_at = now
+        db.add(AnalysisRunMetadata(
+            job_id=job.id,
+            metric_version=optimized_summary["metric_version"],
+            baseline_version=baseline_summary["version"],
+            optimized_version=optimized_summary["version"],
+            processed_count=len(rows),
+            total_runtime_ms=optimized_summary["runtime_ms"],
+            baseline_runtime_ms=baseline_summary["runtime_ms"],
+            runtime_delta_pct=_delta_pct(optimized_summary["runtime_ms"], baseline_summary["runtime_ms"]),
+            memory_peak_kb=optimized_summary["memory_peak_kb"],
+            baseline_memory_peak_kb=baseline_summary["memory_peak_kb"],
+            memory_delta_pct=_delta_pct(optimized_summary["memory_peak_kb"], baseline_summary["memory_peak_kb"]),
+            baseline_scores=baseline_summary["scores"],
+            stage_runtimes_ms=optimized_summary["stage_runtimes_ms"],
+            score_deltas=score_deltas,
+            quality_passed=all(abs(delta) <= 0.01 for delta in score_deltas.values()),
+            bootstrap_passed=None,
+            measured_at=now,
+        ))
+        await db.commit()
+        return job_uuid
+    except Exception as exc:
+        job.status = "failed"
+        job.error_message = str(exc)
+        job.completed_at = datetime.now(timezone.utc)
+        await db.commit()
+        raise
+
+
+async def _analysis_population_count(db: AsyncSession) -> int:
+    return (await db.execute(select(func.count(Submission.id)))).scalar_one()
+
+
 def _quality_response(row) -> dict:
-    job, metadata, metric, _submission, assignment = row
+    job, metadata, metric, submission, assignment = row
     score_deltas = metadata.score_deltas or {}
     stage_runtimes = metadata.stage_runtimes_ms or {}
     status = "success" if metadata.quality_passed is not False else "warning"
@@ -145,7 +234,9 @@ def _quality_response(row) -> dict:
     baseline_runtime_ms = metadata.baseline_runtime_ms
     memory_peak_kb = metadata.memory_peak_kb
     baseline_memory_peak_kb = metadata.baseline_memory_peak_kb
-    current_scores = _current_scores(metric)
+    baseline_scores = metadata.baseline_scores or {}
+    baseline_available = _has_baseline(metadata)
+    current_scores = _current_scores_from_metadata(metadata) or _current_scores(metric)
 
     return {
         "runId": job.job_uuid,
@@ -157,19 +248,15 @@ def _quality_response(row) -> dict:
         "successRate": 100.0 if job.status == "done" else 0.0,
         "totalRuntimeSec": _ms_to_sec(runtime_ms),
         "avgRuntimePerSample": _avg_runtime_sec(runtime_ms, processed_count),
-        "dataHealth": {
-            "score": 100 if job.status == "done" else 0,
-            "requiredColumns": "normal",
-            "missingRows": 0,
-            "duplicateRows": 0,
-            "textOutliers": 0,
-            "ratingCoverage": 0,
-            "lowSampleCourses": 0,
-        },
+        "dataHealth": _data_health(job, submission),
         "comparison": {
             "metricVersion": metadata.metric_version,
             "baselineVersion": metadata.baseline_version,
             "optimizedVersion": metadata.optimized_version,
+            "measurementMode": "batch" if processed_count > 1 else "single",
+            "sampleCount": processed_count,
+            "minSampleCount": processed_count,
+            "population": "all_submissions",
             "runtimeMs": runtime_ms,
             "baselineRuntimeMs": baseline_runtime_ms,
             "runtimeDeltaPct": metadata.runtime_delta_pct,
@@ -183,8 +270,10 @@ def _quality_response(row) -> dict:
                 _throughput_per_sec(processed_count, baseline_runtime_ms),
             ),
             "scoreDeltas": score_deltas,
+            "baselineScores": baseline_scores,
             "currentScores": current_scores,
-            "scoreRows": _score_rows(current_scores, score_deltas),
+            "baselineAvailable": baseline_available,
+            "scoreRows": _score_rows(current_scores, baseline_scores, score_deltas),
             "performanceRows": _performance_rows(
                 processed_count,
                 runtime_ms,
@@ -215,6 +304,12 @@ def _quality_response(row) -> dict:
 
 
 def _readiness(metadata: AnalysisRunMetadata) -> dict:
+    if not _has_baseline(metadata):
+        return {
+            "status": "caution",
+            "reason": "최적화 전 실측 기준선이 아직 없어 전/후 비교와 배포 판단을 확정할 수 없습니다.",
+            "actions": ["기준 commit의 별도 runner로 대표 submission을 분석해 baseline runtime, memory, PI/UI/OI/AIC score를 먼저 저장하세요."],
+        }
     if metadata.quality_passed is False:
         return {
             "status": "blocked",
@@ -234,6 +329,78 @@ def _readiness(metadata: AnalysisRunMetadata) -> dict:
     }
 
 
+def _data_health(job: AnalysisJob, submission: Submission) -> dict:
+    required_values = {
+        "chatgpt_before": submission.chatgpt_before,
+        "user": submission.user_prompt,
+        "essay": submission.essay,
+    }
+    missing_fields = [
+        name for name, value in required_values.items()
+        if not isinstance(value, str) or not value.strip()
+    ]
+    text_lengths = [len(value.strip()) for value in required_values.values() if isinstance(value, str)]
+    text_outliers = sum(1 for length in text_lengths if length < 5 or length > 20000)
+    issue_count = len(missing_fields) + text_outliers
+
+    return {
+        "score": 100 if job.status == "done" and issue_count == 0 else max(0, 100 - issue_count * 25),
+        "requiredColumns": "normal" if not missing_fields else "warning",
+        "missingRows": len(missing_fields),
+        "missingFields": missing_fields,
+        "duplicateRows": 0,
+        "textOutliers": text_outliers,
+        "ratingCoverage": None,
+        "ratingMissingRows": None,
+        "lowSampleCourses": 0,
+    }
+
+
+def _submission_payload(submission: Submission, assignment: Assignment, user: User) -> dict:
+    return {
+        "submission_id": submission.id,
+        "course_code": assignment.course_code or "default",
+        "user_id_str": user.user_id_str,
+        "chatgpt_before": submission.chatgpt_before,
+        "user_prompt": submission.user_prompt,
+        "essay": submission.essay,
+    }
+
+
+def _summarize_batch_result(result: dict) -> dict:
+    metadata = result.get("analysis_metadata") or {}
+    return {
+        "version": metadata.get("optimized_version"),
+        "metric_version": metadata.get("metric_version"),
+        "runtime_ms": metadata.get("total_runtime_ms"),
+        "memory_peak_kb": metadata.get("memory_peak_kb"),
+        "stage_runtimes_ms": metadata.get("stage_runtimes_ms") or {},
+        "scores": result.get("scores") or {},
+    }
+
+
+def _current_scores_from_metadata(metadata: AnalysisRunMetadata) -> dict | None:
+    if not metadata.processed_count or metadata.processed_count <= 1:
+        return None
+    baseline_scores = metadata.baseline_scores or {}
+    score_deltas = metadata.score_deltas or {}
+    if not baseline_scores or not score_deltas:
+        return None
+    return {
+        key: round(float(baseline_scores[key]) + float(score_deltas[key]), 6)
+        for key in ("pi", "ui", "oi", "aic")
+        if key in baseline_scores and key in score_deltas
+    }
+
+
+def _has_baseline(metadata: AnalysisRunMetadata) -> bool:
+    return bool(
+        metadata.baseline_version
+        and metadata.baseline_runtime_ms
+        and metadata.baseline_scores
+    )
+
+
 def _ms_to_sec(value) -> float | None:
     return round(float(value) / 1000, 3) if value is not None else None
 
@@ -248,21 +415,25 @@ def _current_scores(metric: Metric | None) -> dict:
     if not metric:
         return {}
     return {
-        "pi": metric.pi_score,
-        "ui": metric.ui_score,
-        "oi": metric.oi_score,
-        "aic": metric.aic_score,
+        "pi": _score_to_unit(metric.pi_score),
+        "ui": _score_to_unit(metric.ui_score),
+        "oi": _score_to_unit(metric.oi_score),
+        "aic": _score_to_unit(metric.aic_score),
     }
 
 
-def _score_rows(current_scores: dict, score_deltas: dict) -> list[dict]:
+def _score_to_unit(value) -> float | None:
+    return round(float(value) / 100, 3) if value is not None else None
+
+
+def _score_rows(current_scores: dict, baseline_scores: dict, score_deltas: dict) -> list[dict]:
     labels = {"pi": "PI", "ui": "UI", "oi": "OI", "aic": "AIC"}
     rows = []
     for key, label in labels.items():
         current = current_scores.get(key)
         delta = score_deltas.get(key)
-        baseline = None
-        if current is not None and delta is not None:
+        baseline = baseline_scores.get(key)
+        if baseline is None and current is not None and delta is not None:
             baseline = round(float(current) - float(delta), 3)
         rows.append({
             "key": key,

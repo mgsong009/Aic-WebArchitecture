@@ -1,5 +1,9 @@
 USE aic_db;
 
+-- DEMO ONLY: this synthetic monitor row is not used by init.sql or automatic deployment.
+-- Production baseline data must come from a pre-optimization pipeline runner and should
+-- store only aggregate runtime, memory, throughput, and PI/UI/OI/AIC score metadata.
+
 CREATE TABLE IF NOT EXISTS analysis_run_metadata (
     id                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     job_id                   INT UNSIGNED NOT NULL UNIQUE,
@@ -13,6 +17,7 @@ CREATE TABLE IF NOT EXISTS analysis_run_metadata (
     memory_peak_kb           FLOAT,
     baseline_memory_peak_kb  FLOAT,
     memory_delta_pct         FLOAT,
+    baseline_scores          JSON,
     stage_runtimes_ms        JSON,
     score_deltas             JSON,
     quality_passed           BOOLEAN,
@@ -59,6 +64,7 @@ INSERT INTO analysis_run_metadata (
     memory_peak_kb,
     baseline_memory_peak_kb,
     memory_delta_pct,
+    baseline_scores,
     stage_runtimes_ms,
     score_deltas,
     quality_passed,
@@ -76,6 +82,12 @@ INSERT INTO analysis_run_metadata (
     196608.0,
     245760.0,
     -20.0,
+    JSON_OBJECT(
+        'pi', 0.72,
+        'ui', 0.68,
+        'oi', 0.75,
+        'aic', 0.72
+    ),
     JSON_OBJECT(
         'input_validation', 420.0,
         'token_features', 960.0,
@@ -103,6 +115,7 @@ INSERT INTO analysis_run_metadata (
     memory_peak_kb = VALUES(memory_peak_kb),
     baseline_memory_peak_kb = VALUES(baseline_memory_peak_kb),
     memory_delta_pct = VALUES(memory_delta_pct),
+    baseline_scores = VALUES(baseline_scores),
     stage_runtimes_ms = VALUES(stage_runtimes_ms),
     score_deltas = VALUES(score_deltas),
     quality_passed = VALUES(quality_passed),

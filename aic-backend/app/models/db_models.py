@@ -157,6 +157,7 @@ class AnalysisRunMetadata(Base):
     memory_peak_kb: Mapped[Optional[float]] = mapped_column(Float)
     baseline_memory_peak_kb: Mapped[Optional[float]] = mapped_column(Float)
     memory_delta_pct: Mapped[Optional[float]] = mapped_column(Float)
+    baseline_scores: Mapped[Optional[dict]] = mapped_column(JSON)
     stage_runtimes_ms: Mapped[Optional[dict]] = mapped_column(JSON)
     score_deltas: Mapped[Optional[dict]] = mapped_column(JSON)
     quality_passed: Mapped[Optional[bool]] = mapped_column(Boolean)

@@ -11,6 +11,18 @@ const scoreClass = computed(() => {
   if (s >= 70) return 'score-warn'
   return 'score-danger'
 })
+
+const requiredFields = ['chatgpt_before', 'user', 'essay']
+const missingFields = computed(() => Array.isArray(props.dataHealth.missingFields) ? props.dataHealth.missingFields : [])
+const fieldStatus = (field) => missingFields.value.includes(field) ? 'warn' : 'ok'
+const fieldLabel = (field) => missingFields.value.includes(field) ? `${field} 값 누락` : `${field} 값 정상`
+const ratingLabel = computed(() => (
+  props.dataHealth.ratingCoverage == null ? 'N/A' : `${props.dataHealth.ratingCoverage}%`
+))
+const ratingChecklistLabel = computed(() => {
+  if (props.dataHealth.ratingMissingRows == null) return 'rating 데이터 없음'
+  return `rating 결측 ${props.dataHealth.ratingMissingRows}건`
+})
 </script>
 
 <template>
@@ -35,8 +47,8 @@ const scoreClass = computed(() => {
       </div>
       <div class="metric-row">
         <span class="metric-name">rating 보유율</span>
-        <span class="metric-val" :class="dataHealth.ratingCoverage >= 70 ? 'ok' : 'warn'">
-          {{ dataHealth.ratingCoverage }}%
+        <span class="metric-val" :class="dataHealth.ratingCoverage == null || dataHealth.ratingCoverage >= 70 ? 'ok' : 'warn'">
+          {{ ratingLabel }}
         </span>
       </div>
       <div class="metric-row">
@@ -46,21 +58,13 @@ const scoreClass = computed(() => {
     </div>
 
     <div class="checklist">
-      <div class="check-item ok">
-        <span class="check-icon">✓</span>
-        <span>chatgpt_before 컬럼 정상</span>
+      <div v-for="field in requiredFields" :key="field" class="check-item" :class="fieldStatus(field)">
+        <span class="check-icon">{{ fieldStatus(field) === 'ok' ? '✓' : '!' }}</span>
+        <span>{{ fieldLabel(field) }}</span>
       </div>
       <div class="check-item ok">
         <span class="check-icon">✓</span>
-        <span>user 컬럼 정상</span>
-      </div>
-      <div class="check-item ok">
-        <span class="check-icon">✓</span>
-        <span>essay 컬럼 정상</span>
-      </div>
-      <div class="check-item warn">
-        <span class="check-icon">!</span>
-        <span>rating 결측 {{ dataHealth.missingRows * 2 + 591 }}건</span>
+        <span>{{ ratingChecklistLabel }}</span>
       </div>
       <div class="check-item warn">
         <span class="check-icon">!</span>

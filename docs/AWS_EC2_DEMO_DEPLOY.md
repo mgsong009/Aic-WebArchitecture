@@ -191,7 +191,8 @@ It uses this flow:
 3. Upload the archive to EC2 over SSH.
 4. Preserve the existing EC2 `.env`.
 5. Run `sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d` on EC2.
-6. Apply the idempotent existing-volume analysis quality metadata seed at `scripts/seed_analysis_quality_metadata.sql`.
+
+Analysis quality baseline metadata is not seeded during automatic deployment. Record it separately with `scripts/record_analysis_quality_baseline.py` against a pre-optimization pipeline runner when `/admin/analysis-quality` needs before/after comparison data.
 
 Configure these GitHub repository secrets:
 

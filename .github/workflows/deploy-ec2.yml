@@ -88,7 +88,6 @@ jobs:
 
           cd "$DEPLOY_DIR"
           sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-          sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -uaic_user aic_db' < scripts/seed_analysis_quality_metadata.sql
           sudo docker image prune -f
           sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
           REMOTE
