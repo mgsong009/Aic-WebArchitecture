@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860" role="img" aria-labelledby="title desc">
+  <title id="title">AIC Web ELT 데이터 파이프라인 구성도</title>
+  <desc id="desc">학생과 교사 화면 서비스에서 운영 데이터베이스, AI 글쓰기 분석 엔진, ELT 배치 작업, 분석용 데이터 저장소로 이어지는 데이터 파이프라인 구성도</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <filter id="shadow" x="-12%" y="-12%" width="124%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.14"/>
+    </filter>
+    <style>
+      .bg { fill: #f7f8fb; }
+      .title { font: 700 34px "Segoe UI", "Noto Sans KR", Arial, sans-serif; fill: #111827; }
+      .subtitle { font: 400 18px "Segoe UI", "Noto Sans KR", Arial, sans-serif; fill: #475569; }
+      .group-title { font: 700 18px "Segoe UI", "Noto Sans KR", Arial, sans-serif; fill: #334155; }
+      .box { filter: url(#shadow); stroke-width: 1.5; rx: 14; }
+      .box-title { font: 700 21px "Segoe UI", "Noto Sans KR", Arial, sans-serif; fill: #111827; }
+      .box-body { font: 400 15px "Segoe UI", "Noto Sans KR", Arial, sans-serif; fill: #475569; }
+      .small { font: 400 13px "Segoe UI", "Noto Sans KR", Arial, sans-serif; fill: #64748b; }
+      .arrow { stroke: #334155; stroke-width: 2.8; fill: none; marker-end: url(#arrow); }
+      .arrow-light { stroke: #64748b; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+      .label { font: 700 14px "Segoe UI", "Noto Sans KR", Arial, sans-serif; fill: #1f2937; }
+      .label-bg { fill: #f7f8fb; stroke: #e2e8f0; stroke-width: 1; rx: 8; }
+      .pill { font: 700 13px "Segoe UI", "Noto Sans KR", Arial, sans-serif; fill: #0f172a; }
+      .note { font: 400 14px "Segoe UI", "Noto Sans KR", Arial, sans-serif; fill: #475569; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1400" height="860"/>
+
+  <text class="title" x="70" y="66">AIC Web ELT 데이터 파이프라인 구성도</text>
+  <text class="subtitle" x="70" y="98">학습/과제 데이터가 운영 서비스에 저장되고, 분석용 저장소로 이관되어 리포트용 데이터로 가공되는 흐름</text>
+
+  <rect x="50" y="135" width="820" height="345" rx="22" fill="#ffffff" stroke="#dbe4ee" stroke-width="1.5"/>
+  <text class="group-title" x="80" y="170">운영 서비스 영역</text>
+
+  <rect x="930" y="135" width="420" height="590" rx="22" fill="#ffffff" stroke="#dbe4ee" stroke-width="1.5"/>
+  <text class="group-title" x="960" y="170">분석 Warehouse 영역</text>
+
+  <rect class="box" x="85" y="215" width="220" height="116" fill="#eef6ff" stroke="#8ec5ff"/>
+  <text class="box-title" x="115" y="254">학생/교사</text>
+  <text class="box-body" x="115" y="283">브라우저에서 로그인,</text>
+  <text class="box-body" x="115" y="306">과제 제출, 결과 조회</text>
+
+  <rect class="box" x="365" y="215" width="220" height="116" fill="#f1f8ec" stroke="#9bd27f"/>
+  <text class="box-title" x="395" y="254">화면 서비스</text>
+  <text class="box-body" x="395" y="283">Vue 웹 앱</text>
+  <text class="box-body" x="395" y="306">사용자 요청 전달</text>
+
+  <rect class="box" x="645" y="215" width="220" height="116" fill="#fff7ed" stroke="#fdba74"/>
+  <text class="box-title" x="675" y="254">서비스 API</text>
+  <text class="box-body" x="675" y="283">인증, 제출 저장,</text>
+  <text class="box-body" x="675" y="306">조회 요청 처리</text>
+
+  <rect class="box" x="645" y="385" width="220" height="116" fill="#fef2f2" stroke="#fca5a5"/>
+  <text class="box-title" x="675" y="424">AI 글쓰기 분석 엔진</text>
+  <text class="box-body" x="675" y="453">제출 글 분석</text>
+  <text class="box-body" x="675" y="476">AIC 지표 계산</text>
+
+  <rect class="box" x="325" y="555" width="320" height="132" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text class="box-title" x="355" y="594">운영 데이터베이스</text>
+  <text class="box-body" x="355" y="623">사용자, 수업, 과제, 제출 데이터</text>
+  <text class="box-body" x="355" y="648">분석 점수와 처리 상태 저장</text>
+  <text class="small" x="355" y="674">MySQL aic_db</text>
+
+  <rect class="box" x="725" y="555" width="220" height="132" fill="#f5f3ff" stroke="#c4b5fd"/>
+  <text class="box-title" x="755" y="594">ELT 배치 작업</text>
+  <text class="box-body" x="755" y="623">운영 데이터 추출</text>
+  <text class="box-body" x="755" y="648">분석 저장소로 이관</text>
+  <text class="small" x="755" y="674">수동 실행 또는 cron</text>
+
+  <rect class="box" x="985" y="215" width="300" height="120" fill="#eef2ff" stroke="#a5b4fc"/>
+  <text class="box-title" x="1015" y="254">원본 형태로 적재된 데이터</text>
+  <text class="box-body" x="1015" y="283">운영 DB에서 가져온 데이터를</text>
+  <text class="box-body" x="1015" y="306">분석 저장소에 그대로 보관</text>
+
+  <rect class="box" x="985" y="390" width="300" height="120" fill="#ecfeff" stroke="#67e8f9"/>
+  <text class="box-title" x="1015" y="429">정리된 제출 분석 데이터</text>
+  <text class="box-body" x="1015" y="458">제출, 학생, 과제, 수업,</text>
+  <text class="box-body" x="1015" y="481">분석 점수를 연결한 중간 데이터</text>
+
+  <rect class="box" x="985" y="565" width="300" height="120" fill="#f0fdf4" stroke="#86efac"/>
+  <text class="box-title" x="1015" y="604">리포트용 요약 데이터</text>
+  <text class="box-body" x="1015" y="633">학생별, 과제별, 수업별</text>
+  <text class="box-body" x="1015" y="656">성과 분석과 대시보드 집계</text>
+
+  <rect x="730" y="740" width="555" height="54" rx="14" fill="#fff" stroke="#dbe4ee"/>
+  <text class="note" x="756" y="773">ELT 실행 이력: 성공 여부, 처리 건수, 검증 결과를 저장해 운영 상태를 확인</text>
+
+  <path class="arrow" d="M 305 273 L 360 273"/>
+  <path class="arrow" d="M 585 273 L 640 273"/>
+  <path class="arrow" d="M 755 332 L 755 378"/>
+  <path class="arrow-light" d="M 645 443 C 580 443 565 510 520 550"/>
+  <path class="arrow" d="M 755 332 C 755 448 625 500 520 550"/>
+  <path class="arrow" d="M 645 621 L 720 621"/>
+  <path class="arrow" d="M 945 621 C 960 500 965 375 985 278"/>
+  <path class="arrow" d="M 1135 335 L 1135 383"/>
+  <path class="arrow" d="M 1135 510 L 1135 558"/>
+  <path class="arrow-light" d="M 835 688 L 835 740"/>
+
+  <rect class="label-bg" x="319" y="245" width="32" height="29"/>
+  <text class="label" x="329" y="265">웹</text>
+
+  <rect class="label-bg" x="598" y="245" width="34" height="29"/>
+  <text class="label" x="607" y="265">API</text>
+
+  <rect class="label-bg" x="770" y="351" width="88" height="29"/>
+  <text class="label" x="781" y="371">글 분석 요청</text>
+
+  <rect class="label-bg" x="549" y="507" width="122" height="29"/>
+  <text class="label" x="561" y="527">분석 결과 저장</text>
+
+  <rect class="label-bg" x="668" y="592" width="44" height="29"/>
+  <text class="label" x="679" y="612">추출</text>
+
+  <rect class="label-bg" x="952" y="437" width="44" height="29"/>
+  <text class="label" x="963" y="457">적재</text>
+
+  <rect class="label-bg" x="1149" y="352" width="44" height="29"/>
+  <text class="label" x="1160" y="372">가공</text>
+
+  <rect class="label-bg" x="1149" y="527" width="44" height="29"/>
+  <text class="label" x="1160" y="547">요약</text>
+
+  <rect x="80" y="735" width="585" height="59" rx="14" fill="#ffffff" stroke="#dbe4ee"/>
+  <text class="pill" x="105" y="760">요약</text>
+  <text class="note" x="153" y="760">운영 서비스는 MySQL을 기준으로 동작하고, ELT는 운영 데이터를 별도 PostgreSQL 분석 저장소로 복제·가공합니다.</text>
+  <text class="note" x="153" y="782">외부 설명에서는 내부 테이블명 대신 과제 제출, 분석 점수, 처리 상태, 리포트용 요약 데이터로 표현합니다.</text>
+</svg>
