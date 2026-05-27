@@ -14,8 +14,10 @@
 **/dist/
 aic-frontend/qa-captures/
 
+# local operation logs
+logs/
+
 # editor/os
 .vscode/
 .DS_Store
 Thumbs.db
-

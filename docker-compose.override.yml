@@ -2,3 +2,9 @@ services:
   frontend:
     ports:
       - "80:80"
+  db:
+    ports:
+      - "3308:3306"
+  warehouse:
+    ports:
+      - "5433:5432"
