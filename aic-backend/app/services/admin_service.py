@@ -1,6 +1,18 @@
-from sqlalchemy import select, func
+from fastapi import HTTPException
+from sqlalchemy import desc, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.db_models import User, Class, ClassEnrollment, Assignment, Submission, Metric, AnalysisJob, TeacherFeedback
+from app.models.db_models import (
+    AnalysisJob,
+    AnalysisRun,
+    Assignment,
+    Class,
+    ClassEnrollment,
+    Metric,
+    Submission,
+    TeacherFeedback,
+    User,
+)
+from app.services.job_service import create_and_dispatch_job
 
 
 async def get_admin_dashboard_stats(db: AsyncSession) -> dict:
@@ -81,3 +93,89 @@ async def get_admin_dashboard_stats(db: AsyncSession) -> dict:
             "total": feedback_count,
         },
     }
+
+
+async def get_latest_analysis_run(db: AsyncSession) -> dict:
+    run = (await db.execute(
+        select(AnalysisRun).order_by(desc(AnalysisRun.created_at), desc(AnalysisRun.id)).limit(1)
+    )).scalar_one_or_none()
+    if not run:
+        raise HTTPException(status_code=404, detail="No analysis run data is available")
+    return _serialize_analysis_run(run)
+
+
+async def get_analysis_run_quality(db: AsyncSession, run_id: str) -> dict:
+    run = await _get_analysis_run(db, run_id)
+    return {
+        "runId": run.run_id,
+        "status": run.status,
+        "successRate": run.success_rate,
+        "dataHealth": run.data_health or {},
+        "backend": run.backend_info or {},
+        "readiness": run.readiness or {},
+    }
+
+
+async def get_analysis_run_pipeline_steps(db: AsyncSession, run_id: str) -> dict:
+    run = await _get_analysis_run(db, run_id)
+    return {
+        "runId": run.run_id,
+        "pipelineSteps": run.pipeline_steps or [],
+    }
+
+
+async def get_analysis_run_runtime(db: AsyncSession, run_id: str) -> dict:
+    run = await _get_analysis_run(db, run_id)
+    return {
+        "runId": run.run_id,
+        "totalRuntimeSec": run.total_runtime_sec,
+        "avgRuntimePerSample": run.avg_runtime_per_sample,
+        "pipelineSteps": run.pipeline_steps or [],
+    }
+
+
+async def reprocess_analysis_run(db: AsyncSession, run_id: str) -> dict:
+    run = await _get_analysis_run(db, run_id)
+    if not run.submission_id:
+        raise HTTPException(status_code=409, detail="Run is not linked to a submission")
+
+    job_id = await create_and_dispatch_job(run.submission_id, db)
+    return {
+        "ok": True,
+        "previousRunId": run.run_id,
+        "jobId": job_id,
+    }
+
+
+async def _get_analysis_run(db: AsyncSession, run_id: str) -> AnalysisRun:
+    run = (await db.execute(
+        select(AnalysisRun).where(AnalysisRun.run_id == run_id)
+    )).scalar_one_or_none()
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Analysis run {run_id} was not found")
+    return run
+
+
+def _serialize_analysis_run(run: AnalysisRun) -> dict:
+    return {
+        "runId": run.run_id,
+        "course": run.course,
+        "assignment": run.assignment,
+        "status": run.status,
+        "processedRows": run.processed_rows,
+        "validRows": run.valid_rows,
+        "successRate": _round_number(run.success_rate, 1),
+        "totalRuntimeSec": _round_number(run.total_runtime_sec, 3),
+        "avgRuntimePerSample": _round_number(run.avg_runtime_per_sample, 3),
+        "dataHealth": run.data_health or {},
+        "backend": run.backend_info or {},
+        "pipelineSteps": run.pipeline_steps or [],
+        "readiness": run.readiness or {},
+        "errorMessage": run.error_message,
+        "createdAt": run.created_at,
+        "completedAt": run.completed_at,
+    }
+
+
+def _round_number(value, digits: int):
+    return round(value, digits) if value is not None else 0

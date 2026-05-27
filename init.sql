@@ -98,6 +98,85 @@ CREATE TABLE analysis_jobs (
     INDEX idx_status (status)
 ) ENGINE=InnoDB;
 
+CREATE TABLE analysis_runs (
+    id                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    run_id                   VARCHAR(64) NOT NULL UNIQUE,
+    job_uuid                 CHAR(36) UNIQUE,
+    submission_id            INT UNSIGNED NULL,
+    course                   VARCHAR(32),
+    assignment               VARCHAR(512),
+    status                   ENUM('running','completed','failed') DEFAULT 'running',
+    processed_rows           INT NOT NULL DEFAULT 0,
+    valid_rows               INT NOT NULL DEFAULT 0,
+    success_rate             FLOAT NOT NULL DEFAULT 0,
+    total_runtime_sec        FLOAT NOT NULL DEFAULT 0,
+    avg_runtime_per_sample   FLOAT NOT NULL DEFAULT 0,
+    data_health              JSON,
+    backend_info             JSON,
+    pipeline_steps           JSON,
+    readiness                JSON,
+    error_message            TEXT,
+    created_at               DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at             DATETIME,
+    FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE SET NULL,
+    INDEX idx_analysis_runs_created_at (created_at),
+    INDEX idx_analysis_runs_status (status)
+) ENGINE=InnoDB;
+
+CREATE TABLE benchmark_runs (
+    id                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    run_id                   VARCHAR(64) NOT NULL UNIQUE,
+    label                    VARCHAR(128),
+    status                   ENUM('pending','running','completed','failed','canceled') DEFAULT 'pending',
+    dataset_snapshot         JSON,
+    dataset_hash             VARCHAR(64),
+    pipeline_version         VARCHAR(64),
+    config_hash              VARCHAR(64),
+    code_version             VARCHAR(64),
+    warmup_excluded_count    INT NOT NULL DEFAULT 0,
+    total_items              INT NOT NULL DEFAULT 0,
+    processed_items          INT NOT NULL DEFAULT 0,
+    failed_items             INT NOT NULL DEFAULT 0,
+    p50_runtime_sec          FLOAT,
+    p95_runtime_sec          FLOAT,
+    avg_runtime_sec          FLOAT,
+    failure_rate             FLOAT,
+    fallback_rate            FLOAT,
+    stage_runtime_totals     JSON,
+    data_health_summary      JSON,
+    error_message            TEXT,
+    created_at               DATETIME DEFAULT CURRENT_TIMESTAMP,
+    started_at               DATETIME,
+    completed_at             DATETIME,
+    updated_at               DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_benchmark_runs_created_at (created_at),
+    INDEX idx_benchmark_runs_status (status),
+    INDEX idx_benchmark_runs_dataset_hash (dataset_hash)
+) ENGINE=InnoDB;
+
+CREATE TABLE benchmark_run_items (
+    id                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    benchmark_run_id         INT UNSIGNED NOT NULL,
+    submission_id            INT UNSIGNED NULL,
+    sample_index             INT NOT NULL,
+    is_warmup                TINYINT(1) NOT NULL DEFAULT 0,
+    status                   ENUM('pending','running','completed','failed','skipped') DEFAULT 'pending',
+    metric_snapshot          JSON,
+    runtime_sec              FLOAT,
+    error_message            TEXT,
+    embedding_backend        VARCHAR(16),
+    pipeline_steps           JSON,
+    created_at               DATETIME DEFAULT CURRENT_TIMESTAMP,
+    started_at               DATETIME,
+    completed_at             DATETIME,
+    FOREIGN KEY (benchmark_run_id) REFERENCES benchmark_runs(id) ON DELETE CASCADE,
+    FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE SET NULL,
+    UNIQUE KEY uq_benchmark_run_item_index (benchmark_run_id, sample_index),
+    UNIQUE KEY uq_benchmark_run_item_submission (benchmark_run_id, submission_id),
+    INDEX idx_benchmark_run_items_status (status),
+    INDEX idx_benchmark_run_items_submission_id (submission_id)
+) ENGINE=InnoDB;
+
 CREATE TABLE teacher_feedback (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     assignment_id   INT UNSIGNED NOT NULL,
@@ -732,6 +811,62 @@ INSERT INTO metrics (submission_id, pi_score, ui_score, oi_score, aic_score, top
 (254, 21, 17, 20, 20, 3, 0.000, 0.079, 0.921, 20, 0.01, 0.00, 0.42, 0.93, 0.68, 0.01, 0.99, 0.82, 0.03, 'sbert', '2025-03-13 12:51:00'),
 (255, 15, 35, 41, 40, 6, 0.000, 0.079, 0.921, 88, 0.07, 0.01, 0.17, 0.63, 0.40, 0.01, 0.99, 0.85, 0.06, 'sbert', '2025-03-20 17:21:00'),
 (256, 16, 19, 24, 24, 4, 0.000, 0.079, 0.921, 19, 0.01, 0.00, 0.13, 0.93, 0.53, 0.02, 0.98, 0.78, 0.04, 'sbert', '2025-04-03 19:21:00');
+
+
+INSERT INTO analysis_jobs (job_uuid, submission_id, status, created_at, started_at, completed_at) VALUES
+('00000000-0000-4000-8000-000000000256', 256, 'done', '2025-04-03 19:20:58', '2025-04-03 19:20:59', '2025-04-03 19:21:00');
+
+INSERT INTO analysis_runs (
+    run_id, job_uuid, submission_id, course, assignment, status,
+    processed_rows, valid_rows, success_rate, total_runtime_sec, avg_runtime_per_sample,
+    data_health, backend_info, pipeline_steps, readiness, created_at, completed_at
+) VALUES (
+    'RUN-20250403-192100-00000256',
+    '00000000-0000-4000-8000-000000000256',
+    256,
+    'CS101',
+    'AI Creativity and IP',
+    'completed',
+    1,
+    1,
+    100.0,
+    1.842,
+    1.842,
+    JSON_OBJECT(
+        'score', 90,
+        'requiredColumns', 'normal',
+        'missingRows', 0,
+        'duplicateRows', 0,
+        'textOutliers', 1,
+        'ratingCoverage', 0.0,
+        'lowSampleCourses', 0
+    ),
+    JSON_OBJECT(
+        'embeddingBackend', 'SBERT',
+        'model', 'paraphrase-multilingual-mpnet-base-v2',
+        'fallback', 'None',
+        'metricVersion', 'v1.0.0',
+        'pipelineVersion', '1.0',
+        'configHash', '229b1c5',
+        'createdAt', '2025-04-03 19:21:00'
+    ),
+    JSON_ARRAY(
+        JSON_OBJECT('name', 'Data Load', 'status', 'success', 'seconds', 0.001),
+        JSON_OBJECT('name', 'Preprocess', 'status', 'success', 'seconds', 0.001),
+        JSON_OBJECT('name', 'PI', 'status', 'success', 'seconds', 0.276),
+        JSON_OBJECT('name', 'Embedding', 'status', 'success', 'seconds', 1.013),
+        JSON_OBJECT('name', 'UI/OI', 'status', 'success', 'seconds', 0.461),
+        JSON_OBJECT('name', 'Validation', 'status', 'warning', 'seconds', 0.001),
+        JSON_OBJECT('name', 'Save', 'status', 'success', 'seconds', 0.089)
+    ),
+    JSON_OBJECT(
+        'status', 'caution',
+        'reason', '분석은 완료됐지만 rating 보유율이 70% 미만이므로 검증 지표 해석에 주의가 필요합니다.',
+        'actions', JSON_ARRAY('rating 보유율이 70% 미만이므로 검증 지표 해석에 주의하세요.')
+    ),
+    '2025-04-03 19:20:58',
+    '2025-04-03 19:21:00'
+);
 
 
 INSERT INTO teacher_feedback (assignment_id, student_id, teacher_id, content) VALUES

@@ -20,6 +20,24 @@ services:
       timeout: 5s
       retries: 10
 
+  warehouse:
+    image: postgres:16
+    container_name: aic_warehouse
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aic_warehouse
+      POSTGRES_USER: warehouse_user
+      POSTGRES_PASSWORD: ${WAREHOUSE_PASSWORD}
+    volumes:
+      - warehouse_data:/var/lib/postgresql/data
+    networks:
+      - aic_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warehouse_user -d aic_warehouse"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   pipeline:
     build: ./aic-pipeline
     container_name: aic_pipeline
@@ -47,6 +65,30 @@ services:
     networks:
       - aic_internal
 
+  elt:
+    build: ./aic-elt
+    container_name: aic_elt
+    depends_on:
+      db:
+        condition: service_healthy
+      warehouse:
+        condition: service_healthy
+    environment:
+      SOURCE_DB_HOST: db
+      SOURCE_DB_PORT: 3306
+      SOURCE_DB_NAME: aic_db
+      SOURCE_DB_USER: aic_user
+      SOURCE_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WAREHOUSE_DB_HOST: warehouse
+      WAREHOUSE_DB_PORT: 5432
+      WAREHOUSE_DB_NAME: aic_warehouse
+      WAREHOUSE_DB_USER: warehouse_user
+      WAREHOUSE_DB_PASSWORD: ${WAREHOUSE_PASSWORD}
+    networks:
+      - aic_internal
+    profiles:
+      - tools
+
   frontend:
     build: ./aic-frontend
     container_name: aic_frontend
@@ -62,4 +104,5 @@ networks:
 
 volumes:
   mysql_data:
+  warehouse_data:
   model_cache:

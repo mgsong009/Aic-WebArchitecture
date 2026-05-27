@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import (
-    Integer, String, Text, Enum, DateTime, Float, ForeignKey,
-    UniqueConstraint, Index, func
+    Boolean, Integer, String, Text, Enum, DateTime, Float, ForeignKey,
+    UniqueConstraint, Index, func, JSON
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
@@ -91,6 +91,8 @@ class Submission(Base):
     student: Mapped["User"] = relationship(back_populates="submissions")
     metrics: Mapped[Optional["Metric"]] = relationship(back_populates="submission", uselist=False)
     jobs: Mapped[list["AnalysisJob"]] = relationship(back_populates="submission")
+    analysis_runs: Mapped[list["AnalysisRun"]] = relationship(back_populates="submission")
+    benchmark_items: Mapped[list["BenchmarkRunItem"]] = relationship(back_populates="submission")
 
 
 class Metric(Base):
@@ -135,6 +137,101 @@ class AnalysisJob(Base):
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     submission: Mapped["Submission"] = relationship(back_populates="jobs")
+
+
+class AnalysisRun(Base):
+    __tablename__ = "analysis_runs"
+    __table_args__ = (
+        Index("idx_analysis_runs_created_at", "created_at"),
+        Index("idx_analysis_runs_status", "status"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    job_uuid: Mapped[Optional[str]] = mapped_column(String(36), unique=True)
+    submission_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("submissions.id", ondelete="SET NULL"))
+    course: Mapped[Optional[str]] = mapped_column(String(32))
+    assignment: Mapped[Optional[str]] = mapped_column(String(512))
+    status: Mapped[str] = mapped_column(Enum("running", "completed", "failed"), default="running")
+    processed_rows: Mapped[int] = mapped_column(Integer, default=0)
+    valid_rows: Mapped[int] = mapped_column(Integer, default=0)
+    success_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    total_runtime_sec: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_runtime_per_sample: Mapped[float] = mapped_column(Float, default=0.0)
+    data_health: Mapped[Optional[dict]] = mapped_column(JSON)
+    backend_info: Mapped[Optional[dict]] = mapped_column(JSON)
+    pipeline_steps: Mapped[Optional[list]] = mapped_column(JSON)
+    readiness: Mapped[Optional[dict]] = mapped_column(JSON)
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+    submission: Mapped[Optional["Submission"]] = relationship(back_populates="analysis_runs")
+
+
+class BenchmarkRun(Base):
+    __tablename__ = "benchmark_runs"
+    __table_args__ = (
+        Index("idx_benchmark_runs_created_at", "created_at"),
+        Index("idx_benchmark_runs_status", "status"),
+        Index("idx_benchmark_runs_dataset_hash", "dataset_hash"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    label: Mapped[Optional[str]] = mapped_column(String(128))
+    status: Mapped[str] = mapped_column(Enum("pending", "running", "completed", "failed", "canceled"), default="pending")
+    dataset_snapshot: Mapped[Optional[dict]] = mapped_column(JSON)
+    dataset_hash: Mapped[Optional[str]] = mapped_column(String(64))
+    pipeline_version: Mapped[Optional[str]] = mapped_column(String(64))
+    config_hash: Mapped[Optional[str]] = mapped_column(String(64))
+    code_version: Mapped[Optional[str]] = mapped_column(String(64))
+    warmup_excluded_count: Mapped[int] = mapped_column(Integer, default=0)
+    total_items: Mapped[int] = mapped_column(Integer, default=0)
+    processed_items: Mapped[int] = mapped_column(Integer, default=0)
+    failed_items: Mapped[int] = mapped_column(Integer, default=0)
+    p50_runtime_sec: Mapped[Optional[float]] = mapped_column(Float)
+    p95_runtime_sec: Mapped[Optional[float]] = mapped_column(Float)
+    avg_runtime_sec: Mapped[Optional[float]] = mapped_column(Float)
+    failure_rate: Mapped[Optional[float]] = mapped_column(Float)
+    fallback_rate: Mapped[Optional[float]] = mapped_column(Float)
+    stage_runtime_totals: Mapped[Optional[dict]] = mapped_column(JSON)
+    data_health_summary: Mapped[Optional[dict]] = mapped_column(JSON)
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    items: Mapped[list["BenchmarkRunItem"]] = relationship(back_populates="benchmark_run")
+
+
+class BenchmarkRunItem(Base):
+    __tablename__ = "benchmark_run_items"
+    __table_args__ = (
+        UniqueConstraint("benchmark_run_id", "sample_index", name="uq_benchmark_run_item_index"),
+        UniqueConstraint("benchmark_run_id", "submission_id", name="uq_benchmark_run_item_submission"),
+        Index("idx_benchmark_run_items_status", "status"),
+        Index("idx_benchmark_run_items_submission_id", "submission_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    benchmark_run_id: Mapped[int] = mapped_column(Integer, ForeignKey("benchmark_runs.id", ondelete="CASCADE"), nullable=False)
+    submission_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("submissions.id", ondelete="SET NULL"))
+    sample_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_warmup: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(Enum("pending", "running", "completed", "failed", "skipped"), default="pending")
+    metric_snapshot: Mapped[Optional[dict]] = mapped_column(JSON)
+    runtime_sec: Mapped[Optional[float]] = mapped_column(Float)
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
+    embedding_backend: Mapped[Optional[str]] = mapped_column(String(16))
+    pipeline_steps: Mapped[Optional[list]] = mapped_column(JSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+    benchmark_run: Mapped["BenchmarkRun"] = relationship(back_populates="items")
+    submission: Mapped[Optional["Submission"]] = relationship(back_populates="benchmark_items")
 
 
 class TeacherFeedback(Base):

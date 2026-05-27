@@ -30,11 +30,11 @@
 
 ## 참고 기준
 
-- 기준 사이트: https://genspark.genspark.site/api/code_sandbox_light/preview/c66a59ad-6a9b-45f6-bda6-5cbf0f5ea36d/index.html
-- 목표: 참고 사이트의 12개 HTML 화면을 `aic-frontend` Vue 라우트에서 최대한 동일하게 재현합니다.
-- 기준 화면: `index.html`, `login.html`, `student-dashboard.html`, `student-assignment.html`, `student-growth.html`, `student-feedback.html`, `teacher-dashboard.html`, `teacher-students.html`, `teacher-student-detail.html`, `teacher-risk.html`, `teacher-assignment-analytics.html`, `teacher-advanced.html`.
-- 동일성 기준: 화면 구조, 섹션 순서, 색상, 카드/버튼/배지 스타일, 여백, 타이포그래피, 차트 배치, 사이드바/헤더 구성을 reference와 맞춥니다.
-- 구현 원칙: 정적 HTML을 그대로 배포하지 않고 Vue 3 SFC, Pinia, Vue Router, 기존 Axios API 경계를 유지하며 reference를 화면별로 이식합니다.
+- 목표: 기존 `backend -> operational db` 흐름은 유지하면서 별도 `warehouse` DB와 일회성 ELT 작업을 추가합니다.
+- 아키텍처 범위: 백엔드는 운영 DB만 사용하고, ELT 작업이 운영 DB에서 데이터를 추출해 warehouse에 적재한 뒤 분석용 raw/staging/mart 테이블로 변환합니다.
+- 실행 방식: ELT는 `docker compose run --rm elt` 형태의 일회성 서비스로 실행 가능해야 합니다.
+- 1차 구현 범위: 교사/관리자 API 조회 경로는 warehouse로 전환하지 않고, warehouse 적재와 변환이 독립적으로 검증 가능하면 완료로 봅니다.
+- 구현 원칙: 운영 DB 스키마와 기존 API 계약을 불필요하게 변경하지 않으며, 비밀값은 `.env.example`에 이름만 추가하고 실제 값은 기록하지 않습니다.
 
 ## 작업 목록
 
@@ -43,14 +43,20 @@
 
 ## 결정된 방향
 
-- 기존 TODO 작업은 초기화하고, 참고 사이트 12개 화면을 Vue 프론트엔드에서 동일하게 재현하는 작업으로 새로 관리합니다.
-- “비슷한 디자인”이 아니라 reference HTML의 화면 구조와 시각 구성을 기준으로 구현합니다.
-- 구현은 `aic-frontend` 내부 Vue 화면과 공통 컴포넌트에 한정하고, 인증/권한/서비스 경계는 유지합니다.
-- 정적 HTML을 그대로 복사해 배포하지 않고, 실제 화면은 backend API 데이터와 기존 라우팅에 맞게 구성합니다.
-- 관리자 유저네임 글자 깨짐은 사용자 식별 정보 표시 품질 문제로 보고, 표시 계층만이 아니라 API 응답과 저장 경로까지 확인합니다.
-- 그래프 축 범위 문제는 차트별 임시 보정보다 공통 Chart.js 옵션 또는 재사용 가능한 축 범위 계산으로 우선 해결합니다.
-- 교사 대시보드의 상위 5명 컴포넌트는 프론트 렌더링만이 아니라 백엔드 집계/API 응답과 데이터 매핑까지 함께 확인합니다.
+- TODO는 ELT 아키텍처 1차 구현 중심으로 관리합니다.
+- ELT 아키텍처 1차 구현은 `backend -> operational db` 기존 흐름을 유지하고, 별도 `warehouse` DB와 ELT 작업을 추가해 raw/staging/mart 테이블을 생성하는 범위로 진행합니다.
+- 1차 ELT 구현에서는 교사/관리자 분석 API를 warehouse 조회로 전환하지 않고, warehouse 적재 및 변환이 독립적으로 검증 가능하면 완료로 봅니다.
+- ELT 실행 방식은 `docker compose run --rm elt` 형태의 일회성 서비스로 고정합니다.
+- warehouse는 향후 BI, 관리자 분석, 배치 리포팅을 위한 분석 저장소로 두며, 1차 구현에서는 기존 사용자 화면의 데이터 소스가 아닙니다.
+- 운영 DB는 사용자 요청 처리와 권한/영속성의 원천으로 유지하고, warehouse는 운영 DB에서 파생된 분석용 데이터 저장소로 취급합니다.
+- warehouse 적재 방식은 전체 truncate 재적재가 아니라 primary key 또는 natural key 기준 upsert로 구현합니다.
+- mart 집계 범위는 학생별 과제 분석, 과제별 제출/점수 요약, 클래스별 분석 요약을 1차 범위로 둡니다.
+- 1차 mart 구현은 구조 증명용으로 작게 유지하고, 기존 teacher/admin analytics API 전환은 하지 않습니다.
+- 최소 mart 테이블은 `mart_student_assignment_metrics`, `mart_assignment_summary`, `mart_class_summary` 세 개로 고정합니다.
+- raw 테이블 upsert는 운영 DB의 원본 `id`를 보존한 `source_*_id` 기준으로 수행하고, staging/mart는 학생-과제, 과제, 클래스 단위 조합 key로 갱신합니다.
+- PostgreSQL warehouse의 실제 Docker 기동, 적재, 조회 검증은 완료되었고 세부 결과는 `LOG.md`에 기록합니다.
+- 다음 목표는 warehouse를 사용자 화면의 데이터 소스로 전환하기 전에, 일회성 ELT 작업의 반복 실행 신뢰성과 운영자 검증 흐름을 안정화하는 것입니다.
 
 ## 열린 질문
 
-- 데모 배포 이후 실제 연결할 도메인, TLS 인증서 발급 방식, HTTP to HTTPS 리다이렉트 적용 범위는 배포 단계에서 확정이 필요합니다.
+- 현재 없음.

@@ -83,6 +83,7 @@ MYSQL_ROOT_PASSWORD=...
 MYSQL_PASSWORD=...
 JWT_SECRET=...
 ACME_EMAIL=...
+DISCORD_WEBHOOK_URL=...
 ```
 
 Rules:
@@ -91,6 +92,7 @@ Rules:
 - Keep `JWT_SECRET` at least 32 characters.
 - Do not use words like `placeholder`, `default`, `example`, `your_`, or `change_` in `JWT_SECRET`.
 - Set `ACME_EMAIL` to an email address used for TLS certificate issuance notices.
+- Set `DISCORD_WEBHOOK_URL` only if you want Discord notifications when the ELT health check fails.
 - Never commit `.env`.
 
 Generate a JWT secret on EC2:
@@ -165,6 +167,31 @@ MySQL only runs files mounted into `/docker-entrypoint-initdb.d/` when `/var/lib
 The script above asks you to type `RESET` before changing the database. For non-interactive demo maintenance, run `bash scripts/recreate_demo_db_from_init.sh --yes`.
 
 The script drops and recreates only the `aic_db` database from the current `init.sql`, then restarts the backend. Use it for the disposable EC2 demo database when you want the server to match the repository seed data. Do not use it on production data without replacing it with a proper migration plan.
+
+Run the ELT once and record warehouse run history:
+
+```bash
+AIC_ELT_USE_PROD_COMPOSE=1 bash scripts/run_elt_once.sh
+```
+
+Schedule the ELT with host cron:
+
+```bash
+crontab -e
+```
+
+```cron
+0 3 * * * cd /home/ubuntu/Aic-WebArchitecture && AIC_ELT_USE_PROD_COMPOSE=1 bash scripts/run_elt_once.sh
+30 3 * * * cd /home/ubuntu/Aic-WebArchitecture && AIC_ELT_USE_PROD_COMPOSE=1 bash scripts/check_elt_health_and_notify.sh >> logs/elt/health.log 2>&1
+```
+
+Confirm the last run in warehouse:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T warehouse psql -U warehouse_user -d aic_warehouse -c "SELECT run_id, status, started_at, finished_at, duration_ms, error_message FROM elt_run_history ORDER BY started_at DESC LIMIT 5;"
+```
+
+Detailed warehouse validation and cron troubleshooting live in [WAREHOUSE_VALIDATION.md](WAREHOUSE_VALIDATION.md).
 
 Stop:
 

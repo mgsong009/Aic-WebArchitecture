@@ -1,4 +1,5 @@
 import sys
+from time import perf_counter
 import numpy as np
 import pandas as pd
 
@@ -39,9 +40,19 @@ def preload_model():
 def run_analysis(payload: dict) -> dict:
     global _backend
     try:
+        pipeline_steps = []
+
+        def record_step(name: str, seconds: float, status: str = "success"):
+            pipeline_steps.append({
+                "name": name,
+                "status": status,
+                "seconds": round(seconds, 3),
+            })
+
         if _backend is None:
             preload_model()
 
+        data_load_start = perf_counter()
         sub = payload["submission"]
         cfg = payload["config"]
 
@@ -54,9 +65,16 @@ def run_analysis(payload: dict) -> dict:
             "essay": safe_text(sub["essay"]),
             "rating": np.nan,
         }])
+        record_step("Data Load", perf_counter() - data_load_start)
 
+        preprocess_start = perf_counter()
         keywords = cfg.get("critical_keywords") or DEFAULT_KEYWORDS
-        df = compute_PI(df, keywords, weights=cfg.get("pi_weights", [0.4, 0.3, 0.3]))
+        pi_weights = cfg.get("pi_weights", [0.4, 0.3, 0.3])
+        record_step("Preprocess", perf_counter() - preprocess_start)
+
+        pi_start = perf_counter()
+        df = compute_PI(df, keywords, weights=pi_weights)
+        record_step("PI", perf_counter() - pi_start)
 
         pipeline_cfg = {
             "ui_oi": {
@@ -66,6 +84,9 @@ def run_analysis(payload: dict) -> dict:
             }
         }
         df = compute_UI_OI(df, _backend, pipeline_cfg)
+        ui_oi_timings = df.attrs.get("pipeline_timings", {})
+        record_step("Embedding", ui_oi_timings.get("Embedding", 0.0))
+        record_step("UI/OI", ui_oi_timings.get("UI/OI", 0.0))
 
         weights_cfg = {
             "weights": {
@@ -75,8 +96,11 @@ def run_analysis(payload: dict) -> dict:
                 "n_folds": 5,
             }
         }
+        aic_start = perf_counter()
         df, w = fit_weights_and_aic(df, weights_cfg)
+        record_step("AIC fit", perf_counter() - aic_start)
 
+        validation_start = perf_counter()
         row = df.iloc[0]
 
         def _f(col):
@@ -86,6 +110,7 @@ def run_analysis(payload: dict) -> dict:
         def _i(col):
             v = row.get(col)
             return int(v) if v is not None and not (isinstance(v, float) and np.isnan(v)) else 0
+        record_step("Validation", perf_counter() - validation_start)
 
         return {
             "job_id": payload["job_id"],
@@ -108,6 +133,7 @@ def run_analysis(payload: dict) -> dict:
             "ui_newinfo_ratio": _f("ui_newinfo_ratio"),
             "oi_topic_score_raw": _f("topic_score"),
             "embedding_backend": _backend.kind if _backend else "unknown",
+            "pipeline_steps": pipeline_steps,
         }
     except Exception as exc:
         backend_name = _backend.kind if _backend else "uninitialized"
