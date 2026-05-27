@@ -22,6 +22,12 @@
 
 ## 기록
 
+## 2026-05-27
+
+| 영역 | 요약 | 확인 | 후속 작업 |
+| --- | --- | --- | --- |
+| Backend/Frontend/DB | 관리자 `AIC 분석 품질 모니터`를 mock 데이터에서 실제 분석 실행 측정 데이터로 전환했습니다. MySQL `analysis_runs` 테이블과 SQLAlchemy 모델을 추가하고, 분석 job 실행 시 실행 상태, 처리/성공률, 단계별 런타임, 데이터 품질, 백엔드 정보, 서비스 준비 상태를 저장하도록 연결했습니다. `/api/v1/admin/analysis-runs/latest`, `quality`, `pipeline-steps`, `runtime`, `reprocess` 엔드포인트를 추가했으며, 프론트 `adminAnalysisApi.js`는 기존 mockRun 대신 중앙 Axios 클라이언트로 실제 API를 호출합니다. `init.sql`에는 새 테이블과 데모 실행 측정 시드를 추가했습니다. | `python -m compileall aic-backend\app aic-pipeline\app` 성공. `npm.cmd run build` 성공. 백엔드 앱 임포트 스모크는 로컬 Python 환경에 `aiomysql`/`aiosqlite`가 없어 완료하지 못했습니다. | 실제 Docker DB가 기존 볼륨을 유지 중이면 `analysis_runs` 테이블은 init.sql 재실행 또는 운영 마이그레이션으로 반영해야 합니다. |
+
 ## 2026-05-25 (로컬/운영 Compose 분리)
 
 | 영역 | 요약 | 확인 | 후속 작업 |

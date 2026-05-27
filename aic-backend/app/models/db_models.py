@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from sqlalchemy import (
     Integer, String, Text, Enum, DateTime, Float, ForeignKey,
-    UniqueConstraint, Index, func
+    UniqueConstraint, Index, func, JSON
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
@@ -91,6 +91,7 @@ class Submission(Base):
     student: Mapped["User"] = relationship(back_populates="submissions")
     metrics: Mapped[Optional["Metric"]] = relationship(back_populates="submission", uselist=False)
     jobs: Mapped[list["AnalysisJob"]] = relationship(back_populates="submission")
+    analysis_runs: Mapped[list["AnalysisRun"]] = relationship(back_populates="submission")
 
 
 class Metric(Base):
@@ -135,6 +136,36 @@ class AnalysisJob(Base):
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
     submission: Mapped["Submission"] = relationship(back_populates="jobs")
+
+
+class AnalysisRun(Base):
+    __tablename__ = "analysis_runs"
+    __table_args__ = (
+        Index("idx_analysis_runs_created_at", "created_at"),
+        Index("idx_analysis_runs_status", "status"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    job_uuid: Mapped[Optional[str]] = mapped_column(String(36), unique=True)
+    submission_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("submissions.id", ondelete="SET NULL"))
+    course: Mapped[Optional[str]] = mapped_column(String(32))
+    assignment: Mapped[Optional[str]] = mapped_column(String(512))
+    status: Mapped[str] = mapped_column(Enum("running", "completed", "failed"), default="running")
+    processed_rows: Mapped[int] = mapped_column(Integer, default=1)
+    valid_rows: Mapped[int] = mapped_column(Integer, default=0)
+    success_rate: Mapped[float] = mapped_column(Float, default=0.0)
+    total_runtime_sec: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_runtime_per_sample: Mapped[float] = mapped_column(Float, default=0.0)
+    data_health: Mapped[Optional[dict]] = mapped_column(JSON)
+    backend_info: Mapped[Optional[dict]] = mapped_column(JSON)
+    pipeline_steps: Mapped[Optional[list]] = mapped_column(JSON)
+    readiness: Mapped[Optional[dict]] = mapped_column(JSON)
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+    submission: Mapped[Optional["Submission"]] = relationship(back_populates="analysis_runs")
 
 
 class TeacherFeedback(Base):
