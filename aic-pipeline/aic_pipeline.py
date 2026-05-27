@@ -256,7 +256,7 @@ class EmbeddingBackend:
             norm = np.linalg.norm(c, axis=1, keepdims=True) + 1e-12
             return c / norm
         else:
-            return M.mean(axis=0)
+            return np.asarray(M.mean(axis=0))
 
 
 # --------------------------
@@ -344,17 +344,23 @@ def compute_UI_OI(df: pd.DataFrame, backend: EmbeddingBackend, cfg) -> pd.DataFr
     beta = cfg["ui_oi"].get("topic_score_beta", 1.0)
     min_course_samples = cfg["ui_oi"].get("min_course_samples", 3)
     
+    timings = {}
+
     # 데이터 준비
     before = df["chatgpt_before"].fillna("").tolist()
     essay = df["essay"].fillna("").tolist()
     
     # 백엔드 fit
+    embedding_start = time.perf_counter()
     corpus = before + essay
     backend.fit(corpus)
     
     # 임베딩 변환
     E_before = backend.transform(before)
     E_essay = backend.transform(essay)
+    timings["Embedding"] = time.perf_counter() - embedding_start
+
+    ui_oi_start = time.perf_counter()
     
     # === 1) 의미 거리 (Semantic Distance) ===
     cos_diag = backend.pairwise_cosine_diag(E_before, E_essay)
@@ -423,6 +429,12 @@ def compute_UI_OI(df: pd.DataFrame, backend: EmbeddingBackend, cfg) -> pd.DataFr
     # 의미: 전형성에서 벗어났지만(1-TS), 완전히 엉뚱하지는 않음(TS^β)
     OI_raw = (1.0 - df["topic_score"]) * (df["topic_score"] ** beta)
     df["OI"] = minmax_norm(OI_raw)
+
+    timings["UI/OI"] = time.perf_counter() - ui_oi_start
+    df.attrs["pipeline_timings"] = {
+        **df.attrs.get("pipeline_timings", {}),
+        **timings,
+    }
     
     return df
 

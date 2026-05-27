@@ -106,7 +106,7 @@ CREATE TABLE analysis_runs (
     course                   VARCHAR(32),
     assignment               VARCHAR(512),
     status                   ENUM('running','completed','failed') DEFAULT 'running',
-    processed_rows           INT NOT NULL DEFAULT 1,
+    processed_rows           INT NOT NULL DEFAULT 0,
     valid_rows               INT NOT NULL DEFAULT 0,
     success_rate             FLOAT NOT NULL DEFAULT 0,
     total_runtime_sec        FLOAT NOT NULL DEFAULT 0,
@@ -121,6 +121,60 @@ CREATE TABLE analysis_runs (
     FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE SET NULL,
     INDEX idx_analysis_runs_created_at (created_at),
     INDEX idx_analysis_runs_status (status)
+) ENGINE=InnoDB;
+
+CREATE TABLE benchmark_runs (
+    id                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    run_id                   VARCHAR(64) NOT NULL UNIQUE,
+    label                    VARCHAR(128),
+    status                   ENUM('pending','running','completed','failed','canceled') DEFAULT 'pending',
+    dataset_snapshot         JSON,
+    dataset_hash             VARCHAR(64),
+    pipeline_version         VARCHAR(64),
+    config_hash              VARCHAR(64),
+    code_version             VARCHAR(64),
+    warmup_excluded_count    INT NOT NULL DEFAULT 0,
+    total_items              INT NOT NULL DEFAULT 0,
+    processed_items          INT NOT NULL DEFAULT 0,
+    failed_items             INT NOT NULL DEFAULT 0,
+    p50_runtime_sec          FLOAT,
+    p95_runtime_sec          FLOAT,
+    avg_runtime_sec          FLOAT,
+    failure_rate             FLOAT,
+    fallback_rate            FLOAT,
+    stage_runtime_totals     JSON,
+    data_health_summary      JSON,
+    error_message            TEXT,
+    created_at               DATETIME DEFAULT CURRENT_TIMESTAMP,
+    started_at               DATETIME,
+    completed_at             DATETIME,
+    updated_at               DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_benchmark_runs_created_at (created_at),
+    INDEX idx_benchmark_runs_status (status),
+    INDEX idx_benchmark_runs_dataset_hash (dataset_hash)
+) ENGINE=InnoDB;
+
+CREATE TABLE benchmark_run_items (
+    id                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    benchmark_run_id         INT UNSIGNED NOT NULL,
+    submission_id            INT UNSIGNED NULL,
+    sample_index             INT NOT NULL,
+    is_warmup                TINYINT(1) NOT NULL DEFAULT 0,
+    status                   ENUM('pending','running','completed','failed','skipped') DEFAULT 'pending',
+    metric_snapshot          JSON,
+    runtime_sec              FLOAT,
+    error_message            TEXT,
+    embedding_backend        VARCHAR(16),
+    pipeline_steps           JSON,
+    created_at               DATETIME DEFAULT CURRENT_TIMESTAMP,
+    started_at               DATETIME,
+    completed_at             DATETIME,
+    FOREIGN KEY (benchmark_run_id) REFERENCES benchmark_runs(id) ON DELETE CASCADE,
+    FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE SET NULL,
+    UNIQUE KEY uq_benchmark_run_item_index (benchmark_run_id, sample_index),
+    UNIQUE KEY uq_benchmark_run_item_submission (benchmark_run_id, submission_id),
+    INDEX idx_benchmark_run_items_status (status),
+    INDEX idx_benchmark_run_items_submission_id (submission_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE teacher_feedback (

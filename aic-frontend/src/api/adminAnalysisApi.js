@@ -1,26 +1,23 @@
 import { api } from '@/api/index'
 
-export async function getLatestAnalysisRun() {
-  const { data } = await api.get('/admin/analysis-runs/latest')
+export async function createBenchmarkRun(body = {}) {
+  const { data } = await api.post('/admin/benchmarks', body)
   return data
 }
 
-export async function getAnalysisQuality(runId) {
-  const { data } = await api.get(`/admin/analysis-runs/${runId}/quality`)
+export async function listBenchmarkRuns(limit = 20) {
+  const { data } = await api.get('/admin/benchmarks', { params: { limit } })
   return data
 }
 
-export async function getAnalysisPipelineSteps(runId) {
-  const { data } = await api.get(`/admin/analysis-runs/${runId}/pipeline-steps`)
+export async function getBenchmarkRun(runId) {
+  const { data } = await api.get(`/admin/benchmarks/${runId}`)
   return data
 }
 
-export async function getAnalysisRuntime(runId) {
-  const { data } = await api.get(`/admin/analysis-runs/${runId}/runtime`)
-  return data
-}
-
-export async function reprocessAnalysisRun(runId) {
-  const { data } = await api.post(`/admin/analysis-runs/${runId}/reprocess`)
+export async function compareBenchmarkRuns(baselineRunId, optimizedRunId) {
+  const { data } = await api.get('/admin/benchmarks/compare', {
+    params: { baselineRunId, optimizedRunId },
+  })
   return data
 }

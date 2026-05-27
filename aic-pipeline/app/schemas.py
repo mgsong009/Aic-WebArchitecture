@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 
 
@@ -25,6 +25,12 @@ class AnalyzeRequest(BaseModel):
     config: AnalyzeConfig = AnalyzeConfig()
 
 
+class PipelineStep(BaseModel):
+    name: str
+    status: str
+    seconds: float
+
+
 class AnalyzeResponse(BaseModel):
     job_id: str
     pi: float
@@ -46,3 +52,4 @@ class AnalyzeResponse(BaseModel):
     ui_newinfo_ratio: float
     oi_topic_score_raw: float
     embedding_backend: str
+    pipeline_steps: List[PipelineStep] = Field(default_factory=list)

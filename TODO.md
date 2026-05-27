@@ -40,11 +40,6 @@
 
 | 영역 | 우선순위 | 상태 | 작업 | 완료 기준 | 비고 |
 | --- | --- | --- | --- | --- | --- |
-| Backend/Frontend/Pipeline | P1 | Ready | 관리자 `AIC 분석 품질 모니터` 측정 방식을 실제 품질 검증 기준으로 보정 | `analysis_runs`가 단일 제출 고정값이 아니라 최근 분석 실행의 실제 처리 수·유효 수·성공률을 저장/반환하고, `processedRows`, `validRows`, `successRate`가 분석 job/metric 결과 기반으로 계산됨 | 현재 `processed_rows=1`, `valid_rows=1`, `success_rate=100.0` 고정값은 운영 품질 KPI로 부적절함 |
-| Backend/DB | P1 | Ready | `Data Health` 지표를 제출/분석 데이터 집계 기반으로 계산 | 결측 데이터, 중복 제출, 텍스트 길이 이상치, metric null 비율, 분석 실패 수, fallback 사용률 등이 `submissions`, `metrics`, `analysis_jobs`, `analysis_runs` 실제 데이터에서 계산되고 `data_health` JSON 및 API 응답에 반영됨 | 현재 `duplicateRows=0`, `ratingCoverage=0.0`, `lowSampleCourses=0` 등 고정값 제거 필요 |
-| Pipeline/Backend | P1 | Ready | 파이프라인 단계별 런타임을 추정 비율이 아닌 실제 계측값으로 저장 | `PI`, `Embedding`, `UI/OI`, `AIC fit`, `Validation`, `Save` 등 단계별 seconds가 실제 코드 실행 시간으로 측정되어 pipeline 응답 또는 backend 저장 경로를 통해 `pipeline_steps`에 기록됨 | 현재 전체 pipeline 시간을 15/55/25%로 나누는 추정값 사용 중 |
-| Frontend | P2 | Ready | 분석 품질 화면의 가짜 표시 산식과 고정 경고 문구 제거 | `DataHealthCard.vue`의 `rating 결측 {{ dataHealth.missingRows * 2 + 591 }}건` 같은 화면 산식이 제거되고, 백엔드가 제공한 실제 수치/상태만 표시하며, `PipelineStepper` 경고 문구가 실제 warning 사유를 기반으로 렌더링됨 | 프론트가 품질 값을 임의 생성하지 않도록 정리 |
-| Backend/Frontend | P2 | Ready | `latest analysis run`의 대표 범위와 라벨을 명확화 | 최신 run이 단일 제출인지 과제/코스 단위 batch인지 API 응답에 `scope`, `course`, `assignment`, `submissionId` 등으로 명시되고, 화면 라벨이 해당 범위와 일치하도록 조정됨 | 현재 최신 1건만 반환되어 전체 품질 대표값처럼 보일 수 있음 |
 
 ## 결정된 방향
 
@@ -55,7 +50,12 @@
 - 관리자 유저네임 글자 깨짐은 사용자 식별 정보 표시 품질 문제로 보고, 표시 계층만이 아니라 API 응답과 저장 경로까지 확인합니다.
 - 그래프 축 범위 문제는 차트별 임시 보정보다 공통 Chart.js 옵션 또는 재사용 가능한 축 범위 계산으로 우선 해결합니다.
 - 교사 대시보드의 상위 5명 컴포넌트는 프론트 렌더링만이 아니라 백엔드 집계/API 응답과 데이터 매핑까지 함께 확인합니다.
-- 관리자 `AIC 분석 품질 모니터`는 `analysis_runs` 저장 데이터와 `/api/v1/admin/analysis-runs/*` API 기반으로 표시합니다.
+- 관리자 `AIC 분석 품질 모니터`는 benchmark 중심 화면으로 전환하고, latest 단일 run 정보는 제거하거나 보조 정보로만 유지합니다.
+- 파이프라인 최적화 전후 성능 비교는 분석 1건이 아니라 최근 제출 50건 benchmark로 수행하고, `p50`, `p95`, 평균, 실패율, fallback 비율, 단계별 runtime을 함께 비교합니다.
+- 관리자 분석 품질 화면의 `분석 재실행` 버튼은 단일 제출 재분석이 아니라 최근 제출 50건 benchmark 실행 용도로 사용합니다.
+- 최적화 전후 비교는 사용자가 완료된 benchmark run 중 baseline run과 optimized run을 직접 선택해서 수행합니다.
+- `analysis_runs`는 단일 분석 job 로그, `benchmark_runs`/`benchmark_run_items`는 최적화 의사결정용 benchmark 결과 저장소로 역할을 분리합니다.
+- benchmark 실행은 실제 pipeline을 호출하지만 운영 `metrics` 테이블을 갱신하지 않고, 학생/교사 화면의 기존 분석 결과를 변경하지 않습니다.
 
 ## 열린 질문
 

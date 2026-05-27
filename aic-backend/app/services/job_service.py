@@ -102,7 +102,7 @@ async def _run_pipeline(job_uuid_str: str, submission_id: int, submission_data: 
             "course": submission_data.get("course_code"),
             "assignment": submission_data.get("assignment_title"),
             "status": "running",
-            "processed_rows": 1,
+            "processed_rows": 0,
             "valid_rows": 0,
             "success_rate": 0.0,
             "total_runtime_sec": 0.0,
@@ -158,23 +158,36 @@ async def _run_pipeline(job_uuid_str: str, submission_id: int, submission_data: 
             total_seconds = perf_counter() - total_start
             data_health = _build_data_health(submission_data)
             backend_info = _build_backend_info(result.get("embedding_backend"))
-            pipeline_steps = _build_pipeline_steps(pipeline_seconds, save_seconds, "success")
-            readiness = _build_readiness("completed", 100.0, data_health, backend_info)
+            pipeline_steps = _build_pipeline_steps(
+                result.get("pipeline_steps"),
+                pipeline_seconds,
+                save_seconds,
+                "success",
+            )
 
             await session.execute(
                 update(AnalysisJob)
                 .where(AnalysisJob.job_uuid == job_uuid_str)
                 .values(status="done", completed_at=datetime.now(timezone.utc))
             )
+            await session.flush()
+            quality_counts = await _build_run_quality_counts(session, job_uuid_str)
+            readiness = _build_readiness(
+                "completed",
+                quality_counts["success_rate"],
+                data_health,
+                backend_info,
+            )
             await session.execute(
                 update(AnalysisRun)
                 .where(AnalysisRun.job_uuid == job_uuid_str)
                 .values(
                     status="completed",
-                    valid_rows=1,
-                    success_rate=100.0,
+                    processed_rows=quality_counts["processed_rows"],
+                    valid_rows=quality_counts["valid_rows"],
+                    success_rate=quality_counts["success_rate"],
                     total_runtime_sec=round(total_seconds, 3),
-                    avg_runtime_per_sample=round(total_seconds, 3),
+                    avg_runtime_per_sample=_average_runtime_per_sample(total_seconds, quality_counts["processed_rows"]),
                     data_health=data_health,
                     backend_info=backend_info,
                     pipeline_steps=pipeline_steps,
@@ -188,21 +201,24 @@ async def _run_pipeline(job_uuid_str: str, submission_id: int, submission_data: 
             total_seconds = perf_counter() - total_start
             data_health = _build_data_health(submission_data)
             backend_info = _build_backend_info()
-            pipeline_steps = _build_pipeline_steps(pipeline_seconds, save_seconds, "failed")
+            pipeline_steps = _build_pipeline_steps(None, pipeline_seconds, save_seconds, "failed")
             await session.execute(
                 update(AnalysisJob)
                 .where(AnalysisJob.job_uuid == job_uuid_str)
                 .values(status="failed", error_message=str(exc), completed_at=datetime.now(timezone.utc))
             )
+            await session.flush()
+            quality_counts = await _build_run_quality_counts(session, job_uuid_str)
             await session.execute(
                 update(AnalysisRun)
                 .where(AnalysisRun.job_uuid == job_uuid_str)
                 .values(
                     status="failed",
-                    valid_rows=0,
-                    success_rate=0.0,
+                    processed_rows=quality_counts["processed_rows"],
+                    valid_rows=quality_counts["valid_rows"],
+                    success_rate=quality_counts["success_rate"],
                     total_runtime_sec=round(total_seconds, 3),
-                    avg_runtime_per_sample=round(total_seconds, 3),
+                    avg_runtime_per_sample=_average_runtime_per_sample(total_seconds, quality_counts["processed_rows"]),
                     data_health=data_health,
                     backend_info=backend_info,
                     pipeline_steps=pipeline_steps,
@@ -250,6 +266,54 @@ def _make_run_id(job_uuid_str: str) -> str:
     return f"RUN-{stamp}-{job_uuid_str[:8]}"
 
 
+async def _build_run_quality_counts(session, job_uuid_str: str) -> dict:
+    row = (await session.execute(
+        select(
+            AnalysisJob.status,
+            AnalysisJob.started_at,
+            Metric.aic_score,
+            Metric.pi_score,
+            Metric.ui_score,
+            Metric.oi_score,
+            Metric.computed_at,
+        )
+        .outerjoin(Metric, Metric.submission_id == AnalysisJob.submission_id)
+        .where(AnalysisJob.job_uuid == job_uuid_str)
+    )).first()
+    if not row:
+        return {"processed_rows": 0, "valid_rows": 0, "success_rate": 0.0}
+
+    processed_rows = 1 if row.status in ("done", "failed") else 0
+    metric_values = (row.aic_score, row.pi_score, row.ui_score, row.oi_score)
+    metric_computed_at = _as_naive_utc(row.computed_at)
+    job_started_at = _as_naive_utc(row.started_at)
+    metric_is_current = (
+        metric_computed_at is not None
+        and (job_started_at is None or metric_computed_at >= job_started_at)
+    )
+    valid_rows = 1 if row.status == "done" and metric_is_current and all(v is not None for v in metric_values) else 0
+    success_rate = round(valid_rows / processed_rows * 100, 1) if processed_rows else 0.0
+    return {
+        "processed_rows": processed_rows,
+        "valid_rows": valid_rows,
+        "success_rate": success_rate,
+    }
+
+
+def _average_runtime_per_sample(total_seconds: float, processed_rows: int) -> float:
+    if processed_rows <= 0:
+        return 0.0
+    return round(total_seconds / processed_rows, 3)
+
+
+def _as_naive_utc(value):
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(timezone.utc).replace(tzinfo=None)
+
+
 def _build_data_health(submission_data: dict) -> dict:
     required_fields = ["chatgpt_before", "user_prompt", "essay"]
     missing_rows = sum(1 for field in required_fields if not submission_data.get(field))
@@ -288,18 +352,30 @@ def _build_backend_info(embedding_backend: str | None = None) -> dict:
     }
 
 
-def _build_pipeline_steps(pipeline_seconds: float, save_seconds: float, status: str) -> list[dict]:
-    analyze_status = "failed" if status == "failed" else "success"
+def _build_pipeline_steps(
+    measured_steps: list[dict] | None,
+    pipeline_seconds: float,
+    save_seconds: float,
+    status: str,
+) -> list[dict]:
     save_status = "pending" if status == "failed" and save_seconds == 0 else "success"
-    return [
-        {"name": "Data Load", "status": "success", "seconds": 0.001},
-        {"name": "Preprocess", "status": "success", "seconds": 0.001},
-        {"name": "PI", "status": analyze_status, "seconds": round(pipeline_seconds * 0.15, 3)},
-        {"name": "Embedding", "status": analyze_status, "seconds": round(pipeline_seconds * 0.55, 3)},
-        {"name": "UI/OI", "status": analyze_status, "seconds": round(pipeline_seconds * 0.25, 3)},
-        {"name": "Validation", "status": "warning", "seconds": 0.001},
-        {"name": "Save", "status": save_status, "seconds": round(save_seconds, 3)},
-    ]
+    steps = [_normalize_pipeline_step(step) for step in measured_steps or []]
+    if not steps:
+        steps.append({
+            "name": "Pipeline",
+            "status": "failed" if status == "failed" else "success",
+            "seconds": round(pipeline_seconds, 3),
+        })
+    steps.append({"name": "Save", "status": save_status, "seconds": round(save_seconds, 3)})
+    return steps
+
+
+def _normalize_pipeline_step(step: dict) -> dict:
+    return {
+        "name": str(step.get("name") or "Unknown"),
+        "status": str(step.get("status") or "success"),
+        "seconds": round(float(step.get("seconds") or 0.0), 3),
+    }
 
 
 def _build_readiness(
